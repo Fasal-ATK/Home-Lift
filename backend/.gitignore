@@ -1,0 +1,26 @@
+# Python/Django
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.env
+media/
+staticfiles/
+
+# Virtual environment (in parent directory)
+../venv/
+
+# React/Frontend
+../frontend/node_modules/
+../frontend/build/
+../frontend/.env
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+
+# Windows-specific
+Thumbs.db
+Desktop.ini
