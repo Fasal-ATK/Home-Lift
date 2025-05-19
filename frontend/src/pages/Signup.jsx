@@ -36,7 +36,12 @@ function Signup() {
             setErrorState('Password need to be 6 or more charecter')
             return
         }
-        
+        if (!/^\d{10}$/.test(phone)) {
+            setErrorState('Please enter a valid 10-digit phone number');
+            setLoading(false);
+            return;
+        }
+
         setLoading(true)
         try{
             const response = await axios.post(`${api}/register/`,{
