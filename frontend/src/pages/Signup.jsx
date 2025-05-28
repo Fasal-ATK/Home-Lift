@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import api from '../API/api'
+import { Container } from '@mui/material'
 
 function Signup() {
   useEffect(() => { 
@@ -9,7 +10,6 @@ function Signup() {
         console.log('unmounted')
     })
   }, []);
-
     const [fname,setFname] = useState('') 
     const [lname,setLname] = useState('') 
     const [uname,setUname] = useState('')
@@ -17,9 +17,11 @@ function Signup() {
     const [email,setEmail] = useState('') 
     const [pass1,setPass1] = useState('') 
     const [pass2,setPass2] = useState('') 
-
+    
+    // eslint-disable-next-line no-unused-vars
     const [passMatch,setPassMatch] = useState(false)
     const [error, setErrorState] = useState(''); 
+    // eslint-disable-next-line no-unused-vars
     const [loading, setLoading] = useState(false);
     
     const handleSubmit = async(e)=>{
@@ -44,6 +46,7 @@ function Signup() {
 
         setLoading(true)
         try{
+            // eslint-disable-next-line no-unused-vars
             const response = await axios.post(`${api}/register/`,{
                 first_name: fname,
                 last_name : lname,
@@ -69,7 +72,7 @@ function Signup() {
     }
 }
   return (
-    <div>
+    < Container sx={{background:'tomato'}}>
         <form onSubmit={handleSubmit}>
             First Name : <input type="text" onChange={(event) => setFname(event.target.value)} /> <br />
             Last Name : <input type="text" onChange={(event) => setLname(event.target.value)} />  <br />
@@ -80,7 +83,7 @@ function Signup() {
             Confirm Password : <input type="password"  onChange={(event)=> setPass2(event.target.value)} /> <br />
             <button type='submit'>Submit</button>
         </form>
-    </div>
+    </Container>
   )
 }
 export default Signup
