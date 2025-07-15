@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 
 function Profile() {
   return (
-    <div>
-      <h1>this is Prfile</h1>
+    <div style={{ textAlign: 'center', marginTop: '50px' }}>
+      <h1>this is Profile</h1>
       <br />
       <Link to='/About'> About </Link>
     </div>
