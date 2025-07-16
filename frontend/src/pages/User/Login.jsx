@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Container, TextField, Button, Typography,Box, Alert, CircularProgress, Link } from '@mui/material';
+  Container, TextField, Button, Typography, Box, Alert, CircularProgress, Link, IconButton, InputAdornment
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Cookies from 'js-cookie'; 
 import api from '../../API/api';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    axios.get(`${api}/csrf/`, {
+      withCredentials: true
+    }).then(() => {
+      console.log("CSRF token set.");
+    }).catch(err => {
+      console.error("CSRF fetch failed", err);
+    });
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -21,12 +35,19 @@ function Login() {
     setError('');
     setLoading(true);
     try {
+      const csrftoken = Cookies.get('csrftoken');
+      
       const response = await axios.post(`${api}/login/`, {
         email: email,
         password: pass
-      },{TrustedOrigin: true});
+      }, {
+        withCredentials: true,
+        headers: {
+          'X-CSRFToken': csrftoken
+        }
+      });
+
       console.log(response.data);
-      // store token logic here
       setLoading(false);
       navigate('/dashboard');
     } catch (err) {
@@ -34,6 +55,10 @@ function Login() {
       setLoading(false);
       console.error(err);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPass((prev) => !prev);
   };
 
   return (
@@ -72,10 +97,19 @@ function Login() {
 
             <TextField
               label="Password"
-              type="password"
+              type={showPass ? 'text' : 'password'}
               fullWidth
               sx={{ mt: 2 }}
               onChange={e => setPass(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={togglePasswordVisibility} edge="end">
+                      {showPass ?  <Visibility /> : <VisibilityOff /> }
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
             />
 
             <Button

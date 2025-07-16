@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import {
   Container, TextField, Button, Typography,
-  Box, Alert, CircularProgress, Grid, Checkbox, FormControlLabel, Link
+  Box, Alert, CircularProgress, Grid, Checkbox,
+  FormControlLabel, Link, InputAdornment, IconButton
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../../API/api';
 import OtpModal from '../../components/otp_modal';
@@ -16,6 +18,8 @@ function Signup() {
   const [email, setEmail] = useState('');
   const [pass1, setPass1] = useState('');
   const [pass2, setPass2] = useState('');
+  const [showPass1, setShowPass1] = useState(false); // 🔹 toggle state
+  const [showPass2, setShowPass2] = useState(false); // 🔹 toggle state
   const [agreed, setAgreed] = useState(false);
 
   const [error, setErrorState] = useState('');
@@ -146,8 +150,40 @@ function Signup() {
             <TextField label="Username" fullWidth sx={{ mt: 2 }} onChange={e => setUname(e.target.value)} />
             <TextField label="Email" type="email" fullWidth sx={{ mt: 2 }} onChange={e => setEmail(e.target.value)} />
             <TextField label="Phone" type="tel" fullWidth sx={{ mt: 2 }} onChange={e => setPhone(e.target.value)} />
-            <TextField label="Password" type="password" fullWidth sx={{ mt: 2 }} onChange={e => setPass1(e.target.value)} />
-            <TextField label="Confirm Password" type="password" fullWidth sx={{ mt: 2 }} onChange={e => setPass2(e.target.value)} />
+
+            <TextField
+              label="Password"
+              type={showPass1 ? 'text' : 'password'}
+              fullWidth
+              sx={{ mt: 2 }}
+              onChange={e => setPass1(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPass1(!showPass1)} edge="end">
+                      {showPass1 ? <Visibility /> :<VisibilityOff /> }
+                    </IconButton> 
+                  </InputAdornment> 
+                )
+              }}
+            />
+
+            <TextField
+              label="Confirm Password"
+              type={showPass2 ? 'text' : 'password'}
+              fullWidth
+              sx={{ mt: 2 }}
+              onChange={e => setPass2(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPass2(!showPass2)} edge="end">
+                      {showPass2 ?  <Visibility /> :<VisibilityOff /> }
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
 
             <FormControlLabel
               control={<Checkbox checked={agreed} onChange={e => setAgreed(e.target.checked)} />}

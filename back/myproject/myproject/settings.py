@@ -28,23 +28,25 @@ SECRET_KEY = 'django-insecure-)mfxsn*uwmc(^&j7u9mr+x@c9gxb04g7r2n*wgake5!cg=)bzq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
 CORS_ALLOW_CREDENTIALS = True
 
-SECURE_SSL_REDIRECT = None
-SESSION_COOKIE_SECURE = None
-CSRF_COOKIE_SECURE = None
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Your frontend URL
+]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",  # Your frontend URL
+]
 
+# SECURE_SSL_REDIRECT = False
+# SESSION_COOKIE_SECURE = False
+# CSRF_COOKIE_SECURE = False
+# CSRF_COOKIE_SAMESITE = 'Lax'
+# CSRF_COOKIE_SECURE = False  # Only True if using HTTPS
+# SESSION_COOKIE_SAMESITE = 'Lax'
+# SESSION_COOKIE_SECURE = False
 
-# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-# CORS_ALLOWED_ORIGINS = [
-#     'http://localhost:5173',
-# ]
-# Optional, only if CSRF cookie error persists
-# CSRF_TRUSTED_ORIGINS = [
-#     'http://localhost:5173',
-# ]
 
 # Application definition
 
@@ -60,6 +62,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'phonenumber_field',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
