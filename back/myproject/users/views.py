@@ -72,74 +72,65 @@ from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 
 
-# @method_decorator(ensure_csrf_cookie, name='dispatch')
-# class GetCSRFToken(APIView):
-#     permission_classes = [AllowAny]
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class GetCSRFToken(APIView):
+    permission_classes = [AllowAny]
 
-#     def get(self, request):
-#         return JsonResponse({'message': 'CSRF cookie set'})
+    def get(self, request):
+        return JsonResponse({'message': 'CSRF cookie set'})
 
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 
-# @method_decorator(csrf_exempt, name='dispatch')
-# class UserLogin(APIView):
-#     print("UserLogin view initialized")
-#     permission_classes = [AllowAny]
-
-#     def post(self, request):
-#         try:
-#             serializer = LoginSerializer(data=request.data)
-#             serializer.is_valid(raise_exception=True)
-#             user = serializer.validated_data.get('user')
-#             if not user:
-#                 return Response({
-#                     "error": "invalid-credentials",
-#                     "message": "Unable to log in with provided credentials."
-#                 }, status=status.HTTP_400_BAD_REQUEST)
-
-#             login(request, user)
-#             refresh = RefreshToken.for_user(user)
-#             access_token = str(refresh.access_token)
-
-#             response = Response({
-#                 'user': UserSerializer(user).data,
-#                 'access': access_token,
-#                 'refresh': str(refresh),
-#                 'message': 'Login successful'
-#             }, status=status.HTTP_200_OK)
-
-#             # ✅ Cookie set (JWT refresh token)
-#             response.set_cookie(
-#                 key='refresh',
-#                 value=str(refresh),
-#                 httponly=True,
-#                 secure=False,   # True if using HTTPS
-#                 samesite='Lax',
-#                 max_age=86400,
-#             )
-
-#             return response
-
-#         except ValidationError as ve:
-#             raise ve
-
-#         except Exception as e:
-#             logger.error("Login error: %s", str(e))
-#             return Response({
-#                 "error": "internal-error",
-#                 "message": "Unexpected error. Please try again later."
-#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    def enforce_csrf(self, request):
+        return
+    
 class UserLogin(APIView):
+    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
+    
+    print("UserLogin view initialized")
+    permission_classes = [AllowAny]
+
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            token, created = CustomUser.objects.get_or_create(user=user)
+        try:
+            serializer = LoginSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            user = serializer.validated_data.get('user')
+            if not user:
+                return Response({
+                    "error": "invalid-credentials",
+                    "message": "Unable to log in with provided credentials."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            login(request, user)
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+
+            response = Response({
+                'user': UserSerializer(user).data,
+                'access': access_token,
+                'refresh': str(refresh),
+                'message': 'Login successful'
+            }, status=status.HTTP_200_OK)
+
+            # ✅ Cookie set (JWT refresh token)
+            response.set_cookie(
+                key='refresh',
+                value=str(refresh),
+                httponly=True,
+                secure=False,   # True if using HTTPS
+                samesite='Lax',
+                max_age=86400,
+            )
+
+            return response
+
+        except ValidationError as ve:
+            raise ve
+
+        except Exception as e:
+            logger.error("Login error: %s", str(e))
             return Response({
-                'token': token.key,
-                'username': user.username,
-                'email': user.email
-            })
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                "error": "internal-error",
+                "message": "Unexpected error. Please try again later."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
