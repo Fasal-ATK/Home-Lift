@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from django.core.mail import send_mail
 from django.conf import settings
+from django.core.cache import cache
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserSerializer, SignupSerialzer, LoginSerializer
 from .models import CustomUser
@@ -12,10 +13,6 @@ from django.contrib.auth import login, logout
 import logging
 from rest_framework.exceptions import ValidationError
 
-# ✅ NEW IMPORT for CSRF view
-# from django.views.decorators.csrf import ensure_csrf_cookie
-# from django.http import JsonResponse
-# from django.utils.decorators import method_decorator
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +37,7 @@ class SendOtpView(APIView):
             return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         otp = str(random.randint(100000, 999999))
-        request.session['otp'] = otp
-        request.session['otp_email'] = email
-        request.session.set_expiry(300)  # 5 minutes
+        cache.set(f"otp_{email}", otp, timeout=300)  # OTP 5-minute expiry
 
         send_mail(
             subject="Your OTP Code",
@@ -50,6 +45,7 @@ class SendOtpView(APIView):
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],
         )
+
         return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
 
 
@@ -59,35 +55,20 @@ class VerifyOtpView(APIView):
     def post(self, request):
         email = request.data.get("email")
         otp = request.data.get("otp")
-        session_otp = request.session.get('otp')
-        session_email = request.session.get('otp_email')
 
-        if session_otp == otp and session_email == email:
+        if not email or not otp:
+            return Response({"error": "Email and OTP are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cached_otp = cache.get(f"otp_{email}")
+
+        if cached_otp == otp:
+            cache.delete(f"otp_{email}")  # Clean up used OTP
             return Response({"message": "OTP Verified"}, status=status.HTTP_200_OK)
-        return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.http import JsonResponse
-from django.utils.decorators import method_decorator
-
-
-@method_decorator(ensure_csrf_cookie, name='dispatch')
-class GetCSRFToken(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        return JsonResponse({'message': 'CSRF cookie set'})
-
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-
-class CsrfExemptSessionAuthentication(SessionAuthentication):
-    def enforce_csrf(self, request):
-        return
-    
 class UserLogin(APIView):
-    authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication]
-    
     print("UserLogin view initialized")
     permission_classes = [AllowAny]
 
@@ -134,3 +115,5 @@ class UserLogin(APIView):
                 "error": "internal-error",
                 "message": "Unexpected error. Please try again later."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+

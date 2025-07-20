@@ -26,7 +26,6 @@ function Signup() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [resending, setResending] = useState(false);
 
   const navigate = useNavigate();
@@ -71,10 +70,12 @@ function Signup() {
 
     setLoading(true);
     try {
-      await axios.post(`${api}/send-otp/`, { email });
-      setOtpSent(true);
+      console.log('Sending OTP request for email:', email);
+      const response = await axios.post(`${api}/send-otp/`, { email });
+      console.log('Send OTP response:', response.data);
       setShowOtpModal(true);
     } catch (err) {
+      console.error('Send OTP error:', err.response?.data || err.message);
       setErrorState('Failed to send OTP');
     }
     setLoading(false);
@@ -93,8 +94,20 @@ function Signup() {
   const handleOtpVerify = async (otp) => {
     setErrorState('');
     try {
-      await axios.post(`${api}/verify-otp/`, { email, otp });
-      await axios.post(`${api}/register/`, {
+      console.log('Sending OTP verification request:', { email, otp });
+      
+      // Try with different content types and formats
+      const otpResponse = await axios.post(
+        `${api}/verify-otp/`,
+        { email: email, otp: otp.toString() },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true, // <-- Add this line!
+        }
+      );
+      console.log('OTP verification response:', otpResponse.data);
+      
+      const registerResponse = await axios.post(`${api}/register/`, {
         first_name: fname,
         last_name: lname,
         username: uname,
@@ -102,11 +115,18 @@ function Signup() {
         email,
         password: pass1,
       });
+      console.log('Registration response:', registerResponse.data);
+      
       setSuccess('Registration successful!');
       setShowOtpModal(false);
       setTimeout(() => navigate('/login'), 1500);
-    } catch {
-      setErrorState('Invalid OTP or Registration failed');
+    } catch (error) {
+      console.error('Error details:', error.response?.data || error.message);
+      if (error.response?.status === 400) {
+        setErrorState(`Bad Request: ${error.response.data?.message || error.response.data || 'Invalid OTP format'}`);
+      } else {
+        setErrorState('Invalid OTP or Registration failed');
+      }
       setShowOtpModal(false);
     }
   };
