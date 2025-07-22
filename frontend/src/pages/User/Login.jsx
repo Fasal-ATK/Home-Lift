@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Container, TextField, Button, Typography, Box, Alert, CircularProgress, Link, IconButton, InputAdornment
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import Cookies from 'js-cookie'; 
 import api from '../../API/api';
+import validateLoginForm from '../../utils/loginVal';
+
+// import logo from '../../assets/user/app_logo.png';
+
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -16,57 +19,61 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    axios.get(`${api}/csrf/`, {
-      withCredentials: true
-    }).then(() => {
-      console.log("CSRF token set.");
-    }).catch(err => {
-      console.error("CSRF fetch failed", err);
-    });
-  }, []);
-
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!email || !pass) {
-      setError('Email and password are required');
+    setError('');
+  
+    const validationError = validateLoginForm({ email, password: pass });
+    if (validationError) {
+      setError(validationError);
       return;
     }
-    setError('');
+  
     setLoading(true);
+  
     try {
-      const csrftoken = Cookies.get('csrftoken');
-      
-      const response = await axios.post(`${api}/login/`, {
+      const response = await axios.post(`${api}/user/login/`, {
         email: email,
         password: pass
       }, {
         withCredentials: true,
-        headers: {
-          'X-CSRFToken': csrftoken
-        }
       });
-
+  
       console.log(response.data);
-      setLoading(false);
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
-      setError('Invalid email or password');
-      setLoading(false);
       console.error(err);
+      if (err.response?.status === 401 || err.response?.status === 400) {
+        setError('Invalid email or password');
+      } else {
+        setError('Login failed. Please try again later.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
+  
 
   const togglePasswordVisibility = () => {
-    setShowPass((prev) => !prev);
+    setShowPass(prev => !prev);
   };
 
   return (
     <Box sx={{ bgcolor: '#d9e021', minHeight: '100vh', py: 8 }}>
       <Container maxWidth="sm" sx={{ position: 'relative' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: -4 }}>
-          <img src="/logo.png" alt="logo" style={{ height: 80, backgroundColor: 'white', borderRadius: '50%', padding: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-        </Box>
+        {/* <Box sx={{ display: 'flex', justifyContent: 'center', mb: -4 }}>
+        <img
+          src={logo}
+          alt="logo"
+          style={{
+            height: 64,
+            objectFit: 'contain',
+            backgroundColor: 'transparent',
+            padding: 4
+          }}
+        />
+
+        </Box> */}
 
         <Box
           sx={{
@@ -76,8 +83,7 @@ function Login() {
             px: 4,
             pt: 8,
             pb: 5,
-            textAlign: 'center',
-            position: 'relative',
+            textAlign: 'center'
           }}
         >
           <Typography variant="h5" fontWeight="bold" gutterBottom>
@@ -105,7 +111,7 @@ function Login() {
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton onClick={togglePasswordVisibility} edge="end">
-                      {showPass ?  <Visibility /> : <VisibilityOff /> }
+                      {showPass ? <Visibility /> : <VisibilityOff />}
                     </IconButton>
                   </InputAdornment>
                 )

@@ -9,6 +9,8 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../../API/api';
 import OtpModal from '../../components/otp_modal';
+import { validateSignupForm } from '../../utils/signupVal';
+
 
 function Signup() {
   const [fname, setFname] = useState('');
@@ -30,52 +32,36 @@ function Signup() {
 
   const navigate = useNavigate();
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorState('');
     setSuccess('');
-
-    if (!fname || !uname || !email || !pass1 || !pass2) {
-      setErrorState('Enter the required fields');
+  
+    const validationError = validateSignupForm({
+      fname,
+      lname,
+      uname,
+      email,
+      phone,
+      pass1,
+      pass2,
+      agreed,
+    });
+  
+    if (validationError) {
+      setErrorState(validationError);
       return;
     }
-    if (!/^[a-zA-Z0-9_]+$/.test(uname)) {
-      setErrorState('Username can only contain letters, numbers, and underscores');
-      return;
-    }
-    if (!/^[a-zA-Z]+$/.test(fname) || !/^[a-zA-Z]+$/.test(lname)) {
-      setErrorState('First and Last names can only contain letters');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErrorState('Enter a valid email');
-      return;
-    }
-    if (pass1 !== pass2) {
-      setErrorState('Passwords do not match');
-      return;
-    }
-    if (pass1.length < 6) {
-      setErrorState('Password must be at least 6 characters');
-      return;
-    }
-    if (!/^\d{10}$/.test(phone)) {
-      setErrorState('Enter a valid 10-digit phone number');
-      return;
-    }
-    if (!agreed) {
-      setErrorState('You must agree to the Terms and Conditions');
-      return;
-    }
-
+  
     setLoading(true);
     try {
-      console.log('Sending OTP request for email:', email);
-      const response = await axios.post(`${api}/send-otp/`, { email });
-      console.log('Send OTP response:', response.data);
+      const response = await axios.post(`${api}/user/send-otp/`, { email });
+      console.log('OTP response:', response.data);
       setShowOtpModal(true);
     } catch (err) {
       console.error('Send OTP error:', err.response?.data || err.message);
+      
       setErrorState('Failed to send OTP');
     }
     setLoading(false);
@@ -84,7 +70,7 @@ function Signup() {
   const handleResendOtp = async () => {
     setResending(true);
     try {
-      await axios.post(`${api}/send-otp/`, { email });
+      await axios.post(`${api}/user/send-otp/`, { email });
     } catch {
       setErrorState('Failed to resend OTP');
     }
@@ -98,7 +84,7 @@ function Signup() {
       
       // Try with different content types and formats
       const otpResponse = await axios.post(
-        `${api}/verify-otp/`,
+        `${api}/user/verify-otp/`,
         { email: email, otp: otp.toString() },
         {
           headers: { 'Content-Type': 'application/json' },
@@ -107,7 +93,7 @@ function Signup() {
       );
       console.log('OTP verification response:', otpResponse.data);
       
-      const registerResponse = await axios.post(`${api}/register/`, {
+      const registerResponse = await axios.post(`${api}/user/register/`, {
         first_name: fname,
         last_name: lname,
         username: uname,
@@ -134,9 +120,9 @@ function Signup() {
   return (
     <Box sx={{ bgcolor: '#d9e021', minHeight: '100vh', py: 8 }}>
       <Container maxWidth="sm" sx={{ position: 'relative' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: -4 }}>
+        {/* <Box sx={{ display: 'flex', justifyContent: 'center', mb: -4 }}>
           <img src="/logo.png" alt="logo" style={{ height: 80, backgroundColor: 'white', borderRadius: '50%', padding: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-        </Box>
+        </Box> */}
 
         <Box
           sx={{
@@ -153,6 +139,8 @@ function Signup() {
           <Typography variant="h5" fontWeight="bold" gutterBottom>
             User Registration
           </Typography>
+          <br />
+          <br />
 
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
@@ -169,7 +157,15 @@ function Signup() {
 
             <TextField label="Username" fullWidth sx={{ mt: 2 }} onChange={e => setUname(e.target.value)} />
             <TextField label="Email" type="email" fullWidth sx={{ mt: 2 }} onChange={e => setEmail(e.target.value)} />
-            <TextField label="Phone" type="tel" fullWidth sx={{ mt: 2 }} onChange={e => setPhone(e.target.value)} />
+              
+            <TextField
+                label="Phone"
+                type="tel"
+                fullWidth
+                sx={{ mt: 2 }}
+                onChange={e => setPhone(e.target.value)}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
+              />
 
             <TextField
               label="Password"

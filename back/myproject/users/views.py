@@ -103,7 +103,7 @@ class UserLogin(APIView):
                 samesite='Lax',
                 max_age=86400,
             )
-
+            print("User logged in successfully")
             return response
 
         except ValidationError as ve:

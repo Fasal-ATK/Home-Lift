@@ -60,6 +60,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'users',
+    'admins',
+    'providers',
+
     'rest_framework',
     'corsheaders',
     'phonenumber_field',
