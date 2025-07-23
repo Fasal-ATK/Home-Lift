@@ -28,17 +28,19 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        `${api}/login/`,
-        { email: email, password: pass },
-        { withCredentials: true }
-      );
+      const response = await axios.post(`${api}/admin/login/`, {
+        email: email,
+        password: pass
+      }, {
+        withCredentials: true,
+      });
 
       console.log(response.data);
-      navigate('/');
+      navigate('/admin/dash');  
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401 || err.response?.status === 400) {
+        console.log(err.response.data.message);
         setError('Invalid email or password');
       } else {
         setError('Login failed. Please try again later.');
@@ -53,9 +55,9 @@ function Login() {
   };
 
   return (
-    <Box sx={{ bgcolor: 'black', minHeight: '100vh', py: 8 }}>
+    <Box sx={{ bgcolor: 'black', minHeight: '90vh', py: 8, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <Container maxWidth="sm">
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: -4 }}>
+        {/* <Box sx={{ display: 'flex', justifyContent: 'center', mb: -4 }}>
           <img
             src="../../user/app_logo.png"
             alt="logo"
@@ -67,7 +69,7 @@ function Login() {
               boxShadow: '0 4px 12px rgba(255,255,255,0.1)',
             }}
           />
-        </Box>
+        </Box> */}
 
         <Box
           sx={{
@@ -173,13 +175,13 @@ function Login() {
           </form>
 
           <Typography variant="body2" sx={{ mt: 2, color: '#ccc' }}>
-            Don’t have an account?{' '}
+            Back to the Previous page   {' '}
             <Link
-              href="/signup"
+              href="/"
               underline="hover"
               sx={{ fontWeight: 'bold', color: '#fff' }}
             >
-              Sign Up
+               Landing Page
             </Link>
           </Typography>
         </Box>

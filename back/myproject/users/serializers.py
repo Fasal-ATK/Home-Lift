@@ -6,17 +6,28 @@ from django.contrib.auth.password_validation import validate_password
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['email', 'username', 'first_name', 'last_name', 'phone', 'is_active', 'is_staff' ]
+        fields = ['email', 'username', 'first_name', 'last_name', 'phone']
+        read_only_fields = fields
 
 
+# Signup serializer for users
 class SignupSerialzer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
         required=True,
+        error_messages={
+            'required': 'Password is required',
+            'blank': 'Password cannot be blank',
+        }
     )
+
     class Meta:
         model = CustomUser
-        fields = ['first_name','last_name','username','email','phone','password']
+        fields = ['first_name', 'last_name', 'username', 'email', 'phone', 'password']
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
     
     def create(self, validated_data):
         user = CustomUser.objects.create_user(
@@ -29,6 +40,9 @@ class SignupSerialzer(serializers.ModelSerializer):
         )
         return user
     
+
+# Login serializer for users
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True)
