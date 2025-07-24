@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'phonenumber_field',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
@@ -164,7 +165,11 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
-
+# Simple JWT settings
+SIMPLE_JWT = {
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'BLACKLIST_AFTER_ROTATION': True,
+}
 
 # Send OTP email settings 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

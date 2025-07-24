@@ -5,7 +5,7 @@ import {
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import api from '../../API/api';
+import api from '../../services/apiConfig';
 import validateLoginForm from '../../utils/loginVal';
 
 // import logo from '../../assets/user/app_logo.png';

@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import api from '../../API/api';
+import api from '../../services/apiConfig';
 import OtpModal from '../../components/otp_modal';
 import { validateSignupForm } from '../../utils/signupVal';
 

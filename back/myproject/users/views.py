@@ -90,7 +90,6 @@ class UserLogin(APIView):
             response = Response({
                 'user': UserSerializer(user).data,
                 'access': access_token,
-                'refresh': str(refresh),
                 'message': 'Login successful'
             }, status=status.HTTP_200_OK)
 

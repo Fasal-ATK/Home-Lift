@@ -14,7 +14,7 @@ import ServiceCategroies from './pages/Admin/ServiceCategroies';
 import Reports from './pages/Admin/Reports';
 import Coupons from './pages/Admin/Coupons';
 import BookingMng from './pages/Admin/BookingMng';
-import Logout from './components/Logout';
+import Logout from './components/common/Logout';
 
 
 function App() {

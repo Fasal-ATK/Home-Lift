@@ -4,8 +4,10 @@ import {Container,TextField,Button,Typography,Box,Alert,CircularProgress,Link,Ic
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import api from '../../API/api';
+import api from '../../services/apiConfig';
 import validateLoginForm from '../../utils/loginVal';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../../redux/slices/authSlice';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -13,7 +15,9 @@ function Login() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -24,20 +28,25 @@ function Login() {
       setError(validationError);
       return;
     }
-
     setLoading(true);
 
     try {
       const response = await axios.post(`${api}/admin/login/`, {
-        email: email,
-        password: pass
+        email,
+        password: pass,
       }, {
         withCredentials: true,
       });
-
-      console.log(response.data);
-      navigate('/admin/dash');  
-    } catch (err) {
+    
+      const { access, user } = response.data;
+    
+      // ✅ Use Redux to store and persist data
+      dispatch(loginSuccess({ user, access }));
+    
+      console.log('Login success:', response.data);
+      navigate('/admin/dash');
+      
+    }catch (err) {
       console.error(err);
       if (err.response?.status === 401 || err.response?.status === 400) {
         console.log(err.response.data.message);

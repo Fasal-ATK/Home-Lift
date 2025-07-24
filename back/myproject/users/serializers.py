@@ -6,7 +6,7 @@ from django.contrib.auth.password_validation import validate_password
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['email', 'username', 'first_name', 'last_name', 'phone']
+        fields = ['email', 'username', 'first_name', 'last_name', 'phone', 'is_staff','is_provider']
         read_only_fields = fields
 
 
@@ -77,4 +77,6 @@ class LoginSerializer(serializers.Serializer):
             })
 
         attrs['user'] = user
+        print(attrs)
         return attrs
+    
