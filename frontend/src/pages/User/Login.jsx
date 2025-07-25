@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import {
-  Container, TextField, Button, Typography, Box, Alert, CircularProgress, Link, IconButton, InputAdornment
+  Container, TextField, Button, Typography, Box, Alert, CircularProgress,
+  Link, IconButton, InputAdornment
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import api from '../../services/apiConfig';
+import { authService } from '../../services/apiServices';
 import validateLoginForm from '../../utils/loginVal';
-
-// import logo from '../../assets/user/app_logo.png';
-
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -22,24 +19,22 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-  
+
     const validationError = validateLoginForm({ email, password: pass });
     if (validationError) {
       setError(validationError);
       return;
     }
-  
+
     setLoading(true);
-  
+
     try {
-      const response = await axios.post(`${api}/user/login/`, {
-        email: email,
-        password: pass
-      }, {
-        withCredentials: true,
+      const response = await authService.login({
+        email,
+        password: pass,
       });
-  
-      console.log(response.data);
+
+      console.log(response); // Optional: remove in production
       navigate('/home');
     } catch (err) {
       console.error(err);
@@ -52,7 +47,6 @@ function Login() {
       setLoading(false);
     }
   };
-  
 
   const togglePasswordVisibility = () => {
     setShowPass(prev => !prev);
@@ -60,21 +54,7 @@ function Login() {
 
   return (
     <Box sx={{ bgcolor: '#d9e021', minHeight: '100vh', py: 8 }}>
-      <Container maxWidth="sm" sx={{ position: 'relative' }}>
-        {/* <Box sx={{ display: 'flex', justifyContent: 'center', mb: -4 }}>
-        <img
-          src={logo}
-          alt="logo"
-          style={{
-            height: 64,
-            objectFit: 'contain',
-            backgroundColor: 'transparent',
-            padding: 4
-          }}
-        />
-
-        </Box> */}
-
+      <Container maxWidth="sm">
         <Box
           sx={{
             backgroundColor: 'white',
@@ -83,7 +63,7 @@ function Login() {
             px: 4,
             pt: 8,
             pb: 5,
-            textAlign: 'center'
+            textAlign: 'center',
           }}
         >
           <Typography variant="h5" fontWeight="bold" gutterBottom>
@@ -98,6 +78,7 @@ function Login() {
               type="email"
               fullWidth
               sx={{ mt: 2 }}
+              value={email}
               onChange={e => setEmail(e.target.value)}
             />
 
@@ -106,6 +87,7 @@ function Login() {
               type={showPass ? 'text' : 'password'}
               fullWidth
               sx={{ mt: 2 }}
+              value={pass}
               onChange={e => setPass(e.target.value)}
               InputProps={{
                 endAdornment: (
@@ -122,7 +104,13 @@ function Login() {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, bgcolor: '#e0dc25', color: 'black', fontWeight: 'bold', '&:hover': { bgcolor: '#d4ce1f' } }}
+              sx={{
+                mt: 3,
+                bgcolor: '#e0dc25',
+                color: 'black',
+                fontWeight: 'bold',
+                '&:hover': { bgcolor: '#d4ce1f' }
+              }}
               disabled={loading}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Login'}

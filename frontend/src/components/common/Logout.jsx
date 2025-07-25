@@ -1,31 +1,25 @@
-// components/common/LogoutButton.jsx
+// src/components/common/LogoutButton.jsx
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Button } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import api from '../../services/apiConfig';
+import { authService } from '../../services/apiServices';
+import { useDispatch } from 'react-redux';
+import { logout } from '../../redux/slices/authSlice';
 
 const LogoutButton = ({ collapsed }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogout = async () => {
     try {
-      const access = localStorage.getItem('access'); 
-      console.log(access);
-      console.log('HELO')
-      await axios.post(`${api}/admin/logout/`, null, {
-        withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${access}`,
-        },
-      });
-  
-      // Clear local storage or any tokens
-      localStorage.removeItem('access');
-      localStorage.removeItem('refresh'); // if you stored it
-  
+      await authService.logout(); // Use modular API call
+
+      // Clear Redux and LocalStorage
+      dispatch(logout());
+
+      // Redirect based on path
       const isAdmin = location.pathname.startsWith('/admin');
       navigate(isAdmin ? '/admin/login' : '/login');
     } catch (err) {
@@ -33,7 +27,6 @@ const LogoutButton = ({ collapsed }) => {
       console.log(err?.response?.data?.message || 'Unknown logout error');
     }
   };
-  
 
   return (
     <Button

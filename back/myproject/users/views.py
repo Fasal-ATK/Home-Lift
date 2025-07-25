@@ -1,17 +1,20 @@
+import random
+import logging
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from rest_framework.exceptions import ValidationError
+
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.cache import cache
-from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import login, logout
+
 from .serializers import UserSerializer, SignupSerialzer, LoginSerializer
 from .models import CustomUser
-import random
-from django.contrib.auth import login, logout
-import logging
-from rest_framework.exceptions import ValidationError
 
 
 logger = logging.getLogger(__name__)
@@ -116,3 +119,51 @@ class UserLogin(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class RefreshtokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+            if not refresh_token:
+                return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            token = RefreshToken(refresh_token)
+            access_token = str(token.access_token)
+
+            return Response({
+                'access': access_token,
+                'message': 'Token refreshed successfully'
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error("Token refresh error: %s", str(e))
+            return Response({
+                "error": "internal-error",
+                "message": "Unexpected error. Please try again later."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+
+
+class LogoutView(APIView):
+    print("Logout view initialized")
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            print(f'request.headers: {request.headers}')
+            refresh_token = request.COOKIES.get('refresh')
+            if refresh_token is None:
+                return Response({'detail': 'Refresh token not found in cookies.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            response = Response({'detail': 'Logout successful'}, status=status.HTTP_200_OK)
+            response.delete_cookie('refresh')  # Clear the cookie on logout
+            return response
+
+        except TokenError as e:
+            return Response({'detail': 'Invalid or expired token', 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'detail': 'Logout failed', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

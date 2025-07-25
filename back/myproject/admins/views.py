@@ -2,11 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError
-
+from rest_framework_simplejwt.tokens import RefreshToken
 from users.serializers import UserSerializer  
-from .serializers import AdminLoginSerializer  
-from users.models import CustomUser  
+from .serializers import AdminLoginSerializer   
 
 
 class AdminLoginView(APIView):
@@ -38,25 +36,4 @@ class AdminLoginView(APIView):
         return response
 
 
-class LogoutView(APIView):
-    print("Logout view initialized")
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request):
-        try:
-            print(f'request.headers: {request.headers}')
-            refresh_token = request.COOKIES.get('refresh')
-            if refresh_token is None:
-                return Response({'detail': 'Refresh token not found in cookies.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-
-            response = Response({'detail': 'Logout successful'}, status=status.HTTP_200_OK)
-            response.delete_cookie('refresh')  # Clear the cookie on logout
-            return response
-
-        except TokenError as e:
-            return Response({'detail': 'Invalid or expired token', 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'detail': 'Logout failed', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

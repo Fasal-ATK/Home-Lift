@@ -1,16 +1,17 @@
 // src/layouts/AdminSidebar.jsx
 import { useState, useEffect } from 'react';
-import { Box, List, ListItem, ListItemIcon, ListItemText, Button, IconButton, Typography, Divider, Tooltip, Paper,
-}  from '@mui/material';
-import { Dashboard, Group, Category, Report, LocalOffer, BookOnline, Logout as LogoutIcon, PeopleAltOutlined, ChevronLeft, ChevronRight,
+import {
+  Box, List, ListItem, ListItemIcon, ListItemText, Typography, Divider, Tooltip, Paper
+} from '@mui/material';
+import {
+  Dashboard, Group, Category, Report, LocalOffer,
+  BookOnline, PeopleAltOutlined, ChevronLeft, ChevronRight
 } from '@mui/icons-material';
-import { Link, useLocation,  } from 'react-router-dom';
-// import axios from 'axios';
-// import api from '../../API/api';
+import { Link, useLocation } from 'react-router-dom';
+import LogoutButton from '../../components/common/Logout';
 
 const AdminSidebar = () => {
   const location = useLocation();
-  // const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
 
@@ -28,17 +29,7 @@ const AdminSidebar = () => {
     { text: 'Report', icon: <Report />, path: '/admin/reports' },
     { text: 'Coupons', icon: <LocalOffer />, path: '/admin/coupons' },
     { text: 'Bookings', icon: <BookOnline />, path: '/admin/bookings' },
-    { text: 'Logout', icon: <LogoutIcon />, path: '/admin/logout' },
   ];
-
-  // const handleLogout = async () => {
-  //   try {
-  //     await axios.post(`${api}/admin/logout/`, {}, { withCredentials: true });
-  //   } catch (err) {
-  //     console.error('Logout failed:', err);
-  //     console.log(err.response.data.message);
-  //   }
-  // };
 
   return (
     <Box
@@ -56,7 +47,7 @@ const AdminSidebar = () => {
       }}
     >
       <Box>
-        {/* Stylish Header */}
+        {/* Brand */}
         <Box
           sx={{
             textAlign: 'center',
@@ -82,7 +73,7 @@ const AdminSidebar = () => {
 
         <Divider />
 
-        {/* Nav Items */}
+        {/* Navigation Items */}
         <List>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
@@ -120,33 +111,14 @@ const AdminSidebar = () => {
             );
           })}
         </List>
+
+        {/* ✅ Logout Button */}
+        <Box sx={{ mt: 2 }}>
+          <LogoutButton collapsed={collapsed} />
+        </Box>
       </Box>
 
-      {/* Logout Button */}
-      {/* <Box sx={{ mb: 2 }}> 
-        <Button
-          variant="contained"
-          color="error"
-          fullWidth={!collapsed}
-          sx={{
-            mt: 3,
-            borderRadius: '10px',
-            py: 1.2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: collapsed ? 0 : 1,
-            fontWeight: 'bold',
-            fontSize: '15px',
-          }}
-          onClick={handleLogout}
-        >
-          <LogoutIcon />
-          {!collapsed && 'Logout'}
-        </Button>
-      </Box> */}
-
-      {/* Floating Collapse Button */}
+      {/* Collapse Toggle Button */}
       <Paper
         elevation={4}
         sx={{

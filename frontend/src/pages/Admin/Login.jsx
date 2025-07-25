@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import {Container,TextField,Button,Typography,Box,Alert,CircularProgress,Link,IconButton,InputAdornment,
+import {
+  Container, TextField, Button, Typography, Box, Alert, CircularProgress,
+  Link, IconButton, InputAdornment
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import api from '../../services/apiConfig';
-import validateLoginForm from '../../utils/loginVal';
 import { useDispatch } from 'react-redux';
+
+import { authService } from '../../services/apiServices';
 import { loginSuccess } from '../../redux/slices/authSlice';
+import validateLoginForm from '../../utils/loginVal';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -28,28 +30,21 @@ function Login() {
       setError(validationError);
       return;
     }
+
     setLoading(true);
 
     try {
-      const response = await axios.post(`${api}/admin/login/`, {
-        email,
-        password: pass,
-      }, {
-        withCredentials: true,
-      });
-    
-      const { access, user } = response.data;
-    
-      // ✅ Use Redux to store and persist data
-      dispatch(loginSuccess({ user, access }));
-    
-      console.log('Login success:', response.data);
+      const data = { email, password: pass };
+      const response = await authService.adminLogin(data);
+      // console.log(response.data.message);
+      const { access_token, user } = response;
+
+      dispatch(loginSuccess({ user, access_token }));
       navigate('/admin/dash');
-      
-    }catch (err) {
+
+    } catch (err) {
       console.error(err);
       if (err.response?.status === 401 || err.response?.status === 400) {
-        console.log(err.response.data.message);
         setError('Invalid email or password');
       } else {
         setError('Login failed. Please try again later.');
@@ -66,20 +61,6 @@ function Login() {
   return (
     <Box sx={{ bgcolor: 'black', minHeight: '90vh', py: 8, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <Container maxWidth="sm">
-        {/* <Box sx={{ display: 'flex', justifyContent: 'center', mb: -4 }}>
-          <img
-            src="../../user/app_logo.png"
-            alt="logo"
-            style={{
-              height: 80,
-              backgroundColor: 'white',
-              borderRadius: '50%',
-              padding: 8,
-              boxShadow: '0 4px 12px rgba(255,255,255,0.1)',
-            }}
-          />
-        </Box> */}
-
         <Box
           sx={{
             backgroundColor: '#121212',
@@ -113,15 +94,9 @@ function Login() {
                 '& .MuiInputLabel-root': { color: '#ccc' },
                 '& .MuiOutlinedInput-root': {
                   color: 'white',
-                  '& fieldset': {
-                    borderColor: '#ccc',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#fff',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'white',
-                  },
+                  '& fieldset': { borderColor: '#ccc' },
+                  '&:hover fieldset': { borderColor: '#fff' },
+                  '&.Mui-focused fieldset': { borderColor: 'white' },
                 },
               }}
               onChange={(e) => setEmail(e.target.value)}
@@ -137,26 +112,16 @@ function Login() {
                 '& .MuiInputLabel-root': { color: '#ccc' },
                 '& .MuiOutlinedInput-root': {
                   color: 'white',
-                  '& fieldset': {
-                    borderColor: '#ccc',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#fff',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'white',
-                  },
+                  '& fieldset': { borderColor: '#ccc' },
+                  '&:hover fieldset': { borderColor: '#fff' },
+                  '&.Mui-focused fieldset': { borderColor: 'white' },
                 },
               }}
               onChange={(e) => setPass(e.target.value)}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      onClick={togglePasswordVisibility}
-                      edge="end"
-                      sx={{ color: '#aaa' }}
-                    >
+                    <IconButton onClick={togglePasswordVisibility} edge="end" sx={{ color: '#aaa' }}>
                       {showPass ? <Visibility /> : <VisibilityOff />}
                     </IconButton>
                   </InputAdornment>
@@ -173,9 +138,7 @@ function Login() {
                 bgcolor: 'white',
                 color: 'black',
                 fontWeight: 'bold',
-                '&:hover': {
-                  bgcolor: '#e0e0e0',
-                },
+                '&:hover': { bgcolor: '#e0e0e0' },
               }}
               disabled={loading}
             >
@@ -184,13 +147,9 @@ function Login() {
           </form>
 
           <Typography variant="body2" sx={{ mt: 2, color: '#ccc' }}>
-            Back to the Previous page   {' '}
-            <Link
-              href="/"
-              underline="hover"
-              sx={{ fontWeight: 'bold', color: '#fff' }}
-            >
-               Landing Page
+            Back to the Previous page{' '}
+            <Link href="/" underline="hover" sx={{ fontWeight: 'bold', color: '#fff' }}>
+              Landing Page
             </Link>
           </Typography>
         </Box>
