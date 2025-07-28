@@ -19,7 +19,7 @@ class AdminLoginView(APIView):
         access = str(refresh.access_token)
 
         response = Response({
-            'access': access,
+            'access_token': access,
             'user': UserSerializer(user).data,
             'message': 'Admin login successful'
         }, status=status.HTTP_200_OK)

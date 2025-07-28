@@ -121,6 +121,7 @@ class UserLogin(APIView):
 
 class RefreshtokenView(APIView):
     permission_classes = [IsAuthenticated]
+    
 
     def post(self, request):
         try:
@@ -151,6 +152,7 @@ class LogoutView(APIView):
     
     def post(self, request):
         try:
+            print("Processing logout request")
             print(f'request.headers: {request.headers}')
             refresh_token = request.COOKIES.get('refresh')
             if refresh_token is None:
@@ -161,9 +163,11 @@ class LogoutView(APIView):
 
             response = Response({'detail': 'Logout successful'}, status=status.HTTP_200_OK)
             response.delete_cookie('refresh')  # Clear the cookie on logout
+            print("User logged out successfully")
             return response
 
         except TokenError as e:
             return Response({'detail': 'Invalid or expired token', 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'detail': 'Logout failed', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
