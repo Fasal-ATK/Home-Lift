@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link} from 'react-router-dom'
+import LogoutButton from '../../components/common/Logout'
 
 function Home() {
   return (
@@ -11,6 +12,8 @@ function Home() {
       <Link to='/login'>Login</Link>
       <br /><br />
       <Link to='/signup'>signup</Link>
+      <br /><br />
+      <LogoutButton />
     </div>
   )
 }

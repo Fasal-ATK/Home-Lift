@@ -8,7 +8,7 @@ import {
   BookOnline, PeopleAltOutlined, ChevronLeft, ChevronRight
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
-import LogoutButton from '../../components/common/Logout';
+import LogoutButton from '../common/Logout';
 
 const AdminSidebar = () => {
   const location = useLocation();
@@ -22,7 +22,7 @@ const AdminSidebar = () => {
   }, []);
 
   const navItems = [
-    { text: 'Dashboard', icon: <Dashboard />, path: '/admin/dash' },
+    { text: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
     { text: 'Service & Categories', icon: <Category />, path: '/admin/services' },
     { text: 'Employees', icon: <PeopleAltOutlined />, path: '/admin/employees' },
     { text: 'Users', icon: <Group />, path: '/admin/users' },

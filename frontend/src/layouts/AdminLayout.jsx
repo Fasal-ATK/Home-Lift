@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import AdminSidebar from './AdminSidebar';
+import AdminSidebar from '../components/admin/AdminSidebar';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';

@@ -39,7 +39,7 @@ function Login() {
       const { access_token, user } = response;
 
       dispatch(loginSuccess({ user, access_token }));
-      navigate('/admin/dash');
+      navigate('/admin/dashboard');
 
     } catch (err) {
       console.error(err);
