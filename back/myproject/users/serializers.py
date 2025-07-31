@@ -77,6 +77,5 @@ class LoginSerializer(serializers.Serializer):
             })
 
         attrs['user'] = user
-        print(attrs)
         return attrs
     

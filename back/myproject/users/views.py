@@ -11,10 +11,8 @@ from rest_framework.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.cache import cache
-from django.contrib.auth import login, logout
 
 from .serializers import UserSerializer, SignupSerialzer, LoginSerializer
-from .models import CustomUser
 
 
 logger = logging.getLogger(__name__)
@@ -79,33 +77,26 @@ class UserLogin(APIView):
         try:
             serializer = LoginSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            user = serializer.validated_data.get('user')
-            if not user:
-                return Response({
-                    "error": "invalid-credentials",
-                    "message": "Unable to log in with provided credentials."
-                }, status=status.HTTP_400_BAD_REQUEST)
+            user = serializer.validated_data['user']
 
-            login(request, user)
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
 
             response = Response({
                 'user': UserSerializer(user).data,
-                'access': access_token,
+                'access_token': access_token,
                 'message': 'Login successful'
             }, status=status.HTTP_200_OK)
 
-            # ✅ Cookie set (JWT refresh token)
             response.set_cookie(
                 key='refresh',
                 value=str(refresh),
                 httponly=True,
-                secure=False,   # True if using HTTPS
+                secure=False,  # Set to True in production
                 samesite='Lax',
                 max_age=86400,
             )
-            print("User logged in successfully")
+
             return response
 
         except ValidationError as ve:
@@ -119,15 +110,15 @@ class UserLogin(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
 class RefreshtokenView(APIView):
-    permission_classes = [IsAuthenticated]
-    
+    permission_classes = [AllowAny]  # Not IsAuthenticated (token is expired)
 
     def post(self, request):
         try:
-            refresh_token = request.data.get('refresh')
+            refresh_token = request.COOKIES.get('refresh')
             if not refresh_token:
-                return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Refresh token not found in cookies."}, status=status.HTTP_400_BAD_REQUEST)
 
             token = RefreshToken(refresh_token)
             access_token = str(token.access_token)
@@ -137,13 +128,18 @@ class RefreshtokenView(APIView):
                 'message': 'Token refreshed successfully'
             }, status=status.HTTP_200_OK)
 
+        except TokenError as e:
+            return Response({
+                "error": "Token invalid or expired",
+                "details": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         except Exception as e:
             logger.error("Token refresh error: %s", str(e))
             return Response({
                 "error": "internal-error",
                 "message": "Unexpected error. Please try again later."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
-
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class LogoutView(APIView):

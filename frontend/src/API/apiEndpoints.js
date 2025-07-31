@@ -1,9 +1,10 @@
+// src/API/apiEndpoints.js
 const apiEndpoints = {
     auth: {
         signup: '/user/register/',
         login: '/user/login/',
         logout: '/user/logout/',
-        refreshToken: '/user/token/refresh/',
+        refreshAccessToken: '/user/token/refresh/',
     },
 
     adminAuth: {
