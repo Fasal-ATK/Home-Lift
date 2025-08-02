@@ -21,9 +21,8 @@ const authSlice = createSlice({
       state.user = user;
       state.accessToken = access_token;
       state.isAuthenticated = true;
-      state.isAdmin = user.is_staff;
-      console.log(state.isAdmin);
-      state.isProvider = user.is_provider;
+      state.isAdmin = user?.is_staff || false;
+      state.isProvider = user?.is_provider || false;
 
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('accessToken', access_token); 

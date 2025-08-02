@@ -54,12 +54,14 @@ class LoginSerializer(serializers.Serializer):
         try:
             user = CustomUser.objects.get(email=email)
         except CustomUser.DoesNotExist:
+            print('email does not match')
             raise serializers.ValidationError({
                 "error": "not-exist",
                 "message": "No account found with this email."
             })
 
         if not user.check_password(password):
+            print('password does not match')
             raise serializers.ValidationError({
                 "error": "password-mismatch",
                 "message": "Incorrect password."
@@ -67,12 +69,15 @@ class LoginSerializer(serializers.Serializer):
 
         if not user.is_active:
             if not user.last_login:
+                print('account not activated')
                 raise serializers.ValidationError({
                     "error": "account-not-activated",
                     "message": "Please verify your email to activate your account."
                 })
-            raise serializers.ValidationError({
-                "error": "account-blocked",
+            print('account blocked')
+            raise serializers.ValidationError(
+                {
+                    "error": "account-blocked",
                 "message": "Your account has been blocked. Contact support."
             })
 

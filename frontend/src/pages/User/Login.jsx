@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import {
+import { //mui imorts
   Container, TextField, Button, Typography, Box, Alert, CircularProgress,
   Link, IconButton, InputAdornment
 } from '@mui/material';
@@ -7,6 +7,10 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/apiServices';
 import validateLoginForm from '../../utils/loginVal';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../../redux/slices/authSlice';
+
+
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -14,7 +18,10 @@ function Login() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -29,13 +36,15 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await authService.login({
-        email,
-        password: pass,
-      });
+      const data = { email, password: pass };
+      const response = await authService.login(data);
+      const { user, access_token } = response;
 
-      console.log(response); // Optional: remove in production
+      console.log(response.user.username);
+      dispatch(loginSuccess({ user, access_token }));
+      console.log('login success');
       navigate('/home');
+
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401 || err.response?.status === 400) {

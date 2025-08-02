@@ -16,15 +16,19 @@ import Reports from './pages/Admin/Reports';
 import Coupons from './pages/Admin/Coupons';
 import BookingMng from './pages/Admin/BookingMng';
 import UserLayout from './layouts/UserLayout';
+import PublicRoute from './routes/PublicRoute';
+import PrivateRoute from './routes/PrivateRoute';
 
 function App() {
   return (
     <Routes>
       {/* Public User Routes */}
       <Route path='/' element={<Landing />} />
-      <Route path='/login' element={<Login />} />
-      <Route path='/signup' element={<Signup />} />
-      <Route path='/admin/login' element={<AdminLogin />} />
+      <PublicRoute>
+        <Route path='/login' element={<Login />} />
+        <Route path='/signup' element={<Signup />} />
+        <Route path='/admin/login' element={<AdminLogin />} />
+    </PublicRoute>
 
       {/* User Routes */}
 

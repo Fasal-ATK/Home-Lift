@@ -17,6 +17,7 @@ const LogoutButton = ({ collapsed }) => {
       await authService.logout();
       dispatch(logout());
       navigate(isAdmin ? '/admin/login' : '/login');
+      console.log('logout success');
     } catch (err) {
       console.error('Logout failed:', err);
       console.log(err?.response?.data?.message || 'Unknown logout error');

@@ -96,7 +96,7 @@ class UserLogin(APIView):
                 samesite='Lax',
                 max_age=86400,
             )
-
+            print('User login successful for user:', user.email)
             return response
 
         except ValidationError as ve:
@@ -108,7 +108,6 @@ class UserLogin(APIView):
                 "error": "internal-error",
                 "message": "Unexpected error. Please try again later."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 
 class RefreshtokenView(APIView):

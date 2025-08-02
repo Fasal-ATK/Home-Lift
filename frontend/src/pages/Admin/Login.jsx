@@ -36,7 +36,7 @@ function Login() {
     try {
       const data = { email, password: pass };
       const response = await authService.adminLogin(data);
-      const { access_token, user } = response;
+      const { user, access_token } = response;
 
       dispatch(loginSuccess({ user, access_token }));
       navigate('/admin/dashboard');

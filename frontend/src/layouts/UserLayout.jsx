@@ -8,16 +8,16 @@ import UserNavbar from '../components/user/UserNavbar';
 const UserLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, isAdmin } = useSelector(state => state.auth);
-
-  // Define protected user routes
-  const protectedPaths = ['/profile', '/bookings', '/notifications'];
+  const { isAuthenticated, isAdmin } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    const isProtected = protectedPaths.includes(location.pathname);
-    if (!isAuthenticated && isProtected) {
+    // Block access if not logged in
+    if (!isAuthenticated) {
       navigate('/login');
-    } else if (isAdmin) {
+    }
+
+    // Optionally block admin from accessing user routes
+    if (isAdmin) {
       navigate('/admin/dashboard');
     }
   }, [isAuthenticated, isAdmin, location.pathname, navigate]);
