@@ -1,6 +1,6 @@
 import React from 'react'
 
-function EmployeeMng() {
+function EmpManager() {
   return (
     <div>
       <h1>Employee Manager</h1>
@@ -8,4 +8,4 @@ function EmployeeMng() {
   )
 }
 
-export default EmployeeMng
+export default EmpManager

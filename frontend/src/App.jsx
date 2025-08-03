@@ -1,54 +1,83 @@
-// App.jsx
-import { Routes, Route } from 'react-router-dom';
+// src/App.jsx
+import { Routes, Route, Navigate } from 'react-router-dom';
+
 import Login from './pages/User/Login';
 import Home from './pages/User/Home';
 import Profile from './pages/User/Profile';
 import About from './pages/User/About';
 import Signup from './pages/User/Signup';
+
 import AdminLogin from './pages/Admin/Login';
 import Dashboard from './pages/Admin/Dashboard';
-import Landing from './pages/Landing';
-import AdminLayout from './layouts/AdminLayout';
-import UserMng from './pages/Admin/UserMng';
-import EmployeeMng from './pages/Admin/EmployeeMng';
+import UserManager from './pages/Admin/UserManager';
+import EmpManager from './pages/Admin/EmpManager';
 import ServiceCategroies from './pages/Admin/ServiceCategroies';
 import Reports from './pages/Admin/Reports';
 import Coupons from './pages/Admin/Coupons';
 import BookingMng from './pages/Admin/BookingMng';
+
+import Landing from './pages/Landing';
+
+import AdminLayout from './layouts/AdminLayout';
 import UserLayout from './layouts/UserLayout';
+
 import PublicRoute from './routes/PublicRoute';
 import PrivateRoute from './routes/PrivateRoute';
 
 function App() {
   return (
     <Routes>
-      {/* Public User Routes */}
-      <Route path='/' element={<Landing />} />
+      {/* Public Pages */}
+      <Route path='/' element={
+        <PublicRoute>
+          <Landing />
+        </PublicRoute>} />
+
+      <Route path='/login' element={
+        <PublicRoute>
+          <Login />
+        </PublicRoute>
+        } />
+        
+      <Route path='/signup' element={
       <PublicRoute>
-        <Route path='/login' element={<Login />} />
-        <Route path='/signup' element={<Signup />} />
-        <Route path='/admin/login' element={<AdminLogin />} />
-    </PublicRoute>
+        <Signup />
+      </PublicRoute>} />
+
+      <Route path='/admin/login' element={
+        <PublicRoute>
+          <AdminLogin />
+        </PublicRoute>} />
 
       {/* User Routes */}
+      <Route element={
+        <PrivateRoute role="user">
+          <UserLayout />
+        </PrivateRoute>}>
 
-      <Route element={<UserLayout />} >
+        <Route index element={<Navigate to="home" replace />} />
         <Route path='home' element={<Home />} />
         <Route path='about' element={<About />} />
         <Route path='profile' element={<Profile />} />
       </Route>
- 
-      {/* Admin  Routes */}
 
-      <Route path='/admin' element={<AdminLayout />}>
+      {/* Admin Routes */}
+      <Route path='/admin' element={
+        <PrivateRoute role="admin">
+          <AdminLayout />
+        </PrivateRoute>}>
+        <Route index element={<Navigate to="dashboard" replace />} />
         <Route path='dashboard' element={<Dashboard />} />
-        <Route path='users' element={<UserMng />} />
-        <Route path='employees' element={<EmployeeMng />} />
+        <Route path='users' element={<UserManager />} />
+        <Route path='employees' element={<EmpManager />} />
         <Route path='services' element={<ServiceCategroies />} />
         <Route path='reports' element={<Reports />} />
         <Route path='coupons' element={<Coupons />} />
         <Route path='bookings' element={<BookingMng />} />
       </Route>
+
+      {/* 404 Fallback */}
+      <Route path="*" element={<div>404 - Page Not Found</div>} />
     </Routes>
   );
 }

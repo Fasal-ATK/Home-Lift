@@ -11,6 +11,9 @@ const apiEndpoints = {
         login: '/admin/login/',
     },
 
+    userManage:{
+    },
+
     otp: {
         sendOtp: '/user/send-otp/',
         verifyOtp: '/user/verify-otp/',

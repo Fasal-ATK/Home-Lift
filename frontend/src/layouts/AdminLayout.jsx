@@ -1,22 +1,8 @@
 import { Box } from '@mui/material';
 import AdminSidebar from '../components/admin/AdminSidebar';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { Outlet } from 'react-router-dom';
 
 const AdminLayout = () => {
-  const navigate = useNavigate();
-
-  const { isAuthenticated, isAdmin } = useSelector((state) => state.auth);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login'); 
-    } else if (!isAdmin) {
-      navigate('/user/home'); 
-    }
-  }, [isAuthenticated, isAdmin, navigate]);
-
   return (
     <Box sx={{ display: 'flex' }}>
       <AdminSidebar />

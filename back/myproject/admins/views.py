@@ -28,11 +28,11 @@ class AdminLoginView(APIView):
             key='refresh',
             value=str(refresh),
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
+            secure=False,  
             samesite='Lax',
             max_age=86400,
         )
-        print('Admin login successful for user')
+
         return response
 
 
