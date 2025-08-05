@@ -1,91 +1,79 @@
-// components/user/UserNavbar.jsx
 import React from 'react';
 import {
-  AppBar, Toolbar, Typography, IconButton, Box, Button
+  AppBar,
+  Toolbar,
+  Typography,
+  IconButton,
+  Box,
+  InputBase,
+  Paper,
 } from '@mui/material';
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { Search, Notifications, LocationOn, AccountCircle } from '@mui/icons-material';
+import LogoutButton from '../common/Logout'; // Update this path based on your folder structure
 
 const UserNavbar = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { isAuthenticated } = useSelector(state => state.auth);
-
-  const handleLogout = () => {
-    localStorage.clear();
-    dispatch({ type: 'auth/logout' });
-    navigate('/login');
-  };
-
   return (
-    <AppBar position="static" sx={{ backgroundColor: 'white', borderBottom: '3px solid #f2b705' }}>
-      <Toolbar sx={{ justifyContent: 'space-between' }}>
-        {/* Logo */}
-        <Typography
-          variant="h6"
-          sx={{ fontWeight: 'bold', color: 'black', cursor: 'pointer' }}
-          onClick={() => navigate('/home')}
-        >
-          HOME LIFT
-        </Typography>
+    <AppBar position="static" color="inherit" elevation={0}>
+      <Toolbar sx={{ justifyContent: 'space-between', px: 4 }}>
 
-        {/* Nav Buttons */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography
-            variant="body2"
-            sx={{ cursor: 'pointer' }}
-            onClick={() => navigate('/home')}
-          >
-            Home
+        {/* Left: Logo and Title */}
+        <Box display="flex" alignItems="center" gap={1}>
+          <LocationOn sx={{ color: '#0066CC' }} />
+          <Typography variant="h6" fontWeight="bold" color="primary">
+            HOME LIFT
           </Typography>
-          <Typography
-            variant="body2"
-            sx={{ cursor: 'pointer' }}
-            onClick={() => navigate('/about')}
-          >
-            About
-          </Typography>
-
-          {isAuthenticated ? (
-            <>
-              <IconButton onClick={() => navigate('/notifications')} color="default">
-                <NotificationsNoneIcon />
-              </IconButton>
-              <IconButton onClick={() => navigate('/profile')} color="default">
-                <AccountCircleIcon />
-              </IconButton>
-              <Button
-                variant="contained"
-                size="small"
-                onClick={handleLogout}
-                sx={{ backgroundColor: 'black', color: 'white', px: 2, borderRadius: '8px' }}
-              >
-                Logout
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => navigate('/login')}
-                sx={{ borderColor: 'black', color: 'black' }}
-              >
-                Login
-              </Button>
-              <Button
-                variant="contained"
-                size="small"
-                onClick={() => navigate('/signup')}
-                sx={{ backgroundColor: 'black', color: 'white', px: 2 }}
-              >
-                Signup
-              </Button>
-            </>
-          )}
         </Box>
+
+        {/* Center: Search Bar */}
+        <Paper
+          component="form"
+          elevation={0}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            width: 220,
+            px: 1.5,
+            py: 0.5,
+            borderRadius: 5,
+            border: '1px solid #ccc',
+          }}
+        >
+          <InputBase
+            placeholder="Search"
+            inputProps={{ 'aria-label': 'search' }}
+            sx={{ ml: 1, flex: 1 }}
+          />
+          <IconButton type="submit" sx={{ p: 0.5 }} aria-label="search">
+            <Search sx={{ color: '#0066CC' }} />
+          </IconButton>
+        </Paper>
+
+        {/* Right: Nav links, notification, profile, and logout */}
+        <Box display="flex" alignItems="center" gap={4}>
+          <Typography variant="body1" fontWeight="bold">
+            HOME
+          </Typography>
+          <Typography variant="body1" fontWeight="bold">
+            SERVICES
+          </Typography>
+          <Typography variant="body1" fontWeight="bold">
+            BOOKINGS
+          </Typography>
+          <IconButton>
+            <AccountCircle sx={{ color: '#0066CC' }} />
+          </IconButton>
+          <IconButton>
+            <Notifications sx={{ color: '#0066CC' }} />
+          </IconButton>
+          <Box>
+            <LogoutButton
+              collapsed={false}
+              color="blue"  // ✅ Set color dynamically
+            />
+          </Box>
+        </Box>
+
+
       </Toolbar>
     </AppBar>
   );

@@ -63,6 +63,10 @@ INSTALLED_APPS = [
     'users',
     'admins',
     'providers',
+    'services',
+    'bookings',
+    'reviews',
+    'payments',
 
     'rest_framework',
     'corsheaders',

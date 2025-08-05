@@ -6,6 +6,7 @@ import Home from './pages/User/Home';
 import Profile from './pages/User/Profile';
 import About from './pages/User/About';
 import Signup from './pages/User/Signup';
+import Notifications from './pages/User/Notifications';
 
 import AdminLogin from './pages/Admin/Login';
 import Dashboard from './pages/Admin/Dashboard';
@@ -29,15 +30,14 @@ function App() {
     <Routes>
       {/* Public Pages */}
       <Route path='/' element={
-        <PublicRoute>
+      <PublicRoute>
           <Landing />
-        </PublicRoute>} />
+      </PublicRoute>} />
 
       <Route path='/login' element={
-        <PublicRoute>
+      <PublicRoute>
           <Login />
-        </PublicRoute>
-        } />
+      </PublicRoute>} />
         
       <Route path='/signup' element={
       <PublicRoute>
@@ -45,27 +45,23 @@ function App() {
       </PublicRoute>} />
 
       <Route path='/admin/login' element={
-        <PublicRoute>
+      <PublicRoute>
           <AdminLogin />
-        </PublicRoute>} />
+      </PublicRoute>} />
 
       {/* User Routes */}
       <Route element={
-        <PrivateRoute role="user">
-          <UserLayout />
-        </PrivateRoute>}>
-
-        <Route index element={<Navigate to="home" replace />} />
+        <PrivateRoute role="user">  <UserLayout />  </PrivateRoute>}>
         <Route path='home' element={<Home />} />
+        <Route index element={<Navigate to="home" replace />} />
         <Route path='about' element={<About />} />
         <Route path='profile' element={<Profile />} />
+        <Route path='notifications' element={<Notifications />} />
       </Route>
 
       {/* Admin Routes */}
       <Route path='/admin' element={
-        <PrivateRoute role="admin">
-          <AdminLayout />
-        </PrivateRoute>}>
+        <PrivateRoute role="admin">  <AdminLayout />  </PrivateRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path='dashboard' element={<Dashboard />} />
         <Route path='users' element={<UserManager />} />
