@@ -1,7 +1,16 @@
-// pages/user/Home.jsx
-import React from 'react';
-import { Box, Typography, Button, Grid, Paper } from '@mui/material';
-import LogoutButton from '../../components/common/Logout';
+// src/pages/user/Home.jsx
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  Button,
+  Grid,
+  Paper
+} from '@mui/material';
+import ProviderApplicationModal from '../../components/provider/modal/ApplicationForm';
+import { useSelector } from 'react-redux'; // To get user ID
+// import { useDispatch } from 'react-redux';
+// import { submitProviderApplication } from '../../services/providerService'; // You need to create this
 
 const serviceItems = [
   'AC SERVICE',
@@ -16,9 +25,25 @@ const serviceItems = [
 ];
 
 const Home = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const { user } = useSelector((state) => state.auth);
+
+  const handleOpenModal = () => setModalOpen(true);
+  const handleCloseModal = () => setModalOpen(false);
+
+  const handleSubmitApplication = async (formData) => {
+    try {
+      await submitProviderApplication(formData);
+      alert('Application submitted successfully!');
+    } catch (error) {
+      console.error('Application failed:', error);
+      alert('Something went wrong!');
+    }
+  };
+
   return (
     <Box sx={{ p: 4, backgroundColor: '#f9f9f9' }}>
-      {/* Service Icons Section */}
+      {/* Services List */}
       <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
         Our Services
       </Typography>
@@ -62,6 +87,7 @@ const Home = () => {
         </Typography>
         <Button
           variant="contained"
+          onClick={handleOpenModal}
           sx={{
             backgroundColor: '#007bff',
             color: 'white',
@@ -73,10 +99,14 @@ const Home = () => {
         </Button>
       </Box>
 
-      {/* Logout Button (your component) */}
-      <Box sx={{ mt: 4, textAlign: 'center' }}>
-        <LogoutButton />
-      </Box>
+
+      {/* Modal Component */}
+      <ProviderApplicationModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmitApplication}
+        userId={user?.id}
+      />
     </Box>
   );
 };

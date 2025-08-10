@@ -22,10 +22,16 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = SignupSerialzer(data=request.data)
+        print('register view called')
+        print(f'request.data: {request.data}')
+        user_data = request.data.get('userData', {})
+        serializer = SignupSerialzer(data=user_data)
+        print('serializer called')
         if serializer.is_valid():
+            print('serializer is valid')
             serializer.save()
             return Response({'message': 'User Registered Successfully'}, status=status.HTTP_201_CREATED)
+        print('serializer is not valid')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -33,11 +39,13 @@ class SendOtpView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print('send otp view called')
         email = request.data.get("email")
         if not email:
             return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
-
+        print(f"Sending OTP to {email}")
         otp = str(random.randint(100000, 999999))
+        print(f"Generated OTP: {otp}")
         cache.set(f"otp_{email}", otp, timeout=300)  # OTP 5-minute expiry
 
         send_mail(
@@ -54,6 +62,8 @@ class VerifyOtpView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print('verify otp view called')
+        print(f'request.data: {request.data}')
         email = request.data.get("email")
         otp = request.data.get("otp")
 

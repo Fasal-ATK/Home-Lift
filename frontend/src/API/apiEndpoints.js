@@ -11,16 +11,24 @@ const apiEndpoints = {
         login: '/admin/login/',
     },
 
-    userManage:{
-    },
-
     otp: {
         sendOtp: '/user/send-otp/',
         verifyOtp: '/user/verify-otp/',
     },
 
     adminDashboard: {
+    },
 
+    adminUserManagement:{
+        list : '/admin/customers',
+        block : '/admin/bock/unblock-customer'
+    },
+
+    adminProviderManagement:{
+        list : '/admin/providers',
+    },
+    
+    adminServiceMangement:{
     }
 }
 
