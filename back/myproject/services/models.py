@@ -5,14 +5,12 @@ from cloudinary.models import CloudinaryField
 class ServiceCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
-
     icon = CloudinaryField(
         'image',
         blank=True,
         null=True,
         help_text="Image or icon for this category"
     )
-
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

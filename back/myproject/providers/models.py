@@ -5,34 +5,25 @@ from django.core.exceptions import ValidationError
 from cloudinary.models import CloudinaryField
 
 
-
-class ProviderDetails(models.Model):
+class ProviderApplication(models.Model):
     STATUS_CHOICES = [
+
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
-        ('cancelled', 'Cancelled'),
     ]
 
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='provider_details',
-        limit_choices_to={'is_provider': True},
-    )
-
-    profile_picture = CloudinaryField(
-        'image',
-        blank=True,
-        null=True,
-        help_text="Profile picture stored in Cloudinary"
+        related_name='provider_applications'
     )
 
     document = CloudinaryField(
-        'raw',  # Use 'raw' for documents like PDFs
+        'raw',
         blank=True,
         null=True,
-        help_text="Document stored in Cloudinary"
+        help_text="Upload your verification document"
     )
 
     status = models.CharField(
@@ -41,7 +32,37 @@ class ProviderDetails(models.Model):
         default='pending'
     )
 
-    rejection_reason = models.TextField(blank=True, null=True)
+    rejection_reason = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Only required if status is 'rejected'"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    replied_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Provider Application"
+        verbose_name_plural = "Provider Applications"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.status}"
+
+    def clean(self):
+        if self.status == 'rejected' and not self.rejection_reason:
+            raise ValidationError("Rejection reason is required if the application is rejected.")
+        if self.status != 'rejected' and self.rejection_reason:
+            raise ValidationError("Rejection reason should only be set if the application is rejected.")
+
+
+class ProviderDetails(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='provider_details',
+        limit_choices_to={'is_provider': True},
+    )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -50,14 +71,9 @@ class ProviderDetails(models.Model):
         verbose_name = "Provider Detail"
         verbose_name_plural = "Provider Details"
 
-    def __str__(self):
-        return f"{self.user.username} - {self.status}"
 
-    def clean(self):
-        if self.status != 'rejected' and self.rejection_reason:
-            raise ValidationError("Rejection reason can only be set if the status is 'rejected'.")
-        if self.status == 'rejected' and not self.rejection_reason:
-            raise ValidationError("Rejection reason is required when status is 'rejected'.")
+    def __str__(self):
+        return f"{self.user.username} - Provider Profile"
 
 
 class ProviderService(models.Model):

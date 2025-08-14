@@ -80,7 +80,6 @@ class VerifyOtpView(APIView):
 
 
 class UserLogin(APIView):
-    print("UserLogin view initialized")
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -122,7 +121,7 @@ class UserLogin(APIView):
 
 class RefreshtokenView(APIView):
     permission_classes = [AllowAny]  # Not IsAuthenticated (token is expired)
-
+    
     def post(self, request):
         try:
             refresh_token = request.COOKIES.get('refresh')
@@ -152,7 +151,6 @@ class RefreshtokenView(APIView):
 
 
 class LogoutView(APIView):
-    print("Logout view initialized")
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
