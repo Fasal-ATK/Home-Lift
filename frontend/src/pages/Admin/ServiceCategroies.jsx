@@ -1,11 +1,15 @@
+import { Box } from '@mui/material'
 import React from 'react'
+import CategoryTable from '../../components/admin/CategoryTable'
 
 function ServiceCategroies() {
+
   return (
-    <div>
-      <h1>Service Categroies</h1>
-    </div>
+    <Box>
+      <CategoryTable />
+    </Box>
   )
 }
+
 
 export default ServiceCategroies

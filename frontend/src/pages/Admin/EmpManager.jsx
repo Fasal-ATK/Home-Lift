@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Select, MenuItem, Button, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material';
 import { Edit, Block, LockOpen } from '@mui/icons-material';
 import DataTable from '../../components/admin/DataTable';
+import SearchBarWithFilter from '../../components/admin/SearchBar';
 
 const mockEmployees = [
   { id: 1, name: 'Fasla Rahman', email: 'fasla@example.com', phone: '+919876543210', is_active: true, services: ['AC Repair', 'Washing Machine Repair'] },
@@ -49,7 +50,9 @@ export default function EmpManager() {
       valA = a.services.join(', ');
       valB = b.services.join(', ');
     }
-    if (typeof valA === 'string') return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    if (typeof valA === 'string') {
+      return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    }
     return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
   });
 
@@ -61,7 +64,9 @@ export default function EmpManager() {
     { key: 'services', label: 'Services', sortable: true, render: (row) => row.services.join(', ') },
     { key: 'is_active', label: 'Status', sortable: true, render: (row) => row.is_active ? 'Active' : 'Inactive' },
     {
-      key: 'actions', label: 'Actions', render: (row) => (
+      key: 'actions',
+      label: 'Actions',
+      render: (row) => (
         <>
           <Tooltip title="Edit">
             <IconButton><Edit sx={{ color: 'orange' }} /></IconButton>
@@ -89,14 +94,12 @@ export default function EmpManager() {
         </Button>
       </Box>
 
-      <Box display="flex" gap={2} mb={2}>
-        <TextField label="Search employees..." fullWidth value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        <Select value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <MenuItem value="all">All</MenuItem>
-          <MenuItem value="active">Active</MenuItem>
-          <MenuItem value="inactive">Inactive</MenuItem>
-        </Select>
-      </Box>
+      {/* Integrated Search + Filter */}
+      <SearchBarWithFilter
+        placeholder="Search employees..."
+        onSearch={setSearchTerm}
+        onFilterChange={setFilter}
+      />
 
       <DataTable
         columns={columns}
