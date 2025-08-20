@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
+import cloudinary
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -118,8 +119,12 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),       
+        'USER': config('DB_USER'),       
+        'PASSWORD': config('DB_PASSWORD'),  
+        'HOST': config('DB_HOST'),          
+        'PORT': config('DB_PORT'),               
     }
 }
 
@@ -208,9 +213,14 @@ CACHES = {
     }
 }
 
-# cloudinary Setup
+
+# cloudinary config
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': config('CLOUDINARY_API_KEY'),
-    'API_SECRET': config('CLOUDINARY_API_SECRET'),
+    'cloud_name': 'darpvujkq',
+    'api_key': '434335349575988',
+    'api_secret': 'c6O2QZXRy5poMgI8NJwYsTdi1U',
 }
+
+# Use Cloudinary for media files
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = 'media/'

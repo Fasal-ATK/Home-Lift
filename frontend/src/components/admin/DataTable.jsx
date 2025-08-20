@@ -30,7 +30,7 @@ const DataTable = ({
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#ffe082' }}>
+              <TableRow sx={{ backgroundColor: '#ffe088' }}>
                 {columns.map((col) => (
                   <TableCell key={col.key} align={col.align || 'left'}>
                     {col.label} {col.sortable && renderSortLabel(col.key)}

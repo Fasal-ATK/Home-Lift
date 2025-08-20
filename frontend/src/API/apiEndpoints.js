@@ -16,20 +16,29 @@ const apiEndpoints = {
         verifyOtp: '/user/verify-otp/',
     },
 
-    adminDashboard: {
+    adminDashboard: {},
+
+    adminUserManagement: {
+        list: '/admin/customers',
+        block: '/admin/block/unblock-customer',
     },
 
-    adminUserManagement:{
-        list : '/admin/customers',
-        block : '/admin/bock/unblock-customer'
-    },
-
-    adminProviderManagement:{
-        list : '/admin/providers',
+    adminProviderManagement: {
+        list: '/admin/providers',
     },
     
-    adminServiceMangement:{
+    adminServiceManagement: {
+        // Category APIs
+        listCategories: '/admin/services/categories/',
+        categoryDetail: (id) => `/admin/services/categories/${id}/`,
+        createCategory: '/admin/services/categories/',   // POST
+    
+        // Service APIs
+        listServices: '/admin/services/services/',
+        serviceDetail: (id) => `/admin/services/services/${id}/`,
+        createService: '/admin/services/services/',     // POST
     }
-}
+    
+};
 
-export default apiEndpoints
+export default apiEndpoints;

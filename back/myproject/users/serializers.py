@@ -12,6 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 # Signup serializer for users
 class SignupSerialzer(serializers.ModelSerializer):
+    print('seriazlizer called')
     password = serializers.CharField(
         write_only=True,
         required=True,
