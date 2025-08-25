@@ -2,7 +2,7 @@ from django.db import models
 from cloudinary.models import CloudinaryField
 
 
-class ServiceCategory(models.Model):
+class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     icon = CloudinaryField(
@@ -21,7 +21,7 @@ class ServiceCategory(models.Model):
 class Service(models.Model):
     name = models.CharField(max_length=100)
     category = models.ForeignKey(
-        ServiceCategory,
+        Category,
         on_delete=models.CASCADE,
         related_name='services'
     )

@@ -213,14 +213,12 @@ CACHES = {
     }
 }
 
-
-# cloudinary config
-CLOUDINARY_STORAGE = {
-    'cloud_name': 'darpvujkq',
-    'api_key': '434335349575988',
-    'api_secret': 'c6O2QZXRy5poMgI8NJwYsTdi1U',
-}
-
-# Use Cloudinary for media files
+# Cloudinary settings (default file storage)
+cloudinary.config( 
+  cloud_name = config('CLOUDINARY_CLOUD_NAME'),
+  api_key =  config('CLOUDINARY_API_KEY'),
+  api_secret =  config('CLOUDINARY_API_SECRET'), 
+  secure = True
+)
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'

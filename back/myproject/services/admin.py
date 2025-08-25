@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import ServiceCategory, Service
+from .models import Category, Service
 
 
-@admin.register(ServiceCategory)
-class ServiceCategoryAdmin(admin.ModelAdmin):
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'description', 'is_active', 'created_at')
     list_filter = ('is_active', 'created_at')
     search_fields = ('name', 'description')

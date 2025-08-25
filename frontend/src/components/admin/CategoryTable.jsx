@@ -120,7 +120,7 @@ function CategoryTable() {
           <img
             src={row.icon}
             alt={row.name}
-            style={{ width: 40, height: 40, borderRadius: "50%" }}
+            style={{ width: 70, height: 70, borderRadius: "100%" }}
           />
         ) : (
           "—"

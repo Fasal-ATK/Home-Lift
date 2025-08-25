@@ -1,11 +1,18 @@
 #services/serializers.py
 from rest_framework import serializers
-from .models import ServiceCategory, Service
+from .models import Category, Service
 
-class ServiceCategorySerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
+    icon = serializers.SerializerMethodField()
+
     class Meta:
-        model = ServiceCategory
-        fields = ['id', 'name', 'description', 'icon','is_active']
+        model = Category
+        fields = ['id', 'name', 'description', 'icon', 'is_active']
+
+    def get_icon(self, obj):
+        if obj.icon:
+            return obj.icon.url  
+        return None
 
 
 class ServiceSerializer(serializers.ModelSerializer):
