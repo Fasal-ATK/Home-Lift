@@ -8,7 +8,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { authService, otpService } from '../../services/apiServices';
 
-import OtpModal from '../../components/otp_modal';
+import OtpModal from '../../components/user/otp_modal';
 import { validateSignupForm } from '../../utils/signupVal';
 
 function Signup() {

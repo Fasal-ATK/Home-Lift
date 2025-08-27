@@ -14,7 +14,6 @@ export const authService = {
 
     adminLogin: async (adminData) => {  
         const response = await api.post(apiEndpoints.adminAuth.login, adminData);
-        console.log(response.data);
         return response.data;
     },
 
@@ -48,7 +47,7 @@ export const adminServiceManagementService = {
         return response.data;
     },
     updateCategory: async (id, data) => {
-        const response = await api.put(apiEndpoints.adminServiceManagement.categoryDetail(id), data);
+        const response = await api.patch(apiEndpoints.adminServiceManagement.categoryDetail(id), data);
         return response.data;
     },
     deleteCategory: async (id) => {

@@ -10,7 +10,8 @@ import {
 import { Edit, Delete, Add } from "@mui/icons-material";
 import DataTable from "./DataTable";
 import SearchBarWithFilter from "./SearchBar";
-import ModalForm from "../common/ModalForm";
+import CreationForm from "./modal/CreationForm";
+import EditForm from "./modal/EditForm";
 import ConfirmModal from "../common/Confirm";
 import { adminServiceManagementService } from "../../services/apiServices";
 
@@ -21,6 +22,8 @@ function CategoryTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openModal, setOpenModal] = useState(false);
+  
+  const [isEditOpen, setEditOpen] = useState(false);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -58,6 +61,35 @@ function CategoryTable() {
       console.error("Error creating category:", err);
     }
   };
+
+  const handleUpdateCategory = async (values) => {
+    if (!selectedRow) return;
+  
+    const formData = new FormData();
+    formData.append("name", values.name);
+    formData.append("description", values.description || "");
+  
+    if (values.icon instanceof File) {
+      formData.append("icon", values.icon);
+    }
+  
+    try {
+      const updatedCategory = await adminServiceManagementService.updateCategory(
+        selectedRow.id,
+        formData
+      );
+  
+      setRows((prev) =>
+        prev.map((item) => (item.id === selectedRow.id ? updatedCategory : item))
+      );
+      setEditOpen(false);
+      setSelectedRow(null);
+    } catch (err) {
+      console.error("Error updating category:", err);
+      console.error("Error updating category:", err.response.data);
+    }
+  };
+  
 
   const handleToggleActive = async () => {
     if (!selectedRow) return;
@@ -99,36 +131,34 @@ function CategoryTable() {
   };
 
   const handleEdit = (row) => {
-    console.log("Edit clicked:", row);
-    // optional: open edit modal here
+    setSelectedRow(row);
+    setEditOpen(true);
   };
+  
 
   const handleDelete = (row) => {
     setSelectedRow(row);
     setDeleteConfirmOpen(true);
   };
 
-  const columns = [
+  // ---------------- Table Fields ----------------
+  const columns = [ 
     { key: "id", label: "ID", sortable: true },
     { key: "name", label: "Name", sortable: true },
     { key: "description", label: "Description", sortable: true },
-    {
-      key: "icon",
-      label: "Icon",
+     {key: "icon", label: "Icon",
       render: (row) =>
         row.icon ? (
           <img
             src={row.icon}
             alt={row.name}
-            style={{ width: 70, height: 70, borderRadius: "100%" }}
+            style={{ width: 50, height: 50, borderRadius: "10%" }}
           />
         ) : (
           "—"
         ),
     },
-    {
-      key: "status",
-      label: "Status",
+    { key: "status", label: "Status",
       sortable: true,
       render: (row) => (
         <Chip
@@ -148,9 +178,7 @@ function CategoryTable() {
         />
       ),
     },
-    {
-      key: "actions",
-      label: "Actions",
+    { key: "actions", label: "Actions",
       render: (row) => (
         <Box sx={{ display: "flex", gap: 1 }}>
           <Tooltip title="Edit">
@@ -217,7 +245,7 @@ function CategoryTable() {
       />
 
       {/* Create Category Modal */}
-      <ModalForm
+      <CreationForm
         open={openModal}
         onClose={() => setOpenModal(false)}
         title="Add New Category"
@@ -230,7 +258,22 @@ function CategoryTable() {
         submitLabel="Create"
       />
 
-      {/* Confirm Toggle Modal */}
+      {/* Edit Category Modal */}
+      <EditForm
+        open={isEditOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Category"
+        fields={[
+          { name: "name", label: "Category Name", type: "text", required: true },
+          { name: "description", label: "Description", type: "text" },
+          { name: "icon", label: "Category Icon", type: "file", accept: "image/*" },
+        ]}
+        initialData={selectedRow || {}}
+        onSubmit={handleUpdateCategory}
+        submitLabel="Update"
+      />
+
+      {/* Confirm Toggle Status Modal */}
       <ConfirmModal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}

@@ -7,7 +7,7 @@ import {
   Grid,
   Paper
 } from '@mui/material';
-import ProviderApplicationModal from '../../components/provider/modal/ApplicationForm';
+import ProviderApplicationModal from '../../components/provider/ApplicationForm';
 import { useSelector } from 'react-redux'; // To get user ID
 // import { useDispatch } from 'react-redux';
 // import { submitProviderApplication } from '../../services/providerService'; // You need to create this

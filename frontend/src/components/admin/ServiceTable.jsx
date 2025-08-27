@@ -12,7 +12,7 @@ import {
 import { Edit, Delete, Add } from "@mui/icons-material";
 import DataTable from "./DataTable";
 import SearchBarWithFilter from "./SearchBar";
-import FormModal from "../common/ModalForm";
+import FormModal from "./modal/CreationForm";
 
 function ServiceTable() {
   const [rows, setRows] = useState([]);

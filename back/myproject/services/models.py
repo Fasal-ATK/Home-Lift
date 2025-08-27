@@ -7,6 +7,7 @@ class Category(models.Model):
     description = models.TextField(blank=True)
     icon = CloudinaryField(
         'image',
+        folder='icons/categories',
         blank=True,
         null=True,
         help_text="Image or icon for this category"
@@ -31,6 +32,7 @@ class Service(models.Model):
 
     icon = CloudinaryField(
         'image',
+        folder='icons/services',
         blank=True,
         null=True,
         help_text="Image or icon for this service"
