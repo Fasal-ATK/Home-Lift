@@ -1,7 +1,7 @@
 import { Box, Button } from "@mui/material";
 import React, { useState } from "react";
-import CategoryTable from "../../components/admin/CategoryTable";
-import ServiceTable from "../../components/admin/ServiceTable"; // <-- create this like CategoryTable
+import CategoryTable from "../../components/admin/service&category/CategoryTable";
+import ServiceTable from "../../components/admin/service&category/ServiceTable"; 
 
 function ServiceCategroies() {
   const [activeTab, setActiveTab] = useState("categories");

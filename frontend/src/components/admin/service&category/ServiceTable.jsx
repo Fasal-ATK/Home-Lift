@@ -1,18 +1,12 @@
 // components/admin/ServiceTable.jsx
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  IconButton,
-  Avatar,
-  Chip,
-  Tooltip,
-  Button,
-} from "@mui/material";
+import { Box, Typography, IconButton, Avatar, Chip, Tooltip, Button,} from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
-import DataTable from "./DataTable";
-import SearchBarWithFilter from "./SearchBar";
-import FormModal from "./modal/CreationForm";
+import DataTable from "../DataTable";
+import SearchBarWithFilter from "../SearchBar";
+import FormModal from "../modal/CreationForm";
+
+import { adminServiceManagementService } from "../../../services/apiServices";
 
 function ServiceTable() {
   const [rows, setRows] = useState([]);
@@ -21,9 +15,8 @@ function ServiceTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
-
-  // Mock categories for dropdown
-  const categories = ["Home Repair", "Cleaning", "Electrical", "Plumbing"];
+  const [editingRow, setEditingRow] = useState(null);
+  const [categories, setCategories] = useState([]);
 
   const columns = [
     { key: "id", label: "ID", sortable: true },
@@ -36,7 +29,7 @@ function ServiceTable() {
       key: "icon",
       label: "Icon",
       render: (row) => (
-        <Avatar src={row.icon} alt={row.title} sx={{ width: 30, height: 30 }} />
+        <Avatar src={row.icon_url} alt={row.title} sx={{ width: 30, height: 30 }} />
       ),
     },
     {
@@ -78,52 +71,83 @@ function ServiceTable() {
     },
   ];
 
-  // mock fetch
+  // Fetch services + categories on mount
   useEffect(() => {
-    setTimeout(() => {
-      setRows([
-        {
-          id: 1,
-          title: "Plumbing",
-          category: "Home Repair",
-          description: "Fix water leakage and pipe issues",
-          defaultPrice: "₹500",
-          duration: "1 hr",
-          icon: "https://cdn-icons-png.flaticon.com/512/2965/2965567.png",
-          active: true,
-        },
-        {
-          id: 2,
-          title: "House Cleaning",
-          category: "Cleaning",
-          description: "Deep cleaning service",
-          defaultPrice: "₹1500",
-          duration: "3 hr",
-          icon: "https://cdn-icons-png.flaticon.com/512/3076/3076575.png",
-          active: false,
-        },
-      ]);
-      setLoading(false);
-    }, 500);
+    const fetchData = async () => {
+      try {
+        const [services, cats] = await Promise.all([
+          adminServiceManagementService.getServices(),
+          adminServiceManagementService.getCategories(),
+        ]);
+        setRows(services);
+        setCategories(cats.map((c) => ({ label: c.name, value: c.id })));
+      } catch (err) {
+        console.error("Failed to fetch data:", err.response?.data || err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
-  // handlers
+  // Create or Update service
+  const handleSaveService = async (formValues) => {
+    const formData = new FormData();
+    Object.entries(formValues).forEach(([key, val]) => {
+      if (val !== null && val !== undefined) {
+        formData.append(key, val);
+      }
+    });
+
+    try {
+      if (editingRow) {
+        const updated = await adminServiceManagementService.updateService(
+          editingRow.id,
+          formData
+        );
+        setRows((prev) => prev.map((s) => (s.id === editingRow.id ? updated : s)));
+      } else {
+        const created = await adminServiceManagementService.createService(formData);
+        setRows((prev) => [...prev, created]);
+      }
+      setModalOpen(false);
+      setEditingRow(null);
+    } catch (err) {
+      console.error("Failed to save service:", err.response?.data || err);
+    }
+  };
+
+  // Edit
   const handleEdit = (row) => {
-    console.log("Edit service:", row);
-    // TODO: open modal pre-filled with row data
+    setEditingRow(row);
+    setModalOpen(true);
   };
 
-  const handleDelete = (row) => {
-    console.log("Delete service:", row);
-    // TODO: confirm + API
+  // Delete
+  const handleDelete = async (row) => {
+    if (!window.confirm("Are you sure you want to delete this service?")) return;
+    try {
+      await adminServiceManagementService.deleteService(row.id);
+      setRows((prev) => prev.filter((s) => s.id !== row.id));
+    } catch (err) {
+      console.error("Failed to delete service:", err.response?.data || err);
+    }
   };
 
-  const handleToggleActive = (row) => {
-    setRows((prev) =>
-      prev.map((s) => (s.id === row.id ? { ...s, active: !s.active } : s))
-    );
+  // Toggle active
+  const handleToggleActive = async (row) => {
+    try {
+      const updated = await adminServiceManagementService.updateService(row.id, {
+        ...row,
+        active: !row.active,
+      });
+      setRows((prev) => prev.map((s) => (s.id === row.id ? updated : s)));
+    } catch (err) {
+      console.error("Failed to toggle status:", err.response?.data || err);
+    }
   };
 
+  // Sort
   const handleSort = (key) => {
     let direction = "asc";
     if (sortConfig.key === key && sortConfig.direction === "asc") {
@@ -132,26 +156,11 @@ function ServiceTable() {
     setSortConfig({ key, direction });
   };
 
-  const handleCreateService = (formValues) => {
-    const newService = {
-      id: rows.length + 1,
-      title: formValues.title,
-      category: formValues.category,
-      description: formValues.description,
-      defaultPrice: formValues.defaultPrice,
-      duration: formValues.duration,
-      icon: formValues.icon ? URL.createObjectURL(formValues.icon) : "",
-      active: true,
-    };
-    setRows((prev) => [...prev, newService]);
-    setModalOpen(false);
-  };
-
   // filter + sort
   const filteredRows = rows
     .filter((row) => {
       if (!searchQuery) return true;
-      const haystack = `${row.title} ${row.category} ${row.description} ${row.defaultPrice} ${row.minDuration}`
+      const haystack = `${row.title} ${row.category?.name} ${row.description} ${row.defaultPrice} ${row.duration}`
         .toLowerCase();
       return haystack.includes(searchQuery.toLowerCase());
     })
@@ -191,7 +200,10 @@ function ServiceTable() {
         <Button
           variant="contained"
           startIcon={<Add />}
-          onClick={() => setModalOpen(true)}
+          onClick={() => {
+            setEditingRow(null);
+            setModalOpen(true);
+          }}
         >
           Add Service
         </Button>
@@ -213,13 +225,27 @@ function ServiceTable() {
         loading={loading}
       />
 
-      {/* Modal for service creation */}
+      {/* Modal for service creation/edit */}
       <FormModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title="Create Service"
-        submitLabel="Create"
-        onSubmit={handleCreateService}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingRow(null);
+        }}
+        title={editingRow ? "Edit Service" : "Create Service"}
+        submitLabel={editingRow ? "Update" : "Create"}
+        onSubmit={handleSaveService}
+        initialValues={
+          editingRow
+            ? {
+                title: editingRow.title,
+                category: editingRow.category?.id,
+                description: editingRow.description,
+                defaultPrice: editingRow.defaultPrice,
+                duration: editingRow.duration,
+              }
+            : null
+        }
         fields={[
           { name: "title", label: "Title", required: true },
           {
@@ -237,7 +263,7 @@ function ServiceTable() {
             label: "Upload Icon",
             type: "file",
             accept: "image/*",
-            required: true,
+            required: !editingRow,
           },
         ]}
       />

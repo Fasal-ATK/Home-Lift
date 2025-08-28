@@ -8,12 +8,13 @@ import {
   Chip,
 } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
-import DataTable from "./DataTable";
-import SearchBarWithFilter from "./SearchBar";
-import CreationForm from "./modal/CreationForm";
-import EditForm from "./modal/EditForm";
-import ConfirmModal from "../common/Confirm";
-import { adminServiceManagementService } from "../../services/apiServices";
+
+import DataTable from "../DataTable";
+import SearchBarWithFilter from "../SearchBar";
+import CreationForm from "../modal/CreationForm";
+import EditForm from "../modal/EditForm";
+import ConfirmModal from "../../common/Confirm";
+import { adminServiceManagementService } from "../../../services/apiServices";
 
 function CategoryTable() {
   const [rows, setRows] = useState([]);

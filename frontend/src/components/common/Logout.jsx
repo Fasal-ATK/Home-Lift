@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Slide } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../../redux/slices/authSlice';
-import { authService } from '../../services/apiServices';
+import { useSelector } from 'react-redux';
+import { performLogout } from '../../utils/logoutHelper'; // 🔹 added
 
 const colorPresets = {
   red: {
@@ -26,19 +25,12 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 const LogoutButton = ({ collapsed, color = 'red' }) => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const isAdmin = useSelector((state) => state.auth.isAdmin);
+  const isAdmin = useSelector((state) => state.auth.isAdmin); // 🔹 unchanged
   const [open, setOpen] = useState(false);
 
+  // 🔹 changed: replaced inline handleLogout with performLogout
   const handleLogout = async () => {
-    try {
-      await authService.logout();
-      dispatch(logout());
-      navigate(isAdmin ? '/admin/login' : '/login');
-    } catch (err) {
-      console.error('Logout failed:', err);
-    }
+    await performLogout(isAdmin);
   };
 
   const { backgroundColor, hoverColor } = colorPresets[color] || colorPresets.red;
@@ -100,7 +92,7 @@ const LogoutButton = ({ collapsed, color = 'red' }) => {
           <Button
             onClick={() => {
               setOpen(false);
-              handleLogout();
+              handleLogout(); // 🔹 now calls performLogout
             }}
             variant="contained"
             sx={{

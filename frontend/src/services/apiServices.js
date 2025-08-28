@@ -21,7 +21,7 @@ export const authService = {
         const response = await api.post(apiEndpoints.auth.logout);
         return response.data;
     },
-    
+
 }
 
 export const otpService = {

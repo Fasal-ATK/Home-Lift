@@ -1,6 +1,6 @@
-// src/API/apiConfig.js
 import axios from 'axios';
 import apiEndpoints from './apiEndpoints';
+import { performLogout } from '../utils/logoutHelper'; // 🔹 added
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -31,16 +31,17 @@ api.interceptors.response.use(
         const refreshResponse = await axios.post(
           `${import.meta.env.VITE_API_URL}${apiEndpoints.auth.refreshAccessToken}`,
           {},
-          { withCredentials: true } // Include refresh cookie
+          { withCredentials: true }
         );
 
         const newAccessToken = refreshResponse.data.access;
         localStorage.setItem('accessToken', newAccessToken);
         originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
 
-        return api(originalRequest); // Retry the original request
+        return api(originalRequest);
       } catch (refreshError) {
-        localStorage.removeItem('accessToken');
+        // 🔹 changed: trigger full logout instead of only removing token
+        await performLogout(); 
         return Promise.reject(refreshError);
       }
     }
