@@ -1,7 +1,7 @@
 // src/layouts/AdminSidebar.jsx
 import { useState, useEffect } from 'react';
 import {
-  Box, List, ListItem, ListItemIcon, ListItemText, Typography, Divider, Tooltip, Paper
+  Box, List, ListItemButton, ListItemIcon, ListItemText, Typography, Divider, Tooltip, Paper
 } from '@mui/material';
 import {
   Dashboard, Group, Category, Report, LocalOffer,
@@ -83,8 +83,7 @@ const AdminSidebar = () => {
                 placement="right"
                 key={item.text}
               >
-                <ListItem
-                  button
+                <ListItemButton
                   component={Link}
                   to={item.path}
                   sx={{
@@ -106,7 +105,7 @@ const AdminSidebar = () => {
                       primaryTypographyProps={{ fontWeight: isActive ? 'bold' : 'normal' }}
                     />
                   )}
-                </ListItem>
+                </ListItemButton>
               </Tooltip>
             );
           })}

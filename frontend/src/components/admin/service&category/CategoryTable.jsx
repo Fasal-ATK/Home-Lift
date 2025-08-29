@@ -1,11 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from "../../../redux/slices/categorySlice";
+
 import {
   Typography,
   Box,
   IconButton,
   Tooltip,
-  Button,
-  Chip,
+  Button, Chip,
 } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
 
@@ -14,112 +21,72 @@ import SearchBarWithFilter from "../SearchBar";
 import CreationForm from "../modal/CreationForm";
 import EditForm from "../modal/EditForm";
 import ConfirmModal from "../../common/Confirm";
-import { adminServiceManagementService } from "../../../services/apiServices";
 
 function CategoryTable() {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+
+  // ✅ Use Redux state
+  const { list: rows, loading } = useSelector((state) => state.categories);
+
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [openModal, setOpenModal] = useState(false);
-  
-  const [isEditOpen, setEditOpen] = useState(false);
 
+  const [openModal, setOpenModal] = useState(false);
+  const [isEditOpen, setEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
 
-  // ---------------- API Calls ----------------
-  const fetchCategories = async () => {
-    setLoading(true);
-    try {
-      const data = await adminServiceManagementService.getCategories();
-      setRows(data);
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // ---------------- Redux Fetch ----------------
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   const handleCreateCategory = async (values) => {
     const formData = new FormData();
     formData.append("name", values.name);
     formData.append("description", values.description);
     if (values.icon) formData.append("icon", values.icon);
-    
 
-    try {
-      const newCategory = await adminServiceManagementService.createCategory(formData);
-      setRows((prev) => [...prev, newCategory]);
-      setOpenModal(false);
-    } catch (err) {
-      console.error("Error creating category:", err);
-    }
+    await dispatch(createCategory(formData));
+    setOpenModal(false);
   };
 
   const handleUpdateCategory = async (values) => {
     if (!selectedRow) return;
-  
+
     const formData = new FormData();
     formData.append("name", values.name);
     formData.append("description", values.description || "");
-  
     if (values.icon instanceof File) {
       formData.append("icon", values.icon);
     }
-  
-    try {
-      const updatedCategory = await adminServiceManagementService.updateCategory(
-        selectedRow.id,
-        formData
-      );
-  
-      setRows((prev) =>
-        prev.map((item) => (item.id === selectedRow.id ? updatedCategory : item))
-      );
-      setEditOpen(false);
-      setSelectedRow(null);
-    } catch (err) {
-      console.error("Error updating category:", err);
-      console.error("Error updating category:", err.response.data);
-    }
+
+    await dispatch(updateCategory({ id: selectedRow.id, data: formData }));
+    setEditOpen(false);
+    setSelectedRow(null);
   };
-  
 
   const handleToggleActive = async () => {
     if (!selectedRow) return;
-    try {
-      const updated = await adminServiceManagementService.updateCategory(selectedRow.id, {
-        is_active: !selectedRow.is_active,
-      });
-      setRows((prev) =>
-        prev.map((item) =>
-          item.id === selectedRow.id ? { ...item, is_active: updated.is_active } : item
-        )
-      );
-      setConfirmOpen(false);
-      setSelectedRow(null);
-    } catch (err) {
-      console.error("Error toggling status:", err);
-    }
+
+    await dispatch(
+      updateCategory({
+        id: selectedRow.id,
+        data: { is_active: !selectedRow.is_active },
+      })
+    );
+    setConfirmOpen(false);
+    setSelectedRow(null);
   };
 
   const confirmDelete = async () => {
     if (!selectedRow) return;
-    try {
-      await adminServiceManagementService.deleteCategory(selectedRow.id);
-      setRows((prev) => prev.filter((item) => item.id !== selectedRow.id));
-      setDeleteConfirmOpen(false);
-      setSelectedRow(null);
-    } catch (err) {
-      console.error("Error deleting category:", err);
-    }
+
+    await dispatch(deleteCategory(selectedRow.id));
+    setDeleteConfirmOpen(false);
+    setSelectedRow(null);
   };
 
   // ---------------- Table & Sorting ----------------
@@ -135,7 +102,6 @@ function CategoryTable() {
     setSelectedRow(row);
     setEditOpen(true);
   };
-  
 
   const handleDelete = (row) => {
     setSelectedRow(row);
@@ -143,11 +109,13 @@ function CategoryTable() {
   };
 
   // ---------------- Table Fields ----------------
-  const columns = [ 
+  const columns = [
     { key: "id", label: "ID", sortable: true },
     { key: "name", label: "Name", sortable: true },
     { key: "description", label: "Description", sortable: true },
-     {key: "icon", label: "Icon",
+    {
+      key: "icon",
+      label: "Icon",
       render: (row) =>
         row.icon ? (
           <img
@@ -159,7 +127,9 @@ function CategoryTable() {
           "—"
         ),
     },
-    { key: "status", label: "Status",
+    {
+      key: "status",
+      label: "Status",
       sortable: true,
       render: (row) => (
         <Chip
@@ -179,17 +149,27 @@ function CategoryTable() {
         />
       ),
     },
-    { key: "actions", label: "Actions",
+    {
+      key: "actions",
+      label: "Actions",
       render: (row) => (
         <Box sx={{ display: "flex", gap: 1 }}>
           <Tooltip title="Edit">
-            <IconButton color="primary" size="small" onClick={() => handleEdit(row)}>
+            <IconButton
+              color="primary"
+              size="small"
+              onClick={() => handleEdit(row)}
+            >
               <Edit fontSize="medium" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="Delete">
-            <IconButton color="error" size="small" onClick={() => handleDelete(row)}>
+            <IconButton
+              color="error"
+              size="small"
+              onClick={() => handleDelete(row)}
+            >
               <Delete fontSize="medium" />
             </IconButton>
           </Tooltip>
@@ -220,12 +200,23 @@ function CategoryTable() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h4" fontFamily="monospace" fontWeight="bold" color="black">
+      <Box
+        sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}
+      >
+        <Typography
+          variant="h4"
+          fontFamily="monospace"
+          fontWeight="bold"
+          color="black"
+        >
           Category Management
         </Typography>
 
-        <Button variant="contained" startIcon={<Add />} onClick={() => setOpenModal(true)}>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={() => setOpenModal(true)}
+        >
           Add Category
         </Button>
       </Box>
@@ -279,7 +270,9 @@ function CategoryTable() {
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleToggleActive}
-        message={`Are you sure you want to ${selectedRow?.is_active ? "deactivate" : "activate"} "${selectedRow?.name}"?`}
+        message={`Are you sure you want to ${
+          selectedRow?.is_active ? "deactivate" : "activate"
+        } "${selectedRow?.name}"?`}
         confirmLabel="Yes"
         cancelLabel="No"
       />
