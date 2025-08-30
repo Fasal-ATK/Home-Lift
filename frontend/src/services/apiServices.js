@@ -65,7 +65,7 @@ export const adminServiceManagementService = {
         return response.data;
     },
     updateService: async (id, data) => {
-        const response = await api.put(apiEndpoints.adminServiceManagement.serviceDetail(id), data);
+        const response = await api.patch(apiEndpoints.adminServiceManagement.serviceDetail(id), data);
         return response.data;
     },
     deleteService: async (id) => {

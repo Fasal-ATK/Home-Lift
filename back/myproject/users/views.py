@@ -22,16 +22,12 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        print('register view called')
-        print(f'request.data: {request.data}')
         user_data = request.data.get('userData', {})
         serializer = SignupSerialzer(data=user_data)
-        print('serializer called')
         if serializer.is_valid():
-            print('serializer is valid')
             serializer.save()
+            print('user registered successfully')
             return Response({'message': 'User Registered Successfully'}, status=status.HTTP_201_CREATED)
-        print('serializer is not valid')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -43,7 +39,6 @@ class SendOtpView(APIView):
         email = request.data.get("email")
         if not email:
             return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
-        print(f"Sending OTP to {email}")
         otp = str(random.randint(100000, 999999))
         print(f"Generated OTP: {otp}")
         cache.set(f"otp_{email}", otp, timeout=300)  # OTP 5-minute expiry
@@ -62,8 +57,6 @@ class VerifyOtpView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        print('verify otp view called')
-        print(f'request.data: {request.data}')
         email = request.data.get("email")
         otp = request.data.get("otp")
 
@@ -155,8 +148,6 @@ class LogoutView(APIView):
     
     def post(self, request):
         try:
-            print("Processing logout request")
-            print(f'request.headers: {request.headers}')
             refresh_token = request.COOKIES.get('refresh')
             if refresh_token is None:
                 return Response({'detail': 'Refresh token not found in cookies.'}, status=status.HTTP_400_BAD_REQUEST)

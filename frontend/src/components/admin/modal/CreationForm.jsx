@@ -6,7 +6,11 @@ import {
   TextField,
   Button,
   Stack,
-  IconButton
+  IconButton,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -52,6 +56,8 @@ const FormModal = ({ open, onClose, title, fields, onSubmit, submitLabel = "Subm
           left: '50%',
           transform: 'translate(-50%, -50%)',
           width: 420,
+          maxHeight: '90vh',   // ✅ limit modal height to viewport
+          overflowY: 'auto',   // ✅ enable scrolling if content is taller
           bgcolor: 'background.paper',
           borderRadius: 3,
           boxShadow: 24,
@@ -85,7 +91,7 @@ const FormModal = ({ open, onClose, title, fields, onSubmit, submitLabel = "Subm
                       <Typography variant="body2">
                         Selected: {formValues[field.name].name}
                       </Typography>
-                      {formValues[field.name].type.startsWith("image/") && (
+                      {formValues[field.name].type?.startsWith("image/") && (
                         <Box
                           component="img"
                           src={URL.createObjectURL(formValues[field.name])}
@@ -103,6 +109,20 @@ const FormModal = ({ open, onClose, title, fields, onSubmit, submitLabel = "Subm
                     </Box>
                   )}
                 </>
+              ) : field.type === "select" ? (
+                <FormControl fullWidth required={field.required}>
+                  <InputLabel>{field.label}</InputLabel>
+                  <Select
+                    value={formValues[field.name] || ""}
+                    onChange={(e) => handleChange(e, field.name, "select")}
+                  >
+                    {field.options?.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               ) : (
                 <TextField
                   label={field.label}

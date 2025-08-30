@@ -21,8 +21,14 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'category', 'price', 'duration', 'is_active', 'created_at')
+    list_display = ('name', 'category', 'price', 'icon_tag', 'duration', 'is_active',)
     list_filter = ('category', 'is_active', 'created_at')
     search_fields = ('name', 'description', 'category__name')
     readonly_fields = ('created_at',)
     list_editable = ('price', 'duration', 'is_active')
+
+    def icon_tag(self, obj):
+        if obj.icon:
+            return format_html('<img src="{}" width="40" height="40" style="object-fit:contain;"/>', obj.icon.url)
+        return "—"
+    icon_tag.short_description = 'Icon'

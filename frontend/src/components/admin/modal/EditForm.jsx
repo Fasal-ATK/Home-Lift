@@ -55,15 +55,17 @@ const EditFormModal = ({
     <Modal open={open} onClose={onClose}>
       <Box
         sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
           width: 420,
-          bgcolor: "background.paper",
+          maxHeight: '90vh',   // ✅ limit modal height to viewport
+          overflowY: 'auto',   // ✅ enable scrolling if content is taller
+          bgcolor: 'background.paper',
           borderRadius: 3,
           boxShadow: 24,
-          p: 3
+          p: 3,
         }}
       >
         {/* Header */}

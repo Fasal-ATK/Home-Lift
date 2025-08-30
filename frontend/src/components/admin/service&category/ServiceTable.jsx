@@ -1,50 +1,173 @@
-// components/admin/ServiceTable.jsx
-import React, { useState, useEffect } from "react";
-import { Box, Typography, IconButton, Avatar, Chip, Tooltip, Button,} from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchServices,
+  createService,
+  updateService,
+  deleteService,
+} from "../../../redux/slices/serviceSlice";
+import { fetchCategories } from "../../../redux/slices/categorySlice";
+
+import {
+  Typography,
+  Box,
+  IconButton,
+  Tooltip,
+  Button,
+  Chip,
+} from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
+
 import DataTable from "../DataTable";
 import SearchBarWithFilter from "../SearchBar";
-import FormModal from "../modal/CreationForm";
-
-import { adminServiceManagementService } from "../../../services/apiServices";
+import CreationForm from "../modal/CreationForm";
+import EditForm from "../modal/EditForm";
+import ConfirmModal from "../../common/Confirm";
 
 function ServiceTable() {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+
+  // ✅ Redux state
+  const { list: rows, loading } = useSelector((state) => state.services);
+  const { list: categories } = useSelector((state) => state.categories);
+
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingRow, setEditingRow] = useState(null);
-  const [categories, setCategories] = useState([]);
 
+  const [openModal, setOpenModal] = useState(false);
+  const [isEditOpen, setEditOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null);
+
+  // ---------------- Fetch ----------------
+  useEffect(() => {
+    dispatch(fetchServices());
+    dispatch(fetchCategories()); // categories needed for dropdown
+  }, [dispatch]);
+
+  // ---------------- CRUD ----------------
+  const handleCreateService = async (values) => {
+    const formData = new FormData();
+    formData.append("name", values.name);
+    formData.append("description", values.description);
+    formData.append("category", values.category);
+    formData.append("price", values.price);
+    formData.append("duration", values.duration);
+    if (values.icon) formData.append("icon", values.icon);
+
+    await dispatch(createService(formData));
+    setOpenModal(false);
+  };
+
+  const handleUpdateService = async (values) => {
+    if (!selectedRow) return;
+
+    const formData = new FormData();
+    formData.append("name", values.name);
+    formData.append("description", values.description || "");
+    formData.append("category", values.category);
+    formData.append("price", values.price);
+    formData.append("duration", values.duration);
+
+    if (values.icon instanceof File) {
+      formData.append("icon", values.icon);
+    }
+
+    await dispatch(updateService({ id: selectedRow.id, data: formData }));
+    setEditOpen(false);
+    setSelectedRow(null);
+  };
+
+  const handleToggleActive = async () => {
+    if (!selectedRow) return;
+
+    await dispatch(
+      updateService({
+        id: selectedRow.id,
+        data: { is_active: !selectedRow.is_active }, // ✅ fixed key
+      })
+    );
+    setConfirmOpen(false);
+    setSelectedRow(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedRow) return;
+
+    await dispatch(deleteService(selectedRow.id));
+    setDeleteConfirmOpen(false);
+    setSelectedRow(null);
+  };
+
+  // ---------------- Table Config ----------------
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const handleEdit = (row) => {
+    setSelectedRow(row);
+    setEditOpen(true);
+  };
+
+  const handleDelete = (row) => {
+    setSelectedRow(row);
+    setDeleteConfirmOpen(true);
+  };
+
+  // ---------------- Columns ----------------
   const columns = [
     { key: "id", label: "ID", sortable: true },
-    { key: "title", label: "Title", sortable: true },
-    { key: "category", label: "Category", sortable: true },
-    { key: "description", label: "Description", sortable: true },
-    { key: "defaultPrice", label: "Default Price", sortable: true },
+    { key: "name", label: "Name", sortable: true },
+
+    {
+      key: "category",
+      label: "Category",
+      render: (row) => {
+        // row.category is just an ID
+        const category = categories.find((c) => c.id === row.category);
+        return category ? category.name : "—";
+      },
+    },
+    
+    
+    { key: "price", label: "Price", sortable: true },
     { key: "duration", label: "Duration", sortable: true },
     {
       key: "icon",
       label: "Icon",
-      render: (row) => (
-        <Avatar src={row.icon_url} alt={row.title} sx={{ width: 30, height: 30 }} />
-      ),
+      render: (row) =>
+        row.icon_url ? ( // ✅ use icon_url from serializer
+          <img
+            src={row.icon_url}
+            alt={row.name}
+            style={{ width: 50, height: 50, borderRadius: "10%" }}
+          />
+        ) : (
+          "—"
+        ),
     },
     {
-      key: "active",
+      key: "status",
       label: "Status",
-      sortable: true,
       render: (row) => (
         <Chip
-          label={row.active ? "Active" : "Inactive"}
-          onClick={() => handleToggleActive(row)}
+          label={row.is_active ? "Active" : "Inactive"} // ✅ fixed key
+          onClick={() => {
+            setSelectedRow(row);
+            setConfirmOpen(true);
+          }}
           sx={{
             cursor: "pointer",
-            backgroundColor: row.active ? "green" : "red",
+            backgroundColor: row.is_active ? "green" : "red",
             color: "white",
             fontWeight: "bold",
+            "&:hover": { opacity: 0.8 },
           }}
           size="small"
         />
@@ -71,124 +194,30 @@ function ServiceTable() {
     },
   ];
 
-  // Fetch services + categories on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [services, cats] = await Promise.all([
-          adminServiceManagementService.getServices(),
-          adminServiceManagementService.getCategories(),
-        ]);
-        setRows(services);
-        setCategories(cats.map((c) => ({ label: c.name, value: c.id })));
-      } catch (err) {
-        console.error("Failed to fetch data:", err.response?.data || err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  // Create or Update service
-  const handleSaveService = async (formValues) => {
-    const formData = new FormData();
-    Object.entries(formValues).forEach(([key, val]) => {
-      if (val !== null && val !== undefined) {
-        formData.append(key, val);
-      }
-    });
-
-    try {
-      if (editingRow) {
-        const updated = await adminServiceManagementService.updateService(
-          editingRow.id,
-          formData
-        );
-        setRows((prev) => prev.map((s) => (s.id === editingRow.id ? updated : s)));
-      } else {
-        const created = await adminServiceManagementService.createService(formData);
-        setRows((prev) => [...prev, created]);
-      }
-      setModalOpen(false);
-      setEditingRow(null);
-    } catch (err) {
-      console.error("Failed to save service:", err.response?.data || err);
-    }
-  };
-
-  // Edit
-  const handleEdit = (row) => {
-    setEditingRow(row);
-    setModalOpen(true);
-  };
-
-  // Delete
-  const handleDelete = async (row) => {
-    if (!window.confirm("Are you sure you want to delete this service?")) return;
-    try {
-      await adminServiceManagementService.deleteService(row.id);
-      setRows((prev) => prev.filter((s) => s.id !== row.id));
-    } catch (err) {
-      console.error("Failed to delete service:", err.response?.data || err);
-    }
-  };
-
-  // Toggle active
-  const handleToggleActive = async (row) => {
-    try {
-      const updated = await adminServiceManagementService.updateService(row.id, {
-        ...row,
-        active: !row.active,
-      });
-      setRows((prev) => prev.map((s) => (s.id === row.id ? updated : s)));
-    } catch (err) {
-      console.error("Failed to toggle status:", err.response?.data || err);
-    }
-  };
-
-  // Sort
-  const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
-
-  // filter + sort
+  // ---------------- Filters ----------------
   const filteredRows = rows
     .filter((row) => {
       if (!searchQuery) return true;
-      const haystack = `${row.title} ${row.category?.name} ${row.description} ${row.defaultPrice} ${row.duration}`
-        .toLowerCase();
-      return haystack.includes(searchQuery.toLowerCase());
+      return (
+        row.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        row.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     })
     .filter((row) => {
       if (statusFilter === "all") return true;
-      return statusFilter === "active" ? row.active : !row.active;
+      return statusFilter === "active" ? row.is_active : !row.is_active; // ✅ fixed key
     })
     .sort((a, b) => {
-      const { key, direction } = sortConfig;
-      let aVal = a[key];
-      let bVal = b[key];
-
-      if (typeof aVal === "boolean") {
-        aVal = aVal ? 1 : 0;
-        bVal = bVal ? 1 : 0;
-      }
-      if (typeof aVal === "string" && typeof bVal === "string") {
-        const cmp = aVal.localeCompare(bVal);
-        return direction === "asc" ? cmp : -cmp;
-      }
-      if (aVal < bVal) return direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return direction === "asc" ? 1 : -1;
+      if (a[sortConfig.key] < b[sortConfig.key])
+        return sortConfig.direction === "asc" ? -1 : 1;
+      if (a[sortConfig.key] > b[sortConfig.key])
+        return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Typography
           variant="h4"
           fontFamily="monospace"
@@ -197,27 +226,24 @@ function ServiceTable() {
         >
           Service Management
         </Typography>
+
         <Button
           variant="contained"
           startIcon={<Add />}
-          onClick={() => {
-            setEditingRow(null);
-            setModalOpen(true);
-          }}
+          onClick={() => setOpenModal(true)}
         >
           Add Service
         </Button>
       </Box>
 
-      {/* Search + Filter */}
       <SearchBarWithFilter
         placeholder="Search services..."
         onSearch={setSearchQuery}
         onFilterChange={setStatusFilter}
       />
 
-      {/* Data Table */}
       <DataTable
+        title="Services"
         columns={columns}
         rows={filteredRows}
         sortConfig={sortConfig}
@@ -225,47 +251,74 @@ function ServiceTable() {
         loading={loading}
       />
 
-      {/* Modal for service creation/edit */}
-      <FormModal
-        open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditingRow(null);
-        }}
-        title={editingRow ? "Edit Service" : "Create Service"}
-        submitLabel={editingRow ? "Update" : "Create"}
-        onSubmit={handleSaveService}
-        initialValues={
-          editingRow
-            ? {
-                title: editingRow.title,
-                category: editingRow.category?.id,
-                description: editingRow.description,
-                defaultPrice: editingRow.defaultPrice,
-                duration: editingRow.duration,
-              }
-            : null
-        }
+      {/* Create Service Modal */}
+      <CreationForm
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title="Add New Service"
         fields={[
-          { name: "title", label: "Title", required: true },
+          { name: "name", label: "Service Name", required: true },
+          { name: "description", label: "Description" },
           {
             name: "category",
             label: "Category",
             type: "select",
-            options: categories,
+            options: categories.map((c) => ({ value: c.id, label: c.name })),
             required: true,
           },
-          { name: "description", label: "Description", required: true },
-          { name: "defaultPrice", label: "Default Price", required: true },
-          { name: "duration", label: "Duration", required: true },
-          {
-            name: "icon",
-            label: "Upload Icon",
-            type: "file",
-            accept: "image/*",
-            required: !editingRow,
-          },
+          { name: "price", label: "Price", type: "number", required: true },
+          { name: "duration", label: "Duration (minutes)", type: "number" },
+          { name: "icon", label: "Icon", type: "file", accept: "image/*" },
         ]}
+        onSubmit={handleCreateService}
+        submitLabel="Create"
+      />
+
+      {/* Edit Service Modal */}
+      <EditForm
+        open={isEditOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Service"
+        fields={[
+          { name: "name", label: "Service Name", type: "text", required: true },
+          { name: "description", label: "Description", type: "text" },
+          {
+            name: "category",
+            label: "Category",
+            type: "select",
+            options: categories.map((c) => ({ value: c.id, label: c.name })),
+            required: true,
+          },
+          { name: "price", label: "Price", type: "number", required: true },
+          { name: "duration", label: "Duration (minutes)", type: "number" },
+          { name: "icon_url", label: "Icon", type: "file", accept: "image/*" },
+        ]}
+        initialData={selectedRow || {}}
+        onSubmit={handleUpdateService}
+        submitLabel="Update"
+      />
+
+      {/* Confirm Toggle Active */}
+      <ConfirmModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleToggleActive}
+        message={`Are you sure you want to ${
+          selectedRow?.is_active ? "deactivate" : "activate"
+        } "${selectedRow?.name}"?`}
+        confirmLabel="Yes"
+        cancelLabel="No"
+      />
+
+      {/* Confirm Delete */}
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        message={`Are you sure you want to delete "${selectedRow?.name}"?`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        color="danger"
       />
     </Box>
   );

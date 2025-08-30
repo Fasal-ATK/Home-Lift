@@ -89,13 +89,15 @@ class ServiceDetailView(APIView):
         serializer = ServiceSerializer(service)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def put(self, request, pk):
+    def patch(self, request, pk):
+        print('patch request data:', request.data)
         service = self.get_object(pk)
         if not service:
             return Response({"error": "Service not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = ServiceSerializer(service, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            print('updated service data:', serializer.data)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
