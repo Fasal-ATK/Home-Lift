@@ -15,6 +15,12 @@ class AdminLoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
 
+        if not user.is_active:
+            return Response({
+                "error": "account-blocked",
+                "message": "Your account has been blocked. Please contact support."
+            }, status=status.HTTP_403_FORBIDDEN)
+
         refresh = RefreshToken.for_user(user)
         access = str(refresh.access_token)
 

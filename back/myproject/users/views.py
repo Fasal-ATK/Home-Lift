@@ -8,9 +8,13 @@ from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.exceptions import ValidationError
 
+from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.cache import cache
+
+from core.permissions import IsAdminUserCustom
+from .models import CustomUser
 
 from .serializers import UserSerializer, SignupSerialzer, LoginSerializer
 
@@ -80,6 +84,13 @@ class UserLogin(APIView):
             serializer = LoginSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             user = serializer.validated_data['user']
+
+            if not user.is_active:
+                print('account is blocked')
+                return Response({
+                    "error": "account-blocked",
+                    "message": "Your account has been blocked. Please contact support."
+                }, status=status.HTTP_403_FORBIDDEN)
 
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
@@ -165,3 +176,28 @@ class LogoutView(APIView):
         except Exception as e:
             return Response({'detail': 'Logout failed', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+
+
+class UserManageView(APIView):
+
+    permission_classes = [IsAdminUserCustom]
+
+    def get(self, request):
+        # Fetch only normal users (not staff, not providers)
+        users = CustomUser.objects.filter(is_staff=False, is_provider=False)
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk=None):
+        # Admin can update any normal user by ID
+        user = get_object_or_404(CustomUser, id=pk, is_staff=False, is_provider=False)
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    

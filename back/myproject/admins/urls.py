@@ -6,4 +6,5 @@ urlpatterns = [
     path('login/', AdminLoginView.as_view() ),
     
     path('services/',include('services.urls')),
+    path('customers/',include('users.urls')),
 ]

@@ -1,17 +1,20 @@
 // src/utils/logoutHelper.js
 import { authService } from '../services/apiServices';
 import { logout } from '../redux/slices/authSlice';
-import store from '../redux/store/store'; // make sure you export your store in store.js
+import store from '../redux/store/store';
 
-export const performLogout = async (isAdmin = false) => {
+export const performLogout = async () => {
   try {
-    // Try backend logout (invalidates refresh token cookie)
-    await authService.logout();
+    await authService.logout(); // backend logout (invalidate refresh cookie)
   } catch (err) {
     console.warn("Backend logout failed or token already invalid:", err);
   } finally {
-    // Always clear client state
+    // Always clear local state
     store.dispatch(logout());
-    window.location.href = isAdmin ? '/admin/login' : '/login';
+    localStorage.removeItem('accessToken');
   }
+};
+
+export const redirectAfterLogout = (isAdmin = false) => {
+  window.location.href = isAdmin ? '/admin/login' : '/login';
 };

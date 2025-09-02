@@ -17,10 +17,13 @@ import Reports from './pages/Admin/Reports';
 import Coupons from './pages/Admin/Coupons';
 import BookingMng from './pages/Admin/BookingMng';
 
+import ProviderDashboard from './pages/Provider/ProviderDashboard';
+
 import Landing from './pages/Landing';
 
 import AdminLayout from './layouts/AdminLayout';
 import UserLayout from './layouts/UserLayout';
+import ProviderLayout from './layouts/ProviderLayout';
 
 import PublicRoute from './routes/PublicRoute';
 import PrivateRoute from './routes/PrivateRoute';
@@ -70,6 +73,12 @@ function App() {
         <Route path='reports' element={<Reports />} />
         <Route path='coupons' element={<Coupons />} />
         <Route path='bookings' element={<BookingMng />} />
+      </Route>
+
+      {/* Provider Routes */}
+      <Route path='/provider' element={<ProviderLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path='dashboard' element={<ProviderDashboard />} />
       </Route>
 
       {/* 404 Fallback */}

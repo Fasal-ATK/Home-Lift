@@ -6,9 +6,8 @@ from django.contrib.auth.password_validation import validate_password
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['email', 'username', 'first_name', 'last_name', 'phone', 'is_staff','is_provider']
-        read_only_fields = fields
-
+        fields = ['id','email', 'username', 'first_name', 'last_name', 'phone', 'is_staff','is_provider', 'is_active',]
+        read_only_fields =  read_only_fields = ['id', 'email', 'username']  
 
 # Signup serializer for users
 class SignupSerialzer(serializers.ModelSerializer):
@@ -27,7 +26,8 @@ class SignupSerialzer(serializers.ModelSerializer):
         fields = ['first_name', 'last_name', 'username', 'email', 'phone', 'password']
 
     def validate_password(self, value):
-        validate_password(value)
+        if len(value)<6:
+            raise serializers.ValidationError("Password must be at least 6 characters long.")
         return value
     
     def create(self, validated_data):

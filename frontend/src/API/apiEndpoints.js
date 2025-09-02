@@ -18,9 +18,9 @@ const apiEndpoints = {
 
     adminDashboard: {},
 
-    adminUserManagement: {
-        list: '/admin/customers',
-        block: '/admin/block/unblock-customer',
+    adminCustomerManagement: {
+        list: '/admin/customers/manage/',
+        detail: (id) => `/admin/customers/manage/${id}/`,
     },
 
     adminProviderManagement: {

@@ -73,3 +73,14 @@ export const adminServiceManagementService = {
         return response.data;
     },
 };
+
+export const adminCustomerManagementService = {
+    getCustomers: async () => {
+        const response = await api.get(apiEndpoints.adminCustomerManagement.list);
+        return response.data;
+    },
+    manageCustomer: async (id, data) => {
+        const response = await api.patch(apiEndpoints.adminCustomerManagement.detail(id), data);
+        return response.data;
+    },
+}

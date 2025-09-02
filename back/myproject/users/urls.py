@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterView, SendOtpView, VerifyOtpView, UserLogin, LogoutView, RefreshtokenView
+from .views import RegisterView, SendOtpView, VerifyOtpView, UserLogin, LogoutView, RefreshtokenView, UserManageView
 
 urlpatterns = [
     path('register/', RegisterView.as_view()),
@@ -9,5 +9,8 @@ urlpatterns = [
     path('logout/', LogoutView.as_view() ),
     path('token/refresh/', RefreshtokenView.as_view()),
     
+    # admin user management 
+    path('manage/', UserManageView.as_view()),
+    path('manage/<int:pk>/', UserManageView.as_view()) 
 
 ]
