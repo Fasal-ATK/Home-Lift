@@ -3,9 +3,11 @@ import { authService } from '../services/apiServices';
 import { logout } from '../redux/slices/authSlice';
 import store from '../redux/store/store';
 
-export const performLogout = async () => {
+export const performLogout = async (callBackend = true) => {
   try {
-    await authService.logout(); // backend logout (invalidate refresh cookie)
+    if (callBackend) {
+      await authService.logout(); // only if tokens are still valid
+    }
   } catch (err) {
     console.warn("Backend logout failed or token already invalid:", err);
   } finally {

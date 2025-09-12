@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Box, TextField, Typography, Button, Alert, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
 export default function OtpModal({ open, onClose, onVerify, email, onResend, resending }) {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
+
+    useEffect(() => {
+    if (!open) {
+      setOtp('');
+      setError('');
+    }
+  }, [open]);
 
   const handleVerify = () => {
     if (!otp) {

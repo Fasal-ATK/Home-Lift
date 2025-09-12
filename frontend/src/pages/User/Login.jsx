@@ -23,39 +23,48 @@ function Login() {
   const dispatch = useDispatch();
 
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setError('');
 
-    const validationError = validateLoginForm({ email, password: pass });
-    if (validationError) {
-      setError(validationError);
-      return;
+  const validationError = validateLoginForm({ email, password: pass });
+  if (validationError) {
+    setError(validationError);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const data = { email, password: pass };
+    const response = await authService.login(data); // Axios call
+    const { user, access_token } = response;
+
+    dispatch(loginSuccess({ user, access_token }));
+    navigate('/home');
+
+  } catch (err) {
+    console.error(err);
+
+    // Check if response exists (backend responded with an error)
+    if (err.response) {
+      // Use backend-provided message if available
+      const backendMessage = err.response.data?.message || err.response.data?.detail;
+      setError(backendMessage || 'Login failed. Please check your credentials.');
+    } 
+    // No response means server is unreachable or network error
+    else if (err.request) {
+      setError('Unable to connect to the server. Please try again later.');
+    } 
+    // Some other unknown error
+    else {
+      setError('An unexpected error occurred. Please try again.');
     }
 
-    setLoading(true);
-
-    try {
-      const data = { email, password: pass };
-      const response = await authService.login(data);
-      const { user, access_token } = response;
-
-      console.log(response.user.username);
-      dispatch(loginSuccess({ user, access_token }));
-      console.log('login success');
-      navigate('/home');
-
-    } catch (err) {
-      console.error(err);
-      if (err.response?.status === 401 || err.response?.status === 400) {
-        setError('Invalid email or password');
-      } else {
-        setError('Login failed. Please try again later.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   const togglePasswordVisibility = () => {
     setShowPass(prev => !prev);

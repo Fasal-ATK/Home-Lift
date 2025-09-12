@@ -19,12 +19,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Handle 401 and refresh
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
+    // Handle 401
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
@@ -33,16 +34,17 @@ api.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-
+        
         const newToken = refreshResponse.data.access;
         localStorage.setItem('accessToken', newToken);
         originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
         return api(originalRequest);
-      } catch (refreshError) {
-        await performLogout();
-        redirectAfterLogout(); // 🚀 do redirect separately after cleanup
-        return Promise.reject(refreshError);
-      }
+        } catch (refreshError) {
+          // Don’t call backend logout here because refresh is already invalid
+          await performLogout(false);  // 🚀 skip backend API call
+          redirectAfterLogout();
+          return Promise.reject(refreshError);
+        }
     }
 
     return Promise.reject(error);

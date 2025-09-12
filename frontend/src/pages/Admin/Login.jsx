@@ -21,37 +21,49 @@ function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setError('');
 
-    const validationError = validateLoginForm({ email, password: pass });
-    if (validationError) {
-      setError(validationError);
-      return;
+  const validationError = validateLoginForm({ email, password: pass });
+  if (validationError) {
+    setError(validationError);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const data = { email, password: pass };
+    const response = await authService.adminLogin(data); // Admin login API
+    const { user, access_token } = response;
+
+    dispatch(loginSuccess({ user, access_token }));
+    navigate('/admin/dashboard');
+
+  } catch (err) {
+    console.error(err);
+
+    // Backend responded with an error
+    if (err.response) {
+      const backendMessage = err.response.data?.message || err.response.data?.detail;
+      // Use backend message if available; fallback to default
+      setError(backendMessage || 'Invalid email or password');
+    } 
+    // No response = network/server issue
+    else if (err.request) {
+      setError('Unable to connect to the server. Please try again later.');
+    } 
+    // Unknown error
+    else {
+      setError('An unexpected error occurred. Please try again.');
     }
 
-    setLoading(true);
+  } finally {
+    setLoading(false);
+  }
+};
 
-    try {
-      const data = { email, password: pass };
-      const response = await authService.adminLogin(data);
-      const { user, access_token } = response;
-
-      dispatch(loginSuccess({ user, access_token }));
-      navigate('/admin/dashboard');
-
-    } catch (err) {
-      console.error(err);
-      if (err.response?.status === 401 || err.response?.status === 400) {
-        setError('Invalid email or password');
-      } else {
-        setError('Login failed. Please try again later.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const togglePasswordVisibility = () => {
     setShowPass((prev) => !prev);
