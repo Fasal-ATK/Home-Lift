@@ -26,7 +26,7 @@ class Service(models.Model):
         on_delete=models.CASCADE,
         related_name='services'
     )
-    description = models.TextField()
+    description = models.TextField(blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     duration = models.PositiveIntegerField(help_text="Duration in minutes")
 

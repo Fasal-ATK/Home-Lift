@@ -109,7 +109,7 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
       id_doc: personalDoc,
       document_type: 'id_proof',
       services: serviceFields.map((s) => ({
-        service_id: s.service, // send ID to backend
+        service_id: s.service,
         doc: s.doc,
       })),
     };
@@ -220,16 +220,19 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
                   </Select>
                 </FormControl>
 
-                <Box display="flex" flexDirection="column" mt={0.5}>
-                  {index === serviceFields.length - 1 && serviceFields.length < 4 && (
-                    <IconButton size="small" onClick={addServiceField} color="primary">
-                      <Add />
-                    </IconButton>
-                  )}
-                </Box>
+                {/* Remove button (for all rows except the first one) */}
+                {serviceFields.length > 1 && (
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => removeServiceField(index)}
+                  >
+                    <Remove />
+                  </IconButton>
+                )}
               </Box>
 
-              {/* Optional Service Doc + Remove Button */}
+              {/* Optional Service Doc */}
               {s.service && (
                 <Box display="flex" alignItems="center" mt={1} gap={1}>
                   <input
@@ -259,20 +262,23 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
                       <Remove />
                     </IconButton>
                   )}
-
-                  {serviceFields.length > 1 && (
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => removeServiceField(index)}
-                    >
-                      <Remove />
-                    </IconButton>
-                  )}
                 </Box>
               )}
             </Box>
           ))}
+
+          {/* ✅ Add Service Button outside */}
+          {serviceFields.length < 4 && (
+            <Box display="flex" justifyContent="flex-start" mb={3}>
+              <Button
+                variant="outlined"
+                startIcon={<Add />}
+                onClick={addServiceField}
+              >
+                Add Another Service
+              </Button>
+            </Box>
+          )}
 
           <Box mt={4} display="flex" justifyContent="flex-end">
             <Button

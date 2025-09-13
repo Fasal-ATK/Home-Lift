@@ -15,6 +15,10 @@ import {
   Tooltip,
   Button,
   Chip,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
 
@@ -34,6 +38,7 @@ function ServiceTable() {
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   const [openModal, setOpenModal] = useState(false);
   const [isEditOpen, setEditOpen] = useState(false);
@@ -86,7 +91,7 @@ function ServiceTable() {
     await dispatch(
       updateService({
         id: selectedRow.id,
-        data: { is_active: !selectedRow.is_active }, // ✅ fixed key
+        data: { is_active: !selectedRow.is_active },
       })
     );
     setConfirmOpen(false);
@@ -129,22 +134,20 @@ function ServiceTable() {
       key: "category",
       label: "Category",
       render: (row) => {
-        // row.category is just an ID
         const category = categories.find((c) => c.id === row.category);
         return category ? category.name : "—";
       },
     },
-    
-    
+
     { key: "price", label: "Price", sortable: true },
     { key: "duration", label: "Duration", sortable: true },
     {
       key: "icon",
       label: "Icon",
       render: (row) =>
-        row.icon_url ? ( // ✅ use icon_url from serializer
+        row.icon ? (
           <img
-            src={row.icon_url}
+            src={row.icon}
             alt={row.name}
             style={{ width: 50, height: 50, borderRadius: "10%" }}
           />
@@ -157,7 +160,7 @@ function ServiceTable() {
       label: "Status",
       render: (row) => (
         <Chip
-          label={row.is_active ? "Active" : "Inactive"} // ✅ fixed key
+          label={row.is_active ? "Active" : "Inactive"}
           onClick={() => {
             setSelectedRow(row);
             setConfirmOpen(true);
@@ -179,13 +182,21 @@ function ServiceTable() {
       render: (row) => (
         <Box sx={{ display: "flex", gap: 1 }}>
           <Tooltip title="Edit">
-            <IconButton color="primary" size="small" onClick={() => handleEdit(row)}>
+            <IconButton
+              color="primary"
+              size="small"
+              onClick={() => handleEdit(row)}
+            >
               <Edit fontSize="medium" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="Delete">
-            <IconButton color="error" size="small" onClick={() => handleDelete(row)}>
+            <IconButton
+              color="error"
+              size="small"
+              onClick={() => handleDelete(row)}
+            >
               <Delete fontSize="medium" />
             </IconButton>
           </Tooltip>
@@ -205,7 +216,11 @@ function ServiceTable() {
     })
     .filter((row) => {
       if (statusFilter === "all") return true;
-      return statusFilter === "active" ? row.is_active : !row.is_active; // ✅ fixed key
+      return statusFilter === "active" ? row.is_active : !row.is_active;
+    })
+    .filter((row) => {
+      if (categoryFilter === "all") return true;
+      return row.category === categoryFilter;
     })
     .sort((a, b) => {
       if (a[sortConfig.key] < b[sortConfig.key])
@@ -236,11 +251,30 @@ function ServiceTable() {
         </Button>
       </Box>
 
-      <SearchBarWithFilter
-        placeholder="Search services..."
-        onSearch={setSearchQuery}
-        onFilterChange={setStatusFilter}
-      />
+      {/* 🔎 Search + Filters */}
+      <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
+        <SearchBarWithFilter
+          placeholder="Search services..."
+          onSearch={setSearchQuery}
+          onFilterChange={setStatusFilter}
+        />
+
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel>Category</InputLabel>
+          <Select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            label="Category"
+          >
+            <MenuItem value="all">All Categories</MenuItem>
+            {categories.map((cat) => (
+              <MenuItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
 
       <DataTable
         title="Services"
@@ -268,7 +302,13 @@ function ServiceTable() {
           },
           { name: "price", label: "Price", type: "number", required: true },
           { name: "duration", label: "Duration (minutes)", type: "number" },
-          { name: "icon", label: "Icon", type: "file", accept: "image/*" },
+          {
+            name: "icon",
+            label: "Icon",
+            type: "file",
+            accept: "image/*",
+            required: true,
+          },
         ]}
         onSubmit={handleCreateService}
         submitLabel="Create"
@@ -291,7 +331,12 @@ function ServiceTable() {
           },
           { name: "price", label: "Price", type: "number", required: true },
           { name: "duration", label: "Duration (minutes)", type: "number" },
-          { name: "icon_url", label: "Icon", type: "file", accept: "image/*" },
+          {
+            name: "icon",
+            label: "Replace Icon",
+            type: "file",
+            accept: "image/*",
+          },
         ]}
         initialData={selectedRow || {}}
         onSubmit={handleUpdateService}
