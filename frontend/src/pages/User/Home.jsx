@@ -32,8 +32,6 @@ const Home = () => {
 
   const handleSubmitApplication = async (formData) => {
     try {
-      // If you have a thunk like applyProvider, dispatch that instead:
-      // await dispatch(applyProvider(formData)).unwrap();
       alert('Application submitted successfully!');
     } catch (error) {
       console.error('Application failed:', error);
@@ -44,35 +42,62 @@ const Home = () => {
   return (
     <Box sx={{ p: 4, backgroundColor: '#f9f9f9' }}>
       {/* Categories List */}
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
+      {/* <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
         Our Categories
-      </Typography>
-      <Grid container spacing={2}>
+      </Typography> */}
+      {/* <Grid container spacing={2}>
         {categoriesLoading ? (
           <Typography>Loading categories...</Typography>
         ) : categoriesError ? (
           <Typography color="error">Failed to load categories</Typography>
         ) : (
           categories.map((cat) => (
-            <Grid item xs={4} sm={3} md={2} key={cat.id}>
+            <Grid item xs={6} sm={4} md={2} key={cat.id}>
               <Paper
                 elevation={3}
                 sx={{
                   textAlign: 'center',
                   p: 2,
                   backgroundColor: 'white',
-                  color: '#003A70',
-                  fontWeight: 'bold',
                   borderRadius: '10px',
                   cursor: 'pointer',
+                  height: 150,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
-                {cat.name}
+                {cat.icon ? (
+                  <img
+                    src={cat.icon}
+                    alt={cat.name}
+                    style={{
+                      width: 60,
+                      height: 60,
+                      objectFit: 'contain',
+                      marginBottom: '8px'
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: 60,
+                      height: 60,
+                      backgroundColor: '#eee',
+                      borderRadius: '8px',
+                      mb: 1
+                    }}
+                  />
+                )}
+                <Typography variant="body2" fontWeight="bold" noWrap>
+                  {cat.name}
+                </Typography>
               </Paper>
             </Grid>
           ))
         )}
-      </Grid>
+      </Grid> */}
 
       {/* Services List */}
       <Typography variant="h5" sx={{ fontWeight: 'bold', mt: 4, mb: 2 }}>
@@ -85,20 +110,47 @@ const Home = () => {
           <Typography color="error">Failed to load services</Typography>
         ) : (
           services.map((srv) => (
-            <Grid item xs={4} sm={3} md={2} key={srv.id}>
+            <Grid item xs={6} sm={4} md={2} key={srv.id}>
               <Paper
                 elevation={3}
                 sx={{
                   textAlign: 'center',
                   p: 2,
                   backgroundColor: 'white',
-                  color: '#003A70',
-                  fontWeight: 'bold',
                   borderRadius: '10px',
                   cursor: 'pointer',
+                  height: 150,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
-                {srv.name}
+                {srv.icon ? (
+                  <img
+                    src={srv.icon}
+                    alt={srv.name}
+                    style={{
+                      width: 60,
+                      height: 60,
+                      objectFit: 'contain',
+                      marginBottom: '8px'
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: 60,
+                      height: 60,
+                      backgroundColor: '#eee',
+                      borderRadius: '8px',
+                      mb: 1
+                    }}
+                  />
+                )}
+                <Typography variant="body2" fontWeight="bold" noWrap>
+                  {srv.name}
+                </Typography>
               </Paper>
             </Grid>
           ))
@@ -140,11 +192,9 @@ const Home = () => {
       <ProviderApplicationModal
         open={modalOpen}
         onClose={handleCloseModal}
-        categories={categories}   // from Redux
-        services={services}       // from Redux
+        categories={categories}
+        services={services}
       />
-
-
     </Box>
   );
 };
