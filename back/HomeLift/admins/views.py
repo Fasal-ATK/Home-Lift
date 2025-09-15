@@ -15,12 +15,22 @@ class AdminLoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
 
+        if not user.is_staff:  # or use user.is_superuser if that's your admin flag
+            return Response(
+                {
+                    "error": "not-admin",
+                    "message": "You do not have admin privileges."
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
         if not user.is_active:
-            return Response({
-                "error": "account-blocked",
-                "message": "Your account has been blocked. Please contact support."
-            }, status=status.HTTP_403_FORBIDDEN)
-
+            return Response(
+                {
+                    "error": "account-blocked",
+                    "message": "Your account has been blocked. Please contact support."
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
         refresh = RefreshToken.for_user(user)
         access = str(refresh.access_token)
 
@@ -34,12 +44,10 @@ class AdminLoginView(APIView):
             key='refresh',
             value=str(refresh),
             httponly=True,
-            secure=False,  
+            secure=False,  # ⚠️ Change to True in production
             samesite='Lax',
             max_age=86400,
         )
-
         return response
-
 
 
