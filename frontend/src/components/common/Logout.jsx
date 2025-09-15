@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Slide } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useSelector } from 'react-redux';
-import { performLogout } from '../../utils/logoutHelper'; // 🔹 added
+import { performLogout } from '../../utils/logoutHelper';
+import { ShowToast } from '../common/Toast'; // ✅ import toast
 
 const colorPresets = {
   red: {
@@ -25,12 +25,17 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 const LogoutButton = ({ collapsed, color = 'red' }) => {
-  const isAdmin = useSelector((state) => state.auth.isAdmin); // 🔹 unchanged
+  const isAdmin = useSelector((state) => state.auth.isAdmin);
   const [open, setOpen] = useState(false);
 
-  // 🔹 changed: replaced inline handleLogout with performLogout
   const handleLogout = async () => {
-    await performLogout(isAdmin);
+    try {
+      await performLogout(isAdmin);
+      ShowToast('Logged out successfully', 'success'); // ✅ success toast
+    } catch (error) {
+      console.error(error);
+      ShowToast('Logout failed. Try again.', 'error'); // ✅ error toast
+    }
   };
 
   const { backgroundColor, hoverColor } = colorPresets[color] || colorPresets.red;
@@ -42,9 +47,7 @@ const LogoutButton = ({ collapsed, color = 'red' }) => {
         onClick={() => setOpen(true)}
         sx={{
           backgroundColor,
-          '&:hover': {
-            backgroundColor: hoverColor,
-          },
+          '&:hover': { backgroundColor: hoverColor },
           textTransform: 'none',
           borderRadius: 3,
           px: 2,
@@ -69,12 +72,7 @@ const LogoutButton = ({ collapsed, color = 'red' }) => {
         aria-labelledby="logout-dialog-title"
         aria-describedby="logout-dialog-description"
         PaperProps={{
-          sx: {
-            borderRadius: 3,
-            px: 2,
-            py: 1,
-            minWidth: 300,
-          },
+          sx: { borderRadius: 3, px: 2, py: 1, minWidth: 300 },
         }}
       >
         <DialogTitle id="logout-dialog-title" sx={{ fontWeight: 'bold', fontSize: 20 }}>
@@ -92,14 +90,12 @@ const LogoutButton = ({ collapsed, color = 'red' }) => {
           <Button
             onClick={() => {
               setOpen(false);
-              handleLogout(); // 🔹 now calls performLogout
+              handleLogout();
             }}
             variant="contained"
             sx={{
               backgroundColor,
-              '&:hover': {
-                backgroundColor: hoverColor,
-              },
+              '&:hover': { backgroundColor: hoverColor },
               fontWeight: 'bold',
               color: 'white',
             }}

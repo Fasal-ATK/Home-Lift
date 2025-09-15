@@ -14,7 +14,7 @@ import LogoutButton from '../common/Logout';
 
 const UserNavbar = () => {
   return (
-    <AppBar position="sticky" color="inherit" elevation={0}   sx={{boxShadow: '0px 2px rgba(0,0,0,0.1)', }}>
+    <AppBar position="sticky" color="inherit" elevation={3} sx={{ borderRadius:'14px' }}  >
       <Toolbar sx={{ justifyContent: 'space-between', px: 4 }}>
 
         {/* Left: Logo and Title */}

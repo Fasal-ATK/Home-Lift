@@ -15,55 +15,68 @@ function Login() {
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [error, setError] = useState('');
+
+  const [fieldErrors, setFieldErrors] = useState({}); // field-level validation
+  const [serverError, setServerError] = useState(''); // backend/global errors
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setError('');
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setFieldErrors({});
+    setServerError('');
 
-  const validationError = validateLoginForm({ email, password: pass });
-  if (validationError) {
-    setError(validationError);
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const data = { email, password: pass };
-    const response = await authService.adminLogin(data); // Admin login API
-    const { user, access_token } = response;
-
-    dispatch(loginSuccess({ user, access_token }));
-    navigate('/admin/dashboard');
-
-  } catch (err) {
-    console.error(err);
-
-    // Backend responded with an error
-    if (err.response) {
-      const backendMessage = err.response.data?.message || err.response.data?.detail;
-      // Use backend message if available; fallback to default
-      setError(backendMessage || 'Invalid email or password');
-    } 
-    // No response = network/server issue
-    else if (err.request) {
-      setError('Unable to connect to the server. Please try again later.');
-    } 
-    // Unknown error
-    else {
-      setError('An unexpected error occurred. Please try again.');
+    // ✅ Client-side validation
+    const validationError = validateLoginForm({ email, password: pass });
+    if (validationError) {
+      setFieldErrors(validationError); // expect { email: "msg", password: "msg" }
+      return;
     }
 
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
 
+    try {
+      const data = { email, password: pass };
+      const response = await authService.adminLogin(data);
+
+      const { user, access_token } = response;
+      dispatch(loginSuccess({ user, access_token }));
+      navigate('/admin/dashboard');
+
+    } catch (err) {
+      console.error(err);
+
+      if (err.response) {
+        // Backend validation might return dict { email: [...], password: [...], detail: ... }
+        const backendData = err.response.data;
+
+        if (typeof backendData === 'object') {
+          // Field-specific errors
+          if (backendData.email || backendData.password) {
+            setFieldErrors({
+              email: backendData.email?.[0] || '',
+              password: backendData.password?.[0] || ''
+            });
+          }
+
+          // General errors (like "Invalid credentials")
+          setServerError(
+            backendData.detail || backendData.message || 'Login failed. Try again.'
+          );
+        } else {
+          setServerError('Invalid response from server.');
+        }
+      } else if (err.request) {
+        setServerError('Unable to connect to the server. Please try again later.');
+      } else {
+        setServerError('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const togglePasswordVisibility = () => {
     setShowPass((prev) => !prev);
@@ -88,9 +101,10 @@ const handleLogin = async (e) => {
             Admin Login
           </Typography>
 
-          {error && (
+          {/* 🔴 Global Server Error */}
+          {serverError && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
+              {serverError}
             </Alert>
           )}
 
@@ -110,6 +124,8 @@ const handleLogin = async (e) => {
                   '&.Mui-focused fieldset': { borderColor: 'white' },
                 },
               }}
+              error={!!fieldErrors.email}
+              helperText={fieldErrors.email}
               onChange={(e) => setEmail(e.target.value)}
             />
 
@@ -128,6 +144,8 @@ const handleLogin = async (e) => {
                   '&.Mui-focused fieldset': { borderColor: 'white' },
                 },
               }}
+              error={!!fieldErrors.password}
+              helperText={fieldErrors.password}
               onChange={(e) => setPass(e.target.value)}
               InputProps={{
                 endAdornment: (
@@ -160,7 +178,7 @@ const handleLogin = async (e) => {
           <Typography variant="body2" sx={{ mt: 2, color: '#ccc' }}>
             Back to the Previous page{' '}
             <Link href="/" underline="hover" sx={{ fontWeight: 'bold', color: '#fff' }}>
-              Landing Page
+              User Login
             </Link>
           </Typography>
         </Box>

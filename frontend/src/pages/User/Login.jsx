@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { //mui imorts
+import {
   Container, TextField, Button, Typography, Box, Alert, CircularProgress,
   Link, IconButton, InputAdornment
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../../services/apiServices';
-import validateLoginForm from '../../utils/loginVal';
 import { useDispatch } from 'react-redux';
+
+import { authService } from '../../services/apiServices';
 import { loginSuccess } from '../../redux/slices/authSlice';
-
-
+import validateLoginForm from '../../utils/loginVal';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -18,56 +17,56 @@ function Login() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setError('');
-
-  const validationError = validateLoginForm({ email, password: pass });
-  if (validationError) {
-    setError(validationError);
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const data = { email, password: pass };
-    const response = await authService.login(data); // Axios call
-    const { user, access_token } = response;
-
-    dispatch(loginSuccess({ user, access_token }));
-    navigate('/home');
-
-  } catch (err) {
-    console.error(err);
-
-    // Check if response exists (backend responded with an error)
-    if (err.response) {
-      // Use backend-provided message if available
-      const backendMessage = err.response.data?.message || err.response.data?.detail;
-      setError(backendMessage || 'Login failed. Please check your credentials.');
-    } 
-    // No response means server is unreachable or network error
-    else if (err.request) {
-      setError('Unable to connect to the server. Please try again later.');
-    } 
-    // Some other unknown error
-    else {
-      setError('An unexpected error occurred. Please try again.');
+    // ✅ Frontend validation
+    const validationError = validateLoginForm({ email, password: pass });
+    if (validationError) {
+      setError(validationError);
+      return;
     }
 
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+
+    try {
+      const data = { email, password: pass };
+      const response = await authService.login(data); // user login API
+      const { user, access_token } = response;
+
+      dispatch(loginSuccess({ user, access_token }));
+      navigate('/home');
+
+    } catch (err) {
+      console.error(err);
+
+      if (err.response) {
+        // ✅ Grab backend structured error if available
+        const backendError = err.response.data;
+        const backendMessage =
+          backendError?.message ||
+          backendError?.detail ||
+          backendError?.error ||
+          'Login failed. Please check your credentials.';
+
+        setError(backendMessage);
+      } else if (err.request) {
+        setError('Unable to connect to the server. Please try again later.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const togglePasswordVisibility = () => {
-    setShowPass(prev => !prev);
+    setShowPass((prev) => !prev);
   };
 
   return (
@@ -97,7 +96,7 @@ const handleLogin = async (e) => {
               fullWidth
               sx={{ mt: 2 }}
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
             />
 
             <TextField
@@ -106,7 +105,7 @@ const handleLogin = async (e) => {
               fullWidth
               sx={{ mt: 2 }}
               value={pass}
-              onChange={e => setPass(e.target.value)}
+              onChange={(e) => setPass(e.target.value)}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -114,7 +113,7 @@ const handleLogin = async (e) => {
                       {showPass ? <Visibility /> : <VisibilityOff />}
                     </IconButton>
                   </InputAdornment>
-                )
+                ),
               }}
             />
 
@@ -127,7 +126,7 @@ const handleLogin = async (e) => {
                 bgcolor: '#e0dc25',
                 color: 'black',
                 fontWeight: 'bold',
-                '&:hover': { bgcolor: '#d4ce1f' }
+                '&:hover': { bgcolor: '#d4ce1f' },
               }}
               disabled={loading}
             >
