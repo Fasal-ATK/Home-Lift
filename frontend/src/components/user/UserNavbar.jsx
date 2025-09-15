@@ -9,11 +9,12 @@ import {
   Paper,
 } from '@mui/material';
 import { Search, Notifications, LocationOn, AccountCircle } from '@mui/icons-material';
-import LogoutButton from '../common/Logout'; // Update this path based on your folder structure
+import { Link } from 'react-router-dom'; // ✅ use react-router for navigation
+import LogoutButton from '../common/Logout';
 
 const UserNavbar = () => {
   return (
-    <AppBar position="static" color="inherit" elevation={0}>
+    <AppBar position="sticky" color="inherit" elevation={0}   sx={{boxShadow: '0px 2px rgba(0,0,0,0.1)', }}>
       <Toolbar sx={{ justifyContent: 'space-between', px: 4 }}>
 
         {/* Left: Logo and Title */}
@@ -50,30 +51,38 @@ const UserNavbar = () => {
 
         {/* Right: Nav links, notification, profile, and logout */}
         <Box display="flex" alignItems="center" gap={4}>
-          <Typography variant="body1" fontWeight="bold">
-            HOME
-          </Typography>
-          <Typography variant="body1" fontWeight="bold">
-            SERVICES
-          </Typography>
-          <Typography variant="body1" fontWeight="bold">
-            BOOKINGS
-          </Typography>
-          <IconButton>
+          {/* Text Links */}
+          {["HOME", "SERVICES", "BOOKINGS"].map((item) => (
+            <Typography
+              key={item}
+              component={Link}    // ✅ turn Typography into a link
+              to="/#"
+              variant="body1"
+              fontWeight="bold"
+              sx={{
+                cursor: "pointer",   // ✅ pointer cursor
+                textDecoration: "none",
+                color: "inherit",
+                "&:hover": { color: "#0066CC" }, // ✅ hover effect
+              }}
+            >
+              {item}
+            </Typography>
+          ))}
+
+          {/* Icons as Links */}
+          <IconButton component={Link} to="/#" sx={{ cursor: "pointer" }}>
             <AccountCircle sx={{ color: '#0066CC' }} />
           </IconButton>
-          <IconButton>
+
+          <IconButton component={Link} to="/#" sx={{ cursor: "pointer" }}>
             <Notifications sx={{ color: '#0066CC' }} />
           </IconButton>
+
           <Box>
-            <LogoutButton
-              collapsed={false}
-              color="blue"  // ✅ Set color dynamically
-            />
+            <LogoutButton collapsed={false} color="blue" />
           </Box>
         </Box>
-
-
       </Toolbar>
     </AppBar>
   );
