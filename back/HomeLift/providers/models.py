@@ -23,14 +23,6 @@ class ProviderApplication(models.Model):
         ('rejected', 'Rejected'),
     ]
 
-    DOCUMENT_CHOICES = [
-        ('aadhaar', 'Aadhaar Card'),
-        ('pan', 'PAN Card'),
-        ('passport', 'Passport'),
-        ('voter_id', 'Voter ID'),
-        ('driving_license', 'Driving License'),
-    ]
-
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -42,12 +34,6 @@ class ProviderApplication(models.Model):
         blank=True,
         null=True,
         help_text="Upload your verification document"
-    )
-    document_type = models.CharField(
-        max_length=20,
-        choices=DOCUMENT_CHOICES,
-        help_text="Select the type of document submitted",
-        default='aadhaar'
     )
     status = models.CharField(
         max_length=10,

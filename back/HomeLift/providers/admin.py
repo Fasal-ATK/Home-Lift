@@ -1,5 +1,7 @@
 from django.contrib import admin
 from .models import ProviderDetails, ProviderService, ProviderApplication, ProviderApplicationService
+from django.utils.html import format_html
+
 
 # -----------------------------
 # Inline for ProviderService
@@ -29,10 +31,20 @@ class ProviderDetailsAdmin(admin.ModelAdmin):
 class ProviderApplicationServiceInline(admin.TabularInline):
     model = ProviderApplicationService
     extra = 0
-    readonly_fields = ('id_doc',)
-    fields = ('service', 'id_doc', 'price', 'experience_years')
+    fields = ('service', 'id_doc_preview', 'price', 'experience_years')  # show preview instead of raw field
+    readonly_fields = ('id_doc_preview',)  # make preview readonly
     can_delete = True
 
+    def id_doc_preview(self, obj):
+        if obj.id_doc:
+            # If it's an image, render thumbnail, else show clickable link
+            url = obj.id_doc.url
+            if any(obj.id_doc.url.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp']):
+                return format_html('<a href="{}" target="_blank"><img src="{}" style="max-height: 100px;" /></a>', url, url)
+            return format_html('<a href="{}" target="_blank">View Document</a>', url)
+        return "No document uploaded"
+
+    id_doc_preview.short_description = "Document"
 # -----------------------------
 # Provider Application Admin
 # -----------------------------
