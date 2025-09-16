@@ -43,10 +43,20 @@ class SendOtpView(APIView):
     def post(self, request):
         email = request.data.get("email")
         if not email:
-            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Email is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        if CustomUser.objects.filter(email=email).exists():
+            return Response(
+                {"error": "Email is already registered"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         otp = str(random.randint(100000, 999999))
-        cache.set(f"otp_{email}", otp, timeout=300)  # 5 minutes
+        cache.set(f"otp_{email}", otp, timeout=300) 
+        print(otp) # 5 minutes
 
         send_mail(
             subject="Your OTP Code",
@@ -54,7 +64,11 @@ class SendOtpView(APIView):
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],
         )
-        return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
+
+        return Response(
+            {"message": "OTP sent successfully"}, 
+            status=status.HTTP_200_OK
+        )
 
 
 # ✅ Verify OTP

@@ -1,53 +1,63 @@
-from rest_framework import generics, status
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import ProviderApplication, ProviderApplicationService, ProviderDetails, ProviderService
+from rest_framework import status
+from django.utils import timezone
+from .models import ProviderApplication
 from .serializers import ProviderApplicationSerializer
 from core.permissions import IsNormalUser, IsAdminUserCustom
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ------------------------------
 # Submit Provider Application
 # ------------------------------
-class ProviderApplicationCreateView(generics.CreateAPIView):
-    queryset = ProviderApplication.objects.all()
-    serializer_class = ProviderApplicationSerializer
+class ProviderApplicationCreateAPIView(APIView):
     permission_classes = [IsNormalUser]
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def post(self, request, *args, **kwargs):
+        logger.debug(f"Received data: {request.data}")
+        serializer = ProviderApplicationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ------------------------------
 # List Current User Applications
 # ------------------------------
-class ProviderApplicationListView(generics.ListAPIView):
-    serializer_class = ProviderApplicationSerializer
+class ProviderApplicationListAPIView(APIView):
     permission_classes = [IsAdminUserCustom]
 
-    def get_queryset(self):
-        return ProviderApplication.objects.filter(user=self.request.user)
+    def get(self, request, *args, **kwargs):
+        applications = ProviderApplication.objects.filter(user=request.user)
+        serializer = ProviderApplicationSerializer(applications, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # ------------------------------
 # Admin: Approve/Reject Application
 # ------------------------------
-class ProviderApplicationUpdateStatusView(generics.UpdateAPIView):
-    queryset = ProviderApplication.objects.all()
-    serializer_class = ProviderApplicationSerializer
+class ProviderApplicationUpdateStatusAPIView(APIView):
     permission_classes = [IsAdminUserCustom]
-    lookup_field = 'id'
 
-    def patch(self, request, *args, **kwargs):
-        instance = self.get_object()
+    def patch(self, request, id, *args, **kwargs):
+        try:
+            application = ProviderApplication.objects.get(id=id)
+        except ProviderApplication.DoesNotExist:
+            return Response({'detail': 'Application not found'}, status=status.HTTP_404_NOT_FOUND)
+
         status_value = request.data.get('status')
         rejection_reason = request.data.get('rejection_reason', '')
 
         if status_value not in ['approved', 'rejected']:
             return Response({'detail': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
 
-        instance.status = status_value
-        instance.rejection_reason = rejection_reason if status_value == 'rejected' else ''
-        instance.replied_at = timezone.now()
-        instance.save()
+        application.status = status_value
+        application.rejection_reason = rejection_reason if status_value == 'rejected' else ''
+        application.replied_at = timezone.now()
+        application.save()
 
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        serializer = ProviderApplicationSerializer(application)
+        return Response(serializer.data, status=status.HTTP_200_OK)

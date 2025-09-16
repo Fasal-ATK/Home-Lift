@@ -7,4 +7,5 @@ urlpatterns = [
     
     path('services/',include('services.urls')),
     path('customers/',include('users.urls')),
+    path('providers/',include('providers.urls')),
 ]

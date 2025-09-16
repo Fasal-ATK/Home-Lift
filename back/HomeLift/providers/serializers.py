@@ -13,6 +13,8 @@ from services.models import Service
 # -----------------------------
 class ProviderApplicationServiceSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source='service.name', read_only=True)
+    id_doc = serializers.FileField(required=False, allow_null=True)
+
 
     class Meta:
         model = ProviderApplicationService
@@ -24,14 +26,20 @@ class ProviderApplicationServiceSerializer(serializers.ModelSerializer):
 # -----------------------------
 class ProviderApplicationSerializer(serializers.ModelSerializer):
     services = ProviderApplicationServiceSerializer(many=True)
-    user_name = serializers.CharField(source='user.username', read_only=True)
+
 
     class Meta:
         model = ProviderApplication
         fields = [
-            'id', 'user', 'user_name', 'id_doc', 'document_type', 
-            'status', 'rejection_reason', 'created_at', 'replied_at', 
-            'expiration_date', 'services'
+            'id',
+            'id_doc',
+            'document_type',
+            'status',
+            'rejection_reason',
+            'created_at',
+            'replied_at',
+            'expiration_date',
+            'services',
         ]
         read_only_fields = ['status', 'replied_at', 'expiration_date', 'created_at']
 
@@ -41,6 +49,8 @@ class ProviderApplicationSerializer(serializers.ModelSerializer):
         for service_data in services_data:
             ProviderApplicationService.objects.create(application=application, **service_data)
         return application
+
+
 
 
 # -----------------------------

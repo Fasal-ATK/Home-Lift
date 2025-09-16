@@ -1,14 +1,12 @@
 from django.urls import path
 from .views import (
-    ProviderApplicationCreateView,
-    ProviderApplicationListView,
-    ProviderApplicationUpdateStatusView
+    ProviderApplicationCreateAPIView,
+    ProviderApplicationListAPIView,
+    ProviderApplicationUpdateStatusAPIView
 )
 
 urlpatterns = [
-    path('apply/', ProviderApplicationCreateView.as_view(), name='provider-apply'),
-
-    path('my-applications/', ProviderApplicationListView.as_view(), name='my-applications'),
-    path('admin/application/<int:id>/update/', ProviderApplicationUpdateStatusView.as_view(), name='admin-application-update'),
+    path('apply/', ProviderApplicationCreateAPIView.as_view(), name='provider-apply'),
+    path('my-applications/', ProviderApplicationListAPIView.as_view(), name='my-applications'),
+    path('application/<int:id>/update/', ProviderApplicationUpdateStatusAPIView.as_view(), name='admin-application-update'),
 ]
-
