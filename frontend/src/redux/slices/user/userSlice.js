@@ -30,26 +30,41 @@ export const logoutUser = createAsyncThunk(
 );
 
 // Apply for provider role
-// userSlice.js
 export const applyProvider = createAsyncThunk(
   'user/applyProvider',
   async (applicationData, { rejectWithValue }) => {
     try {
       const formData = new FormData();
-      formData.append('id_doc', applicationData.id_doc);
-      formData.append('document_type', applicationData.document_type);
 
-      applicationData.services.forEach((s, index) => {
-        formData.append(`services[${index}][service_id]`, s.service_id);
-        if (s.doc) formData.append(`services[${index}][doc]`, s.doc);
+      // Attach provider’s main ID document
+      formData.append('id_doc', applicationData.id_doc);
+
+      // Send services metadata as JSON
+      const servicesPayload = applicationData.services.map((s, index) => {
+        return {
+          service: s.service_id,
+          doc_field: s.doc ? `service_doc_${index}` : null, // store file field key reference
+        };
       });
 
-      return await providerService.apply(formData); // must send as multipart
+      formData.append('services', JSON.stringify(servicesPayload));
+
+      // Append actual files with predictable keys
+      applicationData.services.forEach((s, index) => {
+        if (s.doc) {
+          formData.append(`service_doc_${index}`, s.doc);
+        }
+      });
+
+      // ✅ Send to API (multipart/form-data automatically handled by Axios)
+      return await providerService.apply(formData);
     } catch (err) {
+      console.error('❌ Apply provider error:', err);
       return rejectWithValue(err.response?.data || err.message);
     }
   }
 );
+
 
 
 // Fetch provider details
@@ -64,6 +79,20 @@ export const fetchProviderDetails = createAsyncThunk(
   }
 );
 
+export const fetchProviderApplicationStatus = createAsyncThunk(
+  'user/fetchProviderApplicationStatus',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await providerService.fetchApplicationStatus();
+      // Only return the actual JSON data
+      return response.data;  
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+
 // ------------------- Slice ------------------- //
 const userSlice = createSlice({
   name: 'user',
@@ -74,6 +103,7 @@ const userSlice = createSlice({
     loading: false,
     error: null,
     providerApplicationStatus: null, // pending, approved, rejected
+    rejectionReason: null, // 🔹 add this
   },
   reducers: {
     clearUserState: (state) => {
@@ -83,6 +113,7 @@ const userSlice = createSlice({
       state.loading = false;
       state.error = null;
       state.providerApplicationStatus = null;
+      state.rejectionReason = null;
     },
   },
   extraReducers: (builder) => {
@@ -116,7 +147,7 @@ const userSlice = createSlice({
       .addCase(applyProvider.pending, (state) => {
         state.loading = true;
         state.error = null;
-        state.providerApplicationStatus = 'pending';
+        // state.providerApplicationStatus = 'pending';
       })
       .addCase(applyProvider.fulfilled, (state) => {
         state.loading = false;
@@ -137,6 +168,23 @@ const userSlice = createSlice({
         state.provider = null;
         if (state.user) state.user.is_provider = false;
         state.providerApplicationStatus = null;
+      })
+
+            // -------- Fetch Provider Application Status --------
+      .addCase(fetchProviderApplicationStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchProviderApplicationStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        state.providerApplicationStatus = action.payload.status;
+        state.rejectionReason = action.payload.reason || null;
+      })
+      .addCase(fetchProviderApplicationStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.providerApplicationStatus = null;
+        state.rejectionReason = null;
       });
   },
 });

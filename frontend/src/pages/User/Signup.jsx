@@ -10,6 +10,7 @@ import { authService, otpService } from '../../services/apiServices';
 
 import OtpModal from '../../components/user/otp_modal';
 import { validateSignupForm } from '../../utils/signupVal';
+import { ShowToast } from '../../components/common/Toast';
 
 function Signup() {
   const [fname, setFname] = useState('');
@@ -31,13 +32,42 @@ function Signup() {
 
   const navigate = useNavigate();
 
+const extractErrorMessage = (data) => {
+  if (!data) return "Something went wrong";
+
+  if (typeof data === "string") return data;
+  if (data.message) return data.message;
+  if (data.error) return data.error;
+
+  if (typeof data === "object") {
+    for (let key in data) {
+      const val = data[key];
+      if (Array.isArray(val) && val.length > 0) {
+        const first = val[0];
+        if (typeof first === "string") return first;
+        if (first.message) return first.message;
+        if (first.error) return first.error;
+        // Recursively check nested object
+        if (typeof first === "object") return extractErrorMessage(first);
+      } else if (typeof val === "object") {
+        return extractErrorMessage(val);
+      }
+    }
+  }
+
+  return "An unknown error occurred";
+};
+
+
+  // 🔹 Form submit: send OTP
   const handleSubmit = async (e) => {
-    console.log(email)
     e.preventDefault();
     setErrorState('');
     setSuccess('');
 
-    const validationError = validateSignupForm({ fname, lname, uname, email, phone, pass1, pass2, agreed, });
+    const validationError = validateSignupForm({
+      fname, lname, uname, email, phone, pass1, pass2, agreed,
+    });
 
     if (validationError) {
       setErrorState(validationError);
@@ -46,31 +76,35 @@ function Signup() {
 
     setLoading(true);
     try {
-      const response = await otpService.sendOtp({email});
+      const response = await otpService.sendOtp({ email });
       console.log('OTP response:', response.message);
       setShowOtpModal(true);
     } catch (err) {
-      console.error('Send OTP error:', err.response?.data || err.message);
-      setErrorState('Failed to send OTP');
+      console.error("Send OTP error:", err.response?.data || err.message);
+      setErrorState(extractErrorMessage(err.response?.data) || "Failed to send OTP");
     }
     setLoading(false);
   };
 
+  // 🔹 Resend OTP
   const handleResendOtp = async () => {
     setResending(true);
     try {
-      await otpService.sendOtp({email});
-    } catch {
-      setErrorState('Failed to resend OTP');
+      const response = await otpService.sendOtp({ email });
+      console.log('Resent OTP:', response.message);
+    } catch (err) {
+      console.error("Resend OTP error:", err.response?.data || err.message);
+      setErrorState(extractErrorMessage(err.response?.data) || "Failed to resend OTP");
     }
     setResending(false);
   };
 
+  // 🔹 Verify OTP and register user
   const handleOtpVerify = async (otp) => {
     setErrorState('');
     try {
       console.log('Verifying OTP:', { email, otp });
-      const otpResponse = await otpService.verifyOtp({email, otp});
+      const otpResponse = await otpService.verifyOtp({ email, otp });
       console.log('OTP verified:', otpResponse.message);
 
       const userData = {
@@ -82,21 +116,16 @@ function Signup() {
         password: pass1,
       };
 
-      const registerResponse = await authService.signup({userData});
+      const registerResponse = await authService.signup({ userData });
       console.log('Registration response:', registerResponse.message);
 
       setSuccess('Registration successful!');
       setShowOtpModal(false);
+      ShowToast('Registration successful! Please log in.');
       setTimeout(() => navigate('/login'), 1500);
     } catch (error) {
       console.error('Error during OTP verification or registration:', error.response?.data || error.message);
-      if (error.response?.status === 400) {
-        setErrorState(
-          `Bad Request: ${error.response.data?.message || error.response.data || 'Invalid OTP format'}`
-        );
-      } else {
-        setErrorState('Invalid OTP or Registration failed');
-      }
+      setErrorState(extractErrorMessage(error.response?.data) || 'Invalid OTP or Registration failed');
       setShowOtpModal(false);
     }
   };
@@ -120,22 +149,40 @@ function Signup() {
             User Registration
           </Typography>
 
-          <br /><br />
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
           <form onSubmit={handleSubmit}>
             <Grid container spacing={4}>
               <Grid item xs={12} sm={6}>
-                <TextField label="First name" fullWidth onChange={e => setFname(e.target.value)} />
+                <TextField
+                  label="First name"
+                  fullWidth
+                  onChange={e => setFname(e.target.value)}
+                />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Last name" fullWidth onChange={e => setLname(e.target.value)} />
+                <TextField
+                  label="Last name"
+                  fullWidth
+                  onChange={e => setLname(e.target.value)}
+                />
               </Grid>
             </Grid>
 
-            <TextField label="Username" fullWidth sx={{ mt: 2 }} onChange={e => setUname(e.target.value)} />
-            <TextField label="Email" type="email" fullWidth sx={{ mt: 2 }} onChange={e => setEmail(e.target.value)} />
+            <TextField
+              label="Username"
+              fullWidth
+              sx={{ mt: 2 }}
+              onChange={e => setUname(e.target.value)}
+            />
+            <TextField
+              label="Email"
+              type="email"
+              fullWidth
+              sx={{ mt: 2 }}
+              onChange={e => setEmail(e.target.value)}
+            />
             <TextField
               label="Phone"
               type="tel"
@@ -193,7 +240,13 @@ function Signup() {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, bgcolor: '#e0dc25', color: 'black', fontWeight: 'bold', '&:hover': { bgcolor: '#d4ce1f' } }}
+              sx={{
+                mt: 3,
+                bgcolor: '#e0dc25',
+                color: 'black',
+                fontWeight: 'bold',
+                '&:hover': { bgcolor: '#d4ce1f' }
+              }}
               disabled={loading}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign up with email'}

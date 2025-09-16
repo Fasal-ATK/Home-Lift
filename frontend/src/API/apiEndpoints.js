@@ -42,6 +42,7 @@ const apiEndpoints = {
 
     provider: {
         apply: '/provider/apply/',
+        applicationStatus: '/provider/status/',
         me: '/provider/me/',
       },
       

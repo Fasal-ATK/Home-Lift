@@ -1,143 +1,110 @@
 // src/pages/user/Home.jsx
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Grid,
-  Paper,
-  Container
-} from "@mui/material";
+import { Box, Typography, Button, Grid, Paper, Container } from "@mui/material";
 import ProviderApplicationModal from "../../components/provider/ApplicationForm";
+import ProviderStatusModal from "../../components/provider/ProviderStatusModal";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
+import { fetchProviderApplicationStatus } from "../../redux/slices/user/userSlice";
 
 // assets
 import moreImg from "../../assets/user/home/more.png";
 import ruServiceProvider from "../../assets/user/home/ru-service-provider.png";
-
-// Why Home Lift assets
 import earningsIcon from "../../assets/user/home/partner/Increase-Your-Earnings.png";
 import productivityIcon from "../../assets/user/home/partner/Improve-Productivity.png";
 import customerBaseIcon from "../../assets/user/home/partner/Large-Customer-Base.png";
 
-const Home = () => {
-  const [modalOpen, setModalOpen] = useState(false);
-  const { list: categories } = useSelector((state) => state.categories);
-  const {
-    list: services,
-    loading: servicesLoading,
-    error: servicesError
-  } = useSelector((state) => state.services);
+// ------------------- Reusable Components ------------------- //
+const ServiceCard = ({ name, icon, isMore }) => (
+  <Paper
+    sx={{
+      width: 130,
+      height: 140,
+      textAlign: "center",
+      backgroundColor: "white",
+      borderRadius: "10px",
+      cursor: "pointer",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      "&:hover": { backgroundColor: "#f9f9f9" },
+      p: isMore ? 1 : 0
+    }}
+  >
+    <Box
+      component="img"
+      src={icon}
+      alt={name}
+      sx={{ width: 60, height: 60, objectFit: "contain", mb: isMore ? 1 : 2, pt: isMore ? 0 : 2 }}
+    />
+    <Typography
+      variant="body2"
+      fontWeight="bold"
+      sx={{ textAlign: "center", whiteSpace: "normal", wordBreak: "break-word" }}
+    >
+      {name}
+    </Typography>
+  </Paper>
+);
 
+const BenefitItem = ({ icon, title, description }) => (
+  <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
+    <Box component="img" src={icon} alt={title} sx={{ width: 40, height: 40, mr: 2 }} />
+    <Box>
+      <Typography variant="subtitle2" fontWeight="bold">{title}</Typography>
+      <Typography variant="body2">{description}</Typography>
+    </Box>
+  </Box>
+);
+
+// ------------------- Home Component ------------------- //
+const Home = () => {
+  const [applicationModalOpen, setApplicationModalOpen] = useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
   const dispatch = useDispatch();
 
+  const { list: categories } = useSelector((state) => state.categories);
+  const { list: services, loading: servicesLoading, error: servicesError } = useSelector((state) => state.services);
+  const { providerApplicationStatus, rejectionReason } = useSelector((state) => state.user);
+
+  // Fetch categories, services, and provider application status
   useEffect(() => {
     dispatch(fetchCategories());
     dispatch(fetchServices());
+    dispatch(fetchProviderApplicationStatus());
   }, [dispatch]);
 
-  const handleOpenModal = () => setModalOpen(true);
-  const handleCloseModal = () => setModalOpen(false);
+  // Open status modal automatically if application is pending/rejected
+  useEffect(() => {
+    if (providerApplicationStatus === "pending" || providerApplicationStatus === "rejected") {
+      setStatusModalOpen(true);
+    }
+  }, [providerApplicationStatus]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 2 }}>
-      {/* Services List */}
-      <Typography variant="h5" sx={{ fontWeight: "bold", mb: 3 }}>
-        Popular Services
-      </Typography>
-      <Grid container spacing={2} justifyContent="flex-start">
-        {servicesLoading ? (
-          <Typography>Loading services...</Typography>
-        ) : servicesError ? (
-          <Typography color="error">Failed to load services</Typography>
-        ) : (
-          <>
-            {services.slice(0, 9).map((srv) => (
-              <Grid item xs={6} sm={4} md={2} key={srv.id}>
-                <Paper
-                  sx={{
-                    width: 130,
-                    height: 140,
-                    textAlign: "center",
-                    backgroundColor: "white",
-                    borderRadius: "10px",
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    "&:hover": { backgroundColor: "#f9f9f9" }
-                  }}
-                >
-                  {srv.icon ? (
-                    <Box
-                      component="img"
-                      src={srv.icon}
-                      alt={srv.name}
-                      sx={{ pt : 2, width: 60, height: 60, objectFit: "contain" }}
-                    />
-                  ) : (
-                    <Box
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        backgroundColor: "#eee",
-                        borderRadius: "8px"
-                      }}
-                    />
-                  )}
-                  <Typography
-                    variant="body2"
-                    fontWeight="bold"
-                    sx={{
-                      mb: 2,
-                      width: "100%",
-                      textAlign: "center",
-                      whiteSpace: "normal",
-                      wordBreak: "break-word"
-                    }}
-                  >
-                    {srv.name}
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-
-            {/* More Services Box */}
-            <Grid item xs={6} sm={4} md={2}>
-              <Paper
-                sx={{
-                  width: 140,
-                  height: 140,
-                  textAlign: "center",
-                  backgroundColor: "white",
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  "&:hover": { backgroundColor: "#f9f9f9" }
-                }}
-              >
-                <Box
-                  component="img"
-                  src={moreImg}
-                  alt="More Services"
-                  sx={{ width: 60, height: 60, mb: 3 }}
-                />
-                <Typography variant="body2" fontWeight="bold">
-                  More Services
-                </Typography>
-              </Paper>
+      {/* Popular Services */}
+      <Typography variant="h5" fontWeight="bold" mb={3}>Popular Services</Typography>
+      {servicesLoading ? (
+        <Typography>Loading services...</Typography>
+      ) : servicesError ? (
+        <Typography color="error">Failed to load services</Typography>
+      ) : (
+        <Grid container spacing={2}>
+          {services.slice(0, 9).map((srv) => (
+            <Grid item xs={6} sm={4} md={2} key={srv.id}>
+              <ServiceCard name={srv.name} icon={srv.icon || ""} />
             </Grid>
-          </>
-        )}
-      </Grid>
+          ))}
+          <Grid item xs={6} sm={4} md={2}>
+            <ServiceCard name="More Services" icon={moreImg} isMore />
+          </Grid>
+        </Grid>
+      )}
 
-      {/* Call to Action with Benefits */}
+      {/* Call to Action */}
       <Box
         sx={{
           mt: 6,
@@ -151,111 +118,65 @@ const Home = () => {
           flexWrap: "wrap"
         }}
       >
-        {/* Left Column */}
-        <Box sx={{ flex: 1, minWidth: 250, pr: { md: 4, xs: 0, textAlign:'center' } }}>
-          <Typography
-            variant="h6"
-            fontWeight="bold"
-            gutterBottom
-            sx={{ textTransform: "uppercase" }}
-          >
+        <Box sx={{ flex: 1, minWidth: 250, pr: { md: 4, xs: 0 } }}>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ textTransform: "uppercase" }}>
             Are you a service expert?
           </Typography>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Join world's largest service network
-          </Typography>
+          <Typography variant="body2" mb={2}>Join world's largest service network</Typography>
 
           <Button
             variant="contained"
-            onClick={handleOpenModal}
-            sx={{
-              backgroundColor: "#007bff",
-              color: "yellow",
-              textTransform: "none",
-              px: 3,
-              mb: 3,
-              borderRadius: "9px",
-
+            onClick={() => {
+              // Open apply modal only if user hasn't applied or status is null
+              if (!providerApplicationStatus) {
+                setApplicationModalOpen(true);
+              } else {
+                setStatusModalOpen(true);
+              }
             }}
+            sx={{ backgroundColor: "#007bff", ":hover": { backgroundColor: "black" }, color: "yellow", textTransform: "none", px: 3, mb: 3, borderRadius: "9px" }}
           >
             Register as Partner
           </Button>
 
-          {/* Benefits list */}
-          <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
-            <Box
-              component="img"
-              src={earningsIcon}
-              alt="Increase Earnings"
-              sx={{ width: 40, height: 40, mr: 2 }}
-            />
-            <Box>
-              <Typography variant="subtitle2" fontWeight="bold">
-                Increase Your Earnings
-              </Typography>
-              <Typography variant="body2">
-                With HOME LIFT, you earn more than your cost and minimize
-                efforts.
-              </Typography>
-            </Box>
-          </Box>
-
-          <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
-            <Box
-              component="img"
-              src={productivityIcon}
-              alt="Improve Productivity"
-              sx={{ width: 40, height: 40, mr: 2 }}
-            />
-            <Box>
-              <Typography variant="subtitle2" fontWeight="bold">
-                Improve Productivity
-              </Typography>
-              <Typography variant="body2">
-                Easy scheduling, invoicing, and recommendations to boost your
-                workflow.
-              </Typography>
-            </Box>
-          </Box>
-
-          <Box sx={{ display: "flex", alignItems: "flex-start" }}>
-            <Box
-              component="img"
-              src={customerBaseIcon}
-              alt="Large Customer Base"
-              sx={{ width: 40, height: 40, mr: 2 }}
-            />
-            <Box>
-              <Typography variant="subtitle2" fontWeight="bold">
-                Large Customer Base
-              </Typography>
-              <Typography variant="body2">
-                Reach a much larger customer base without marketing costs.
-              </Typography>
-            </Box>
-          </Box>
+          <BenefitItem
+            icon={earningsIcon}
+            title="Increase Your Earnings"
+            description="With HOME LIFT, you earn more than your cost and minimize efforts."
+          />
+          <BenefitItem
+            icon={productivityIcon}
+            title="Improve Productivity"
+            description="Easy scheduling, invoicing, and recommendations to boost your workflow."
+          />
+          <BenefitItem
+            icon={customerBaseIcon}
+            title="Large Customer Base"
+            description="Reach a much larger customer base without marketing costs."
+          />
         </Box>
 
-        {/* Right Column - Workers Image */}
         <Box
           component="img"
           src={ruServiceProvider}
           alt="Service Experts"
-          sx={{
-            flex: 1,
-            maxWidth: 350,
-            borderRadius: "10px",
-            mt: { xs: 3, md: 0 }
-          }}
+          sx={{ flex: 1, maxWidth: 350, borderRadius: "10px", mt: { xs: 3, md: 0 } }}
         />
       </Box>
 
-      {/* Modal */}
+      {/* Modals */}
       <ProviderApplicationModal
-        open={modalOpen}
-        onClose={handleCloseModal}
+        open={applicationModalOpen}
+        onClose={() => setApplicationModalOpen(false)}
         categories={categories}
         services={services}
+      />
+
+      <ProviderStatusModal
+        open={statusModalOpen}
+        onClose={() => setStatusModalOpen(false)}
+        status={providerApplicationStatus}
+        rejectionReason={rejectionReason}
       />
     </Container>
   );

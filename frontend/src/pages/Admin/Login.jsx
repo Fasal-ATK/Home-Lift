@@ -11,6 +11,8 @@ import { authService } from '../../services/apiServices';
 import { loginSuccess } from '../../redux/slices/authSlice';
 import validateLoginForm from '../../utils/loginVal';
 
+import { ShowToast } from '../../components/common/Toast'; 
+
 function Login() {
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
@@ -43,6 +45,7 @@ function Login() {
 
       const { user, access_token } = response;
       dispatch(loginSuccess({ user, access_token }));
+      ShowToast(`Welcome back, ${user?.name || 'User'}!`, "success");
       navigate('/admin/dashboard');
 
     } catch (err) {

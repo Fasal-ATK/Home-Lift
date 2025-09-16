@@ -47,6 +47,7 @@ export const providerService = {
       const response = await api.get(apiEndpoints.provider.me);
       return response.data;
     },
+     fetchApplicationStatus: () => api.get(apiEndpoints.provider.applicationStatus), 
   };
   
 

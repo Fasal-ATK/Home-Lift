@@ -1,16 +1,7 @@
 // src/components/provider/ApplicationForm.jsx
 import React, { useState } from 'react';
 import {
-  Modal,
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  MenuItem,
-  FormControl,
-  Select,
-  Paper,
-  InputLabel,
+  Modal, Box, Typography, Button, IconButton, MenuItem, FormControl, Select, Paper, InputLabel
 } from '@mui/material';
 import { Add, Remove, UploadFile, Close } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
@@ -21,7 +12,7 @@ const StyledBox = styled(Paper)(({ theme }) => ({
   position: 'absolute',
   top: '50%',
   left: '50%',
-  transform: 'translate(-50%, -50%)',
+  transform: 'translate(-50%,-50%)',
   width: 620,
   backgroundColor: theme.palette.background.paper,
   borderRadius: 12,
@@ -43,76 +34,125 @@ const FileButton = styled(Button)(({ theme }) => ({
   minWidth: 180,
 }));
 
+// ================= FileUpload Component =================
+const FileUpload = ({ file, onChange, label, uniqueId }) => (
+  <>
+    <input
+      type="file"
+      accept=".pdf,.doc,.docx,.png,.jpg"
+      style={{ display: 'none' }}
+      id={uniqueId}
+      onChange={(e) => onChange(e.target.files[0])}
+    />
+    <label htmlFor={uniqueId}>
+      <FileButton variant="outlined" component="span" startIcon={<UploadFile />}>
+        {file ? file.name : label}
+      </FileButton>
+    </label>
+    {file && (
+      <IconButton size="small" color="error" onClick={() => onChange(null)}>
+        <Remove />
+      </IconButton>
+    )}
+  </>
+);
+
+// ================= ServiceField Component =================
+const ServiceField = ({
+  index, field, categories, services,
+  handleCategoryChange, handleServiceChange,
+  handleServiceDocChange, removeField, canRemove
+}) => {
+  const serviceOptions = field.category
+    ? services.filter((s) => s.category === parseInt(field.category))
+    : [];
+
+  return (
+    <Box mb={3} p={2} border="1px solid #e0e0e0" borderRadius={2} boxShadow={1}>
+      <Box display="flex" alignItems="flex-start" gap={1} mb={1}>
+        <FormControl fullWidth size="small">
+          <Select
+            value={field.category}
+            onChange={(e) => handleCategoryChange(index, e.target.value)}
+            displayEmpty
+          >
+            <MenuItem value="" disabled>Select Category</MenuItem>
+            {categories.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth size="small">
+          <Select
+            value={field.service}
+            onChange={(e) => handleServiceChange(index, e.target.value)}
+            displayEmpty
+            disabled={!field.category}
+          >
+            <MenuItem value="" disabled>Select Service</MenuItem>
+            {serviceOptions.map((s) => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+          </Select>
+        </FormControl>
+
+        {canRemove && (
+          <IconButton size="small" color="error" onClick={() => removeField(index)}>
+            <Remove />
+          </IconButton>
+        )}
+      </Box>
+
+      {field.service && (
+        <Box display="flex" alignItems="center" gap={1} mt={1}>
+          <FileUpload
+            file={field.doc}
+            onChange={(file) => handleServiceDocChange(index, file)}
+            label="Upload Optional Document"
+            uniqueId={`service-doc-${index}`}
+          />
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+// ================= ProviderApplicationModal =================
 const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
   const dispatch = useDispatch();
-  const { loading, error, providerApplicationStatus } = useSelector(
-    (state) => state.user
-  );
+  const { loading, error, providerApplicationStatus } = useSelector((state) => state.user);
 
   const [personalDoc, setPersonalDoc] = useState(null);
-  const [serviceFields, setServiceFields] = useState([
-    { category: '', service: '', doc: null },
-  ]);
+  const [serviceFields, setServiceFields] = useState([{ category: '', service: '', doc: null }]);
 
-  const handlePersonalDocChange = (e) => setPersonalDoc(e.target.files[0]);
-
-  const addServiceField = () => {
-    if (serviceFields.length < 4) {
-      setServiceFields([...serviceFields, { category: '', service: '', doc: null }]);
-    }
-  };
-
-  const removeServiceField = (index) =>
-    setServiceFields(serviceFields.filter((_, i) => i !== index));
-
-  const handleCategoryChange = (index, value) => {
+  const addField = () => serviceFields.length < 4 && setServiceFields([...serviceFields, { category: '', service: '', doc: null }]);
+  const removeField = (i) => setServiceFields(serviceFields.filter((_, idx) => idx !== i));
+  const handleCategoryChange = (i, value) => {
     const updated = [...serviceFields];
-    updated[index].category = value;
-    updated[index].service = '';
-    updated[index].doc = null;
+    updated[i] = { category: value, service: '', doc: null };
     setServiceFields(updated);
   };
-
-  const handleServiceChange = (index, value) => {
+  const handleServiceChange = (i, value) => {
     const updated = [...serviceFields];
-    updated[index].service = value;
+    updated[i].service = value;
     setServiceFields(updated);
   };
-
-  const handleServiceDocChange = (index, file) => {
+  const handleServiceDocChange = (i, file) => {
     const updated = [...serviceFields];
-    updated[index].doc = file;
+    updated[i].doc = file;
     setServiceFields(updated);
-  };
-
-  // ✅ Filter services by category
-  const getServiceOptions = (index) => {
-    const selectedCategory = serviceFields[index].category;
-    if (!selectedCategory) return [];
-    return services.filter((svc) => svc.category === parseInt(selectedCategory));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!personalDoc) return alert('Please upload your personal verification document.');
-    for (let s of serviceFields) {
-      if (!s.category || !s.service) return alert('Please select category and service for all fields.');
-    }
+    for (let s of serviceFields) if (!s.category || !s.service) return alert('Please select category and service for all fields.');
 
     const selectedServices = serviceFields.map((s) => s.service);
-    if (new Set(selectedServices).size !== selectedServices.length) {
-      return alert('Each service can only be selected once.');
-    }
+    if (new Set(selectedServices).size !== selectedServices.length) return alert('Each service can only be selected once.');
 
     const applicationData = {
       id_doc: personalDoc,
-      document_type: 'id_proof',
-      services: serviceFields.map((s) => ({
-        service_id: s.service,
-        doc: s.doc,
-      })),
+      services: serviceFields.map((s) => ({ service_id: s.service, doc: s.doc })),
     };
+    console.log('🚀 Submitting application with data:', applicationData);
 
     dispatch(applyProvider(applicationData))
       .unwrap()
@@ -121,8 +161,12 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
         handleClose();
       })
       .catch((err) => {
-        console.error(err);
-        alert('Failed to submit application.');
+        console.error('❌ Application submission error:', err);
+        if (typeof err === 'object') {
+          alert('Failed to submit application:\n' + JSON.stringify(err, null, 2));
+        } else {
+          alert('Failed to submit application: ' + err);
+        }
       });
   };
 
@@ -135,146 +179,44 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
   return (
     <Modal open={open} onClose={handleClose}>
       <StyledBox>
-        {/* Close Button */}
         <Box display="flex" justifyContent="flex-end">
-          <IconButton size="small" onClick={handleClose}>
-            <Close />
-          </IconButton>
+          <IconButton size="small" onClick={handleClose}><Close /></IconButton>
         </Box>
 
         <SectionTitle variant="h6">Apply to Become a Provider</SectionTitle>
 
         <form onSubmit={handleSubmit}>
-          {/* Personal Verification Document */}
-          <Box display="flex" alignItems="center" mb={4} gap={2}>
-            <InputLabel sx={{ fontWeight: 500 }}>
-              Personal Identity Verification Document
-            </InputLabel>
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.png,.jpg"
-              onChange={handlePersonalDocChange}
-              style={{ display: 'none' }}
-              id="personal-doc"
+          {/* Personal Identity Verification */}
+          <Box display="flex" alignItems="center" mb={3} gap={2}>
+            <InputLabel sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>Upload your Personal Identity Verification document/image</InputLabel>
+            <FileUpload
+              file={personalDoc}
+              onChange={setPersonalDoc}
+              label="Upload File"
+              uniqueId="personal-doc"
             />
-            <label htmlFor="personal-doc">
-              <FileButton
-                variant="outlined"
-                component="span"
-                startIcon={<UploadFile />}
-              >
-                {personalDoc ? personalDoc.name : 'Upload File'}
-              </FileButton>
-            </label>
           </Box>
 
-          {/* Services Selection */}
-          <SectionTitle variant="subtitle2">
-            Select Services (up to 4) & Optional Documents
-          </SectionTitle>
-
-          {serviceFields.map((s, index) => (
-            <Box
-              key={index}
-              mb={3}
-              p={2}
-              border="1px solid #e0e0e0"
-              borderRadius={2}
-              boxShadow={1}
-            >
-              <Box display="flex" alignItems="flex-start" mb={1} gap={1}>
-                <FormControl fullWidth>
-                  <Select
-                    value={s.category}
-                    onChange={(e) => handleCategoryChange(index, e.target.value)}
-                    displayEmpty
-                    size="small"
-                  >
-                    <MenuItem value="" disabled>
-                      Select Category
-                    </MenuItem>
-                    {categories.map((c) => (
-                      <MenuItem key={c.id} value={c.id}>
-                        {c.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <FormControl fullWidth>
-                  <Select
-                    value={s.service}
-                    onChange={(e) => handleServiceChange(index, e.target.value)}
-                    displayEmpty
-                    disabled={!s.category}
-                    size="small"
-                  >
-                    <MenuItem value="" disabled>
-                      Select Service
-                    </MenuItem>
-                    {getServiceOptions(index).map((svc) => (
-                      <MenuItem key={svc.id} value={svc.id}>
-                        {svc.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                {/* Remove button (for all rows except the first one) */}
-                {serviceFields.length > 1 && (
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => removeServiceField(index)}
-                  >
-                    <Remove />
-                  </IconButton>
-                )}
-              </Box>
-
-              {/* Optional Service Doc */}
-              {s.service && (
-                <Box display="flex" alignItems="center" mt={1} gap={1}>
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx,.png,.jpg"
-                    style={{ display: 'none' }}
-                    id={`service-doc-${index}`}
-                    onChange={(e) => handleServiceDocChange(index, e.target.files[0])}
-                  />
-                  <label htmlFor={`service-doc-${index}`}>
-                    <FileButton
-                      variant="outlined"
-                      component="span"
-                      startIcon={<UploadFile />}
-                      size="small"
-                    >
-                      {s.doc ? s.doc.name : 'Upload Optional Document'}
-                    </FileButton>
-                  </label>
-
-                  {s.doc && (
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleServiceDocChange(index, null)}
-                    >
-                      <Remove />
-                    </IconButton>
-                  )}
-                </Box>
-              )}
-            </Box>
+          {/* Services Section */}
+          <SectionTitle variant="subtitle2">Select Services (up to 4) & Optional Documents</SectionTitle>
+          {serviceFields.map((f, i) => (
+            <ServiceField
+              key={i}
+              index={i}
+              field={f}
+              categories={categories}
+              services={services}
+              handleCategoryChange={handleCategoryChange}
+              handleServiceChange={handleServiceChange}
+              handleServiceDocChange={handleServiceDocChange}
+              removeField={removeField}
+              canRemove={serviceFields.length > 1}
+            />
           ))}
 
-          {/* ✅ Add Service Button outside */}
           {serviceFields.length < 4 && (
-            <Box display="flex" justifyContent="flex-start" mb={3}>
-              <Button
-                variant="outlined"
-                startIcon={<Add />}
-                onClick={addServiceField}
-              >
+            <Box mb={3}>
+              <Button variant="outlined" startIcon={<Add />} onClick={addField}>
                 Add Another Service
               </Button>
             </Box>
@@ -295,15 +237,9 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
             </Button>
           </Box>
 
-          {error && (
-            <Typography color="error" mt={2}>
-              {error}
-            </Typography>
-          )}
+          {error && <Typography color="error" mt={2}>{error}</Typography>}
           {providerApplicationStatus === 'pending' && (
-            <Typography color="primary" mt={2}>
-              Your application is under review.
-            </Typography>
+            <Typography color="primary" mt={2}>Your application is under review.</Typography>
           )}
         </form>
       </StyledBox>
