@@ -2,8 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
-from .models import ProviderApplication
-from .serializers import ProviderApplicationSerializer
+from .models import ProviderApplication, ProviderDetails
+from .serializers import ProviderApplicationSerializer, ProviderDetailsSerializer
 from core.permissions import IsNormalUser, IsAdminUserCustom, IsProviderUser
 import logging
 import json
@@ -17,6 +17,7 @@ class ProviderApplicationCreateAPIView(APIView):
     permission_classes = [IsNormalUser]
 
     def post(self, request, *args, **kwargs):
+        print(request.user)
         # 🔍 View-level guard
         if ProviderApplication.objects.filter(
             user=request.user,
@@ -83,26 +84,19 @@ class ProviderApplicationStatusView(APIView):
 
 
 
-
-
-
-
-
 # ------------------------------
-# List Current User Applications
+# List Current Users Applications
 # ------------------------------
 class ProviderApplicationListAPIView(APIView):
     permission_classes = [IsAdminUserCustom]
 
     def get(self, request, *args, **kwargs):
-        applications = ProviderApplication.objects.filter(user=request.user)
+        applications = ProviderApplication.objects.filter(status__in=['pending'])
         serializer = ProviderApplicationSerializer(applications, many=True)
+        print(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# ------------------------------
-# Admin: Approve/Reject Application
-# ------------------------------
 class ProviderApplicationUpdateStatusAPIView(APIView):
     permission_classes = [IsAdminUserCustom]
 
@@ -125,3 +119,47 @@ class ProviderApplicationUpdateStatusAPIView(APIView):
 
         serializer = ProviderApplicationSerializer(application)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+# ------------------------------
+# Provider MANAGEMENT
+# ------------------------------
+
+class ProvidersListAPIView(APIView):
+    permission_classes = [IsAdminUserCustom]
+
+    def get(self, request, *args, **kwargs):
+        providers = ProviderDetails.objects.all()
+        serializer = ProviderDetailsSerializer(providers, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ProviderDetailAPIView(APIView):
+    permission_classes = [IsAdminUserCustom]
+
+    def get_object(self, id):
+        try:
+            return ProviderDetails.objects.get(id=id)
+        except ProviderDetails.DoesNotExist:
+            return None
+
+    def get(self, request, id, *args, **kwargs):
+        provider = self.get_object(id)
+        if not provider:
+            return Response({"detail": "Provider not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = ProviderDetailsSerializer(provider)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, id, *args, **kwargs):
+        provider = self.get_object(id)
+        if not provider:
+            return Response({"detail": "Provider not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ProviderDetailsSerializer(provider, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    

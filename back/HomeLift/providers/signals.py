@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from .models import ProviderApplication, ProviderApplicationService, ProviderDetails, ProviderService
 from django.utils import timezone
@@ -23,3 +23,16 @@ def handle_approved_application(sender, instance, created, **kwargs):
                 price=app_service.price,
                 experience_years=app_service.experience_years
             )
+        # ✅ Set user as provider
+        user = instance.user
+        if not user.is_provider:
+            user.is_provider = True
+            user.save(update_fields=['is_provider'])
+
+
+@receiver(post_delete, sender=ProviderDetails)
+def reset_user_is_provider(sender, instance, **kwargs):
+    user = instance.user
+    if user and user.is_provider:   # Only reset if True
+        user.is_provider = False
+        user.save(update_fields=["is_provider"])

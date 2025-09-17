@@ -29,8 +29,9 @@ class ProviderApplication(models.Model):
         related_name='provider_applications'
     )
     id_doc = CloudinaryField(
-        'raw',
+        'ID Document',
         folder='documents/providers',
+        resource_type='auto',  # allows PDFs, images, docs
         blank=True,
         null=True,
         help_text="Upload your verification document"
@@ -76,24 +77,16 @@ class ProviderApplicationService(models.Model):
         on_delete=models.CASCADE,
         related_name='services'
     )
-    service = models.ForeignKey(
-        Service,
-        on_delete=models.CASCADE
-    )
+    service = models.ForeignKey(Service, on_delete=models.CASCADE)
     id_doc = CloudinaryField(
         'raw',
         folder='documents/provider_services',
+        resource_type='auto',
         blank=True,
         null=True,
         help_text="Optional service verification document"
     )
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        blank=True,
-        null=True,
-        help_text="Optional price; if empty, will use default service price"
-    )
+    price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     experience_years = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -101,9 +94,14 @@ class ProviderApplicationService(models.Model):
         verbose_name = "Provider Application Service"
         verbose_name_plural = "Provider Application Services"
 
+    # <-- make sure this is at the same level as Meta, not inside it
+    def save(self, *args, **kwargs):
+        if self.price is None:
+            self.price = self.service.price
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.application.user.username} - {self.service.name}"
-
 
 # -----------------------------
 # Approved Provider Details
