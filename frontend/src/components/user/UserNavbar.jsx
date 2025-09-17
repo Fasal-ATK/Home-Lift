@@ -7,14 +7,21 @@ import {
   Box,
   InputBase,
   Paper,
+  Button,
 } from '@mui/material';
 import { Search, Notifications, LocationOn, AccountCircle } from '@mui/icons-material';
-import { Link } from 'react-router-dom'; // ✅ use react-router for navigation
+import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import LogoutButton from '../common/Logout';
 
 const UserNavbar = () => {
+  const navigate = useNavigate();
+
+  // ✅ Get provider info from authSlice
+  const { isProvider } = useSelector((state) => state.auth);
+
   return (
-    <AppBar position="sticky" color="inherit" elevation={3} sx={{ borderRadius:'14px' }}  >
+    <AppBar position="sticky" color="inherit" elevation={3} sx={{ borderRadius: '14px' }}>
       <Toolbar sx={{ justifyContent: 'space-between', px: 4 }}>
 
         {/* Left: Logo and Title */}
@@ -24,6 +31,17 @@ const UserNavbar = () => {
             HOME LIFT
           </Typography>
         </Box>
+                  {/* Provider Page Button */}
+          {isProvider && (
+            <Button
+              variant="contained"
+              color="warning"
+              onClick={() => navigate("/provider/dashboard")}
+              sx={{ textTransform: "none", borderRadius: "10px" }}
+            >
+              Provider Page
+            </Button>
+          )}
 
         {/* Center: Search Bar */}
         <Paper
@@ -39,6 +57,7 @@ const UserNavbar = () => {
             border: '1px solid #ccc',
           }}
         >
+          
           <InputBase
             placeholder="Search"
             inputProps={{ 'aria-label': 'search' }}
@@ -49,28 +68,29 @@ const UserNavbar = () => {
           </IconButton>
         </Paper>
 
-        {/* Right: Nav links, notification, profile, and logout */}
-        <Box display="flex" alignItems="center" gap={4}>
+        {/* Right: Nav links, notification, profile, logout, provider page */}
+        <Box display="flex" alignItems="center" gap={2}>
+
           {/* Text Links */}
           {["HOME", "SERVICES", "BOOKINGS"].map((item) => (
             <Typography
               key={item}
-              component={Link}    // ✅ turn Typography into a link
+              component={Link}
               to="/#"
               variant="body1"
               fontWeight="bold"
               sx={{
-                cursor: "pointer",   // ✅ pointer cursor
+                cursor: "pointer",
                 textDecoration: "none",
                 color: "inherit",
-                "&:hover": { color: "#0066CC" }, // ✅ hover effect
+                "&:hover": { color: "#0066CC" },
               }}
             >
               {item}
             </Typography>
           ))}
 
-          {/* Icons as Links */}
+          {/* Icons */}
           <IconButton component={Link} to="/#" sx={{ cursor: "pointer" }}>
             <AccountCircle sx={{ color: '#0066CC' }} />
           </IconButton>
@@ -79,9 +99,8 @@ const UserNavbar = () => {
             <Notifications sx={{ color: '#0066CC' }} />
           </IconButton>
 
-          <Box>
-            <LogoutButton collapsed={false} color="blue" />
-          </Box>
+          <LogoutButton collapsed={false} color="blue" />
+
         </Box>
       </Toolbar>
     </AppBar>

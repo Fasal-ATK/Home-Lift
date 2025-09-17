@@ -29,11 +29,11 @@ export default function ProviderSidebar() {
 
   const navItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/provider/dashboard' },
-    { text: 'Requests', icon: <Description />, path: '/provider/requests' },
-    { text: 'Bookings', icon: <CalendarMonth />, path: '/provider/bookings' },
-    { text: 'History', icon: <History />, path: '/provider/history' },
-    { text: 'Profile', icon: <Person />, path: '/provider/profile' },
-    { text: 'Wallet', icon: <AccountBalanceWallet />, path: '/provider/wallet' },
+    { text: 'Requests', icon: <Description />, path: '#' },
+    { text: 'Bookings', icon: <CalendarMonth />,path: '#' },
+    { text: 'History', icon: <History />, path: '#' },
+    { text: 'Profile', icon: <Person />, path: '#' },
+    { text: 'Wallet', icon: <AccountBalanceWallet />, path: '#'},
   ];
 
   return (

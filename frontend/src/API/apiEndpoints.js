@@ -23,12 +23,14 @@ const apiEndpoints = {
     },
 
     adminProviderManagement: {
-        list: '/admin/providers',
-        applicationList: '/admin/providers/applications/',              // GET all applications
-        applicationDetail: (id) => `/admin/providers/applications/${id}/`, // GET, PATCH single application
-        approveApplication: (id) => `/admin/providers/applications/${id}/approve/`, // POST to approve
-        rejectApplication: (id) => `/admin/providers/applications/${id}/reject/`,   // POST to reject
+        list: '/admin/providers/list',
+        update: (id) => `/admin/providers/update/${id}/`,
+
+        // Applications
+        applicationList: '/admin/providers/applications/',
+        applicationDetail: (id) => `/admin/providers/update-applications/${id}/`, // PATCH for approve/reject
     },
+
     
     adminServiceManagement: {
         listCategories: '/admin/services/categories/',

@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
 import { fetchProviderApplicationStatus } from "../../redux/slices/user/userSlice";
+import { useNavigate } from "react-router-dom";
 
 // assets
 import moreImg from "../../assets/user/home/more.png";
@@ -30,7 +31,7 @@ const ServiceCard = ({ name, icon, isMore }) => (
       alignItems: "center",
       justifyContent: "center",
       "&:hover": { backgroundColor: "#f9f9f9" },
-      p: isMore ? 1 : 0
+      p: isMore ? 1 : 0,
     }}
   >
     <Box
@@ -64,24 +65,104 @@ const Home = () => {
   const [applicationModalOpen, setApplicationModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { list: categories } = useSelector((state) => state.categories);
   const { list: services, loading: servicesLoading, error: servicesError } = useSelector((state) => state.services);
-  const { providerApplicationStatus, rejectionReason } = useSelector((state) => state.user);
+  const { providerApplicationStatus, rejectionReason} = useSelector((state) => state.user);
+  const { isProvider } = useSelector((state) => state.auth);
 
-  // Fetch categories, services, and provider application status
   useEffect(() => {
     dispatch(fetchCategories());
     dispatch(fetchServices());
     dispatch(fetchProviderApplicationStatus());
   }, [dispatch]);
 
-  // Open status modal automatically if application is pending/rejected
-  useEffect(() => {
-    if (providerApplicationStatus === "pending" || providerApplicationStatus === "rejected") {
-      setStatusModalOpen(true);
+  // Normalize status string
+  const normalizedStatus = providerApplicationStatus?.toLowerCase();
+
+  const renderCTAButton = () => {
+    if (isProvider && normalizedStatus === "approved") {
+      return (
+        <Button
+          variant="contained"
+          onClick={() => navigate("/provider/dashboard")}
+          sx={{
+            backgroundColor: "green",
+            ":hover": { backgroundColor: "darkgreen" },
+            color: "white",
+            textTransform: "none",
+            px: 3,
+            mb: 3,
+            borderRadius: "9px"
+          }}
+        >
+          Go to Provider
+        </Button>
+      );
     }
-  }, [providerApplicationStatus]);
+
+    if (!providerApplicationStatus) {
+      return (
+        <Button
+          variant="contained"
+          onClick={() => setApplicationModalOpen(true)}
+          sx={{
+            backgroundColor: "#007bff",
+            ":hover": { backgroundColor: "black" },
+            color: "yellow",
+            textTransform: "none",
+            px: 3,
+            mb: 3,
+            borderRadius: "9px"
+          }}
+        >
+          Register as Partner
+        </Button>
+      );
+    }
+
+    if (normalizedStatus === "pending") {
+      return (
+        <Button
+          variant="contained"
+          disabled
+          sx={{
+            backgroundColor: "#ff9800",
+            color: "white",
+            textTransform: "none",
+            px: 3,
+            mb: 3,
+            borderRadius: "9px"
+          }}
+        >
+          Application Pending
+        </Button>
+      );
+    }
+
+    if (normalizedStatus === "rejected") {
+      return (
+        <Button
+          variant="contained"
+          onClick={() => setApplicationModalOpen(true)}
+          sx={{
+            backgroundColor: "red",
+            ":hover": { backgroundColor: "darkred" },
+            color: "white",
+            textTransform: "none",
+            px: 3,
+            mb: 3,
+            borderRadius: "9px"
+          }}
+        >
+          Application Rejected - Retry
+        </Button>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <Container maxWidth="lg" sx={{ py: 2 }}>
@@ -124,36 +205,11 @@ const Home = () => {
           </Typography>
           <Typography variant="body2" mb={2}>Join world's largest service network</Typography>
 
-          <Button
-            variant="contained"
-            onClick={() => {
-              // Open apply modal only if user hasn't applied or status is null
-              if (!providerApplicationStatus) {
-                setApplicationModalOpen(true);
-              } else {
-                setStatusModalOpen(true);
-              }
-            }}
-            sx={{ backgroundColor: "#007bff", ":hover": { backgroundColor: "black" }, color: "yellow", textTransform: "none", px: 3, mb: 3, borderRadius: "9px" }}
-          >
-            Register as Partner
-          </Button>
+          {renderCTAButton()}
 
-          <BenefitItem
-            icon={earningsIcon}
-            title="Increase Your Earnings"
-            description="With HOME LIFT, you earn more than your cost and minimize efforts."
-          />
-          <BenefitItem
-            icon={productivityIcon}
-            title="Improve Productivity"
-            description="Easy scheduling, invoicing, and recommendations to boost your workflow."
-          />
-          <BenefitItem
-            icon={customerBaseIcon}
-            title="Large Customer Base"
-            description="Reach a much larger customer base without marketing costs."
-          />
+          <BenefitItem icon={earningsIcon} title="Increase Your Earnings" description="With HOME LIFT, you earn more than your cost and minimize efforts." />
+          <BenefitItem icon={productivityIcon} title="Improve Productivity" description="Easy scheduling, invoicing, and recommendations to boost your workflow." />
+          <BenefitItem icon={customerBaseIcon} title="Large Customer Base" description="Reach a much larger customer base without marketing costs." />
         </Box>
 
         <Box

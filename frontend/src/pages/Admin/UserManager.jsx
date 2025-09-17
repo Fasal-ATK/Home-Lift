@@ -114,9 +114,14 @@ export default function UserManager() {
 
   return (
     <Box p={3}>
-      <Typography variant="h5" fontWeight="bold" mb={2} color="orange">
-        Customer Management
-      </Typography>
+        <Typography
+          variant="h4"
+          fontFamily="monospace"
+          fontWeight="bold"
+          color="black"
+        >
+          Customer Management
+        </Typography>
 
       <SearchBarWithFilter
         placeholder="Search customers..."

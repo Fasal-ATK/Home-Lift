@@ -101,24 +101,50 @@ export const adminCustomerManagementService = {
 };
 
 export const adminProviderManagementService = {
-    getApplications: async () => {
-        const response = await api.get(apiEndpoints.adminProviderManagement.applicationList);
-        return response.data;
-    },
+  getProviders: async () => {
+    const response = await api.get(apiEndpoints.adminProviderManagement.list);
+    return response.data;
+  },
 
-    getApplicationDetail: async (id) => {
-        const response = await api.get(apiEndpoints.adminProviderManagement.applicationDetail(id));
-        return response.data;
-    },
+  manageProvider: async (id, data) => {
+    const response = await api.patch(
+      apiEndpoints.adminProviderManagement.update(id),
+      data
+    );
+    return response.data;
+  },
 
-    approveApplication: async (id, data) => {
-        const response = await api.post(apiEndpoints.adminProviderManagement.approveApplication(id), data);
-        return response.data;
-    },
+  getApplications: async () => {
+    const response = await api.get(
+      apiEndpoints.adminProviderManagement.applicationList
+    );
+    return response.data;
+  },
 
-    rejectApplication: async (id, data) => {
-        const response = await api.post(apiEndpoints.adminProviderManagement.rejectApplication(id), data);
-        return response.data;
-    }
+  updateApplicationStatus: async (id, data) => {
+    // { status: "approved" } or { status: "rejected", rejection_reason: "..." }
+    const response = await api.patch(
+      apiEndpoints.adminProviderManagement.applicationDetail(id),
+      data
+    );
+    return response.data;
+  },
+
+  // ✅ Explicit wrapper for approving an application
+  approveApplication: async (id, extraData = {}) => {
+    return await adminProviderManagementService.updateApplicationStatus(id, {
+      status: "approved",
+      ...extraData,
+    });
+  },
+
+  // ✅ Explicit wrapper for rejecting an application
+  rejectApplication: async (id, extraData = {}) => {
+    return await adminProviderManagementService.updateApplicationStatus(id, {
+      status: "rejected",
+      rejection_reason: extraData.rejection_reason || "Rejected by admin",
+    });
+  },
 };
+
 

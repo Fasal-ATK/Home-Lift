@@ -18,6 +18,7 @@ import ServiceCategroies from './pages/Admin/ServiceCategroies';
 import Reports from './pages/Admin/Reports';
 import Coupons from './pages/Admin/Coupons';
 import BookingMng from './pages/Admin/BookingMng';
+import EmployeeReq from './components/admin/emp/ProviderApplications';
 
 import ProviderDashboard from './pages/Provider/ProviderDashboard';
 import Landing from './pages/Landing';
@@ -92,8 +93,14 @@ function App() {
           <Route path='bookings' element={<BookingMng />} />
         </Route>
 
+
         {/* Provider Routes */}
-        <Route path='/provider' element={<ProviderLayout />}>
+        <Route path='provider' element={
+          <PrivateRoute providerOnly={true} role="provider">
+          <ProviderLayout />
+          </PrivateRoute>
+        }>
+
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path='dashboard' element={<ProviderDashboard />} />
         </Route>
