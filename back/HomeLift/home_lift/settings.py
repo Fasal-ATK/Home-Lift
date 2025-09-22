@@ -76,8 +76,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
 
-    'social_django',
-
     'cloudinary',
     'cloudinary_storage',
 ]
@@ -173,14 +171,10 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 AUTHENTICATION_BACKENDS = (
-    'social_core.backends.google.GoogleOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
-
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('GOOGLE_CLIENT_ID')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('GOOGLE_CLIENT_SECRET')
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID')
 
 
 # REST Framework settings
@@ -231,5 +225,5 @@ cloudinary.config(
   api_secret =  config('CLOUDINARY_API_SECRET'), 
   secure = True
 )
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+DEFAULT_FILE_STORAGE = 'users.storage.NoDeleteCloudinaryStorage'
 MEDIA_URL = '/media/'
