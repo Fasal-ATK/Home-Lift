@@ -4,6 +4,7 @@ const apiEndpoints = {
         login: '/user/login/',
         logout: '/user/logout/',
         refreshAccessToken: '/user/token/refresh/',
+        googleLogin: '/user/google-auth/',
     },
 
     adminAuth: {

@@ -1,3 +1,4 @@
+// src/pages/user/Login.jsx
 import React, { useState } from 'react';
 import {
   Container, TextField, Button, Typography, Box, Alert, CircularProgress,
@@ -10,8 +11,8 @@ import { useDispatch } from 'react-redux';
 import { authService } from '../../services/apiServices';
 import { loginSuccess } from '../../redux/slices/authSlice';
 import validateLoginForm from '../../utils/loginVal';
-
 import { ShowToast } from '../../components/common/Toast';
+import GoogleLoginButton from '../../components/user/GoogleLoginButton';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -27,7 +28,7 @@ function Login() {
     e.preventDefault();
     setError('');
 
-    // ✅ Frontend validation
+    // Frontend validation
     const validationError = validateLoginForm({ email, password: pass });
     if (validationError) {
       setError(validationError);
@@ -49,14 +50,12 @@ function Login() {
       console.error(err);
 
       if (err.response) {
-        // ✅ Grab backend structured error if available
         const backendError = err.response.data;
         const backendMessage =
           backendError?.message ||
           backendError?.detail ||
           backendError?.error ||
           'Login failed. Please check your credentials.';
-
         setError(backendMessage);
       } else if (err.request) {
         setError('Unable to connect to the server. Please try again later.');
@@ -68,9 +67,7 @@ function Login() {
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPass((prev) => !prev);
-  };
+  const togglePasswordVisibility = () => setShowPass(prev => !prev);
 
   return (
     <Box sx={{ bgcolor: '#d9e021', minHeight: '100vh', py: 8 }}>
@@ -92,6 +89,7 @@ function Login() {
 
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
+          {/* Email/Password Login Form */}
           <form onSubmit={handleLogin}>
             <TextField
               label="Email"
@@ -136,6 +134,11 @@ function Login() {
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
             </Button>
           </form>
+
+          {/* ------------------ Google Login Button ------------------ */}
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+            <GoogleLoginButton />
+          </Box>
 
           <Typography variant="body2" sx={{ mt: 2 }}>
             Don’t have an account?{' '}

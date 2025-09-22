@@ -11,6 +11,7 @@ import { authService, otpService } from '../../services/apiServices';
 import OtpModal from '../../components/user/otp_modal';
 import { validateSignupForm } from '../../utils/signupVal';
 import { ShowToast } from '../../components/common/Toast';
+import GoogleLoginButton from '../../components/user/GoogleLoginButton';
 
 function Signup() {
   const [fname, setFname] = useState('');
@@ -154,14 +155,14 @@ const extractErrorMessage = (data) => {
 
           <form onSubmit={handleSubmit}>
             <Grid container spacing={4}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="First name"
                   fullWidth
                   onChange={e => setFname(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="Last name"
                   fullWidth
@@ -252,6 +253,11 @@ const extractErrorMessage = (data) => {
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign up with email'}
             </Button>
           </form>
+
+
+          {/* <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+            <GoogleLoginButton />
+          </Box> */}
 
           <Typography variant="body2" sx={{ mt: 2 }}>
             Already have an account?{' '}
