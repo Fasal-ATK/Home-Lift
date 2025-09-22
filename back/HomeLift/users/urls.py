@@ -9,7 +9,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view() ),
     path('token/refresh/', RefreshtokenView.as_view()),
 
-    path('/google-auth/', GoogleLoginAPIView.as_view(), name='google-login'),
+    path('google-auth/', GoogleLoginAPIView.as_view(), name='google-login'),
     
     # admin user management 
     path('manage/', UserManageView.as_view()),

@@ -4,7 +4,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
-    phone = PhoneNumberField(unique=True, region='IN')
+    phone = PhoneNumberField(unique=True, region='IN',null=True, blank=True)
     is_provider = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 

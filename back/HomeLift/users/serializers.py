@@ -5,6 +5,7 @@ import re
 
 
 class UserSerializer(serializers.ModelSerializer):
+    phone = serializers.CharField(required=False, allow_blank=True)
     class Meta:
         model = CustomUser
         fields = [
