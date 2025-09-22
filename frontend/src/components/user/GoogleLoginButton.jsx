@@ -13,7 +13,7 @@ const GoogleLoginButton = () => {
 
   const handleSuccess = async (credentialResponse) => {
     try {
-      const id_token = credentialResponse.credential; // ✅ use id_token
+      const id_token = credentialResponse.credential; 
 
       // Send Google ID token to backend
       const { data } = await api.post(apiEndpoints.auth.googleLogin, { id_token });
