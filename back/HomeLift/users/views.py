@@ -16,16 +16,80 @@ from django.shortcuts import get_object_or_404
 from core.permissions import IsAdminUserCustom
 from .models import CustomUser
 from .serializers import UserSerializer, SignupSerializer, LoginSerializer
+from social_django.utils import load_strategy, load_backend
+
 
 
 logger = logging.getLogger(__name__)
 
 
+
+class GoogleLoginAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        id_token_from_client = request.data.get("id_token")
+        if not id_token_from_client:
+            return Response({"error": "id_token required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # ✅ Verify the ID token with Google
+            idinfo = id_token.verify_oauth2_token(
+                id_token_from_client,
+                requests.Request(),
+                settings.GOOGLE_CLIENT_ID
+            )
+
+            email = idinfo.get("email")
+            if not email:
+                return Response({"error": "No email found in Google token"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # ✅ Get or create user
+            user, created = CustomUser.objects.get_or_create(email=email, defaults={
+                "username": email.split("@")[0]
+            })
+
+            if not user.is_active:
+                return Response({"error": "Inactive user"}, status=status.HTTP_403_FORBIDDEN)
+
+            if user.is_staff or user.is_superuser:
+                return Response({
+                    "error": "is-admin",
+                    "message": "Admin accounts cannot log in here."
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            # ✅ Generate tokens
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+
+            response = Response({
+                "user": UserSerializer(user).data,
+                "access_token": access_token,
+                "message": "Login successful via Google"
+            }, status=status.HTTP_200_OK)
+
+            response.set_cookie(
+                key="refresh",
+                value=str(refresh),
+                httponly=True,
+                secure=False,  # ⚠️ True in production
+                samesite="Lax",
+                max_age=86400,
+            )
+
+            return response
+
+        except Exception as e:
+            logger.error("Google login error: %s", str(e))
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            
 # ✅ Register
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print(f'signup',request.data)
         serializer = SignupSerializer(data=request.data.get('userData', {}))
         if serializer.is_valid():
             serializer.save()
@@ -185,6 +249,8 @@ class LogoutView(APIView):
         except Exception as e:
             logger.error("Logout error: %s", str(e))
             return Response({"error": "internal-error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
         
 
 

@@ -60,6 +60,7 @@ class SignupSerializer(serializers.ModelSerializer):
                 "error": "phone-exists",
                 "message": "This phone number is already in use."
             })
+        return value
         
 
     def create(self, validated_data):
