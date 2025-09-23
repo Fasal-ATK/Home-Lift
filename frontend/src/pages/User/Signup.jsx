@@ -255,9 +255,9 @@ const extractErrorMessage = (data) => {
           </form>
 
 
-          {/* <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
             <GoogleLoginButton />
-          </Box> */}
+          </Box>
 
           <Typography variant="body2" sx={{ mt: 2 }}>
             Already have an account?{' '}
