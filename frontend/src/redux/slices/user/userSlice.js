@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { providerService } from '../../../services/apiServices';
 
+
 // ------------------- Thunks ------------------- //
 
 // Apply for provider role
@@ -69,7 +70,7 @@ export const fetchProviderApplicationStatus = createAsyncThunk(
 const userSlice = createSlice({
   name: 'user',
   initialState: {
-    provider: null,
+    providerData: null,           // renamed from 'provider'
     loading: false,
     error: null,
     providerApplicationStatus: null, // pending, approved, rejected
@@ -77,7 +78,7 @@ const userSlice = createSlice({
   },
   reducers: {
     clearUserState: (state) => {
-      state.provider = null;
+      state.providerData = null;
       state.loading = false;
       state.error = null;
       state.providerApplicationStatus = null;
@@ -86,7 +87,7 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // -------- Apply Provider --------
+      // Apply Provider
       .addCase(applyProvider.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -100,17 +101,17 @@ const userSlice = createSlice({
         state.error = action.payload;
       })
 
-      // -------- Fetch Provider Details --------
+      // Fetch Provider Details
       .addCase(fetchProviderDetails.fulfilled, (state, action) => {
-        state.provider = action.payload;
+        state.providerData = action.payload;
         state.providerApplicationStatus = 'approved';
       })
       .addCase(fetchProviderDetails.rejected, (state) => {
-        state.provider = null;
+        state.providerData = null;
         state.providerApplicationStatus = null;
       })
 
-      // -------- Fetch Provider Application Status --------
+      // Fetch Provider Application Status
       .addCase(fetchProviderApplicationStatus.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -128,6 +129,7 @@ const userSlice = createSlice({
       });
   },
 });
+
 
 export const { clearUserState } = userSlice.actions;
 export default userSlice.reducer;

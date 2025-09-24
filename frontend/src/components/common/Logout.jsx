@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Slide } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useSelector } from 'react-redux';
 import { performLogout } from '../../utils/logoutHelper';
 import { ShowToast } from '../common/Toast'; // ✅ import toast
 
@@ -25,18 +24,18 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 const LogoutButton = ({ collapsed, color = 'red' }) => {
-  const isAdmin = useSelector((state) => state.auth.isAdmin);
   const [open, setOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
-      await performLogout(isAdmin);
-      ShowToast('Logged out successfully', 'success'); // ✅ success toast
+      await performLogout();
+      ShowToast('Logged out successfully', 'success');
     } catch (error) {
       console.error(error);
-      ShowToast('Logout failed. Try again.', 'error'); // ✅ error toast
+      ShowToast('Logout failed. Try again.', 'error');
     }
   };
+
 
   const { backgroundColor, hoverColor } = colorPresets[color] || colorPresets.red;
 

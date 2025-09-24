@@ -9,6 +9,8 @@ import { fetchServices } from "../../redux/slices/serviceSlice";
 import { fetchProviderApplicationStatus } from "../../redux/slices/user/userSlice";
 import { useNavigate } from "react-router-dom";
 
+import { setProvider } from "../../redux/slices/authSlice"; // import the action
+
 // assets
 import moreImg from "../../assets/user/home/more.png";
 import ruServiceProvider from "../../assets/user/home/ru-service-provider.png";
@@ -61,6 +63,7 @@ const BenefitItem = ({ icon, title, description }) => (
 );
 
 // ------------------- Home Component ------------------- //
+
 const Home = () => {
   const [applicationModalOpen, setApplicationModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -77,6 +80,12 @@ const Home = () => {
     dispatch(fetchServices());
     dispatch(fetchProviderApplicationStatus());
   }, [dispatch]);
+
+  useEffect(() => {
+  if (providerApplicationStatus?.toLowerCase() === "approved") {
+    dispatch(setProvider(true));
+  }
+}, [providerApplicationStatus, dispatch]);
 
   // Normalize status string
   const normalizedStatus = providerApplicationStatus?.toLowerCase();
@@ -102,27 +111,7 @@ const Home = () => {
       );
     }
 
-    if (!providerApplicationStatus) {
-      return (
-        <Button
-          variant="contained"
-          onClick={() => setApplicationModalOpen(true)}
-          sx={{
-            backgroundColor: "#007bff",
-            ":hover": { backgroundColor: "black" },
-            color: "yellow",
-            textTransform: "none",
-            px: 3,
-            mb: 3,
-            borderRadius: "9px"
-          }}
-        >
-          Register as Partner
-        </Button>
-      );
-    }
-
-    if (normalizedStatus === "pending") {
+    else if (normalizedStatus === "pending") {
       return (
         <Button
           variant="contained"
@@ -141,7 +130,7 @@ const Home = () => {
       );
     }
 
-    if (normalizedStatus === "rejected") {
+    else if (normalizedStatus === "rejected") {
       return (
         <Button
           variant="contained"
@@ -157,6 +146,27 @@ const Home = () => {
           }}
         >
           Application Rejected - Retry
+        </Button>
+      );
+    }
+
+      // else if (!providerApplicationStatus ) {
+      else if (!providerApplicationStatus ) {
+      return (
+        <Button
+          variant="contained"
+          onClick={() => setApplicationModalOpen(true)}
+          sx={{
+            backgroundColor: "#007bff",
+            ":hover": { backgroundColor: "black" },
+            color: "yellow",
+            textTransform: "none",
+            px: 3,
+            mb: 3,
+            borderRadius: "9px"
+          }}
+        >
+          Register as Partner
         </Button>
       );
     }
