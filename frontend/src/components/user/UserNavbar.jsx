@@ -19,6 +19,11 @@ const UserNavbar = () => {
 
   // ✅ Get provider info from authSlice
   const { isProvider } = useSelector((state) => state.auth);
+  const navLinks = [
+  { label: "HOME", path: "/home" },
+  { label: "SERVICES", path: "/services" },
+  { label: "BOOKINGS", path: "/bookings" },
+];
 
   return (
     <AppBar position="sticky" color="inherit" elevation={3} sx={{ borderRadius: '14px' }}>
@@ -72,11 +77,11 @@ const UserNavbar = () => {
         <Box display="flex" alignItems="center" gap={2}>
 
           {/* Text Links */}
-          {["HOME", "SERVICES", "BOOKINGS"].map((item) => (
+          {navLinks.map((item) => (
             <Typography
-              key={item}
+              key={item.label}
               component={Link}
-              to="/#"
+              to={item.path}
               variant="body1"
               fontWeight="bold"
               sx={{
@@ -86,12 +91,12 @@ const UserNavbar = () => {
                 "&:hover": { color: "#0066CC" },
               }}
             >
-              {item}
+              {item.label}
             </Typography>
           ))}
 
           {/* Icons */}
-          <IconButton component={Link} to="/#" sx={{ cursor: "pointer" }}>
+          <IconButton component={Link} to="profile" sx={{ cursor: "pointer" }}>
             <AccountCircle sx={{ color: '#0066CC' }} />
           </IconButton>
 

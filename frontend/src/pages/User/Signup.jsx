@@ -23,7 +23,7 @@ function Signup() {
   const [pass2, setPass2] = useState('');
   const [showPass1, setShowPass1] = useState(false);
   const [showPass2, setShowPass2] = useState(false);
-  const [agreed, setAgreed] = useState(false);
+  // const [agreed, setAgreed] = useState(false);
 
   const [error, setErrorState] = useState('');
   const [success, setSuccess] = useState('');
@@ -67,7 +67,8 @@ const extractErrorMessage = (data) => {
     setSuccess('');
 
     const validationError = validateSignupForm({
-      fname, lname, uname, email, phone, pass1, pass2, agreed,
+      fname, lname, uname, email, phone, pass1, pass2, 
+      // agreed,
     });
 
     if (validationError) {
@@ -227,7 +228,7 @@ const extractErrorMessage = (data) => {
               }}
             />
 
-            <FormControlLabel
+            {/* <FormControlLabel
               control={<Checkbox checked={agreed} onChange={e => setAgreed(e.target.checked)} />}
               label={
                 <Typography variant="body2">
@@ -235,7 +236,7 @@ const extractErrorMessage = (data) => {
                 </Typography>
               }
               sx={{ mt: 1, textAlign: 'left' }}
-            />
+            /> */}
 
             <Button
               type="submit"

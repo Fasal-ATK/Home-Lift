@@ -49,7 +49,7 @@ export default function Footer() {
       </Typography>
       <Grid container spacing={4} justifyContent="center">
         {whyHomeLift.map((item, idx) => (
-          <Grid item xs={6} sm={4} md={2} key={idx}>
+          <Grid size={{ xs: 6, sm: 4, md: 2 }} key={idx}>
             <Paper
               elevation={0}
               sx={{
@@ -92,9 +92,6 @@ export default function Footer() {
               {idx < cities.length - 1 && " | "}
             </React.Fragment>
           ))}
-          {/* <Link href="#" underline="hover" sx={{ ml: 1, fontWeight: "bold" }}>
-            More Lift →
-          </Link> */}
         </Typography>
       </Box>
 

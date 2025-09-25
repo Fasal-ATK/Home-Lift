@@ -115,6 +115,7 @@ class SendOtpView(APIView):
             return Response({"error": "Email is already registered"}, status=status.HTTP_400_BAD_REQUEST)
 
         otp = str(random.randint(100000, 999999))
+        print(otp)
         cache.set(f"otp_{email}", otp, timeout=300)  # 5 minutes
 
         send_mail(
@@ -219,6 +220,7 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        print('logout called')
         try:
             refresh_token = request.COOKIES.get("refresh")
             if not refresh_token:

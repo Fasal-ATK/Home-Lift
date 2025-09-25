@@ -3,13 +3,17 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastWrapper } from './components/common/Toast';  // ✅ import toast wrapper
 
 // Pages
+// User Pages
 import Login from './pages/User/Login';
 import Home from './pages/User/Home';
 import Profile from './pages/User/Profile';
 import About from './pages/User/About';
 import Signup from './pages/User/Signup';
 import Notifications from './pages/User/Notifications';
+import Services from './pages/User/Services';
+import Bookings from './pages/User/Bookings';
 
+// Admin Pages
 import AdminLogin from './pages/Admin/Login';
 import Dashboard from './pages/Admin/Dashboard';
 import UserManager from './pages/Admin/UserManager';
@@ -70,11 +74,14 @@ function App() {
             <UserLayout />
           </PrivateRoute>
         }>
-          <Route path='home' element={<Home />} />
           <Route index element={<Navigate to="home" replace />} />
+          <Route path='home' element={<Home />} />
           <Route path='about' element={<About />} />
           <Route path='profile' element={<Profile />} />
           <Route path='notifications' element={<Notifications />} />
+          <Route path='services' element={<Services />} />
+          <Route path='bookings' element={<Bookings />} />
+
         </Route>
 
         {/* Admin Routes */}

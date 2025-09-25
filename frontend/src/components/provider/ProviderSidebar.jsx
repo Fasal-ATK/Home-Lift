@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import LogoutButton from '../common/Logout';
+import { useLocation, Link } from "react-router-dom";
+import LogoutButton from "../common/Logout";
 import {
   Box,
   List,
@@ -10,7 +9,7 @@ import {
   Typography,
   IconButton,
   Divider,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Dashboard,
   Description,
@@ -18,49 +17,52 @@ import {
   History,
   Person,
   AccountBalanceWallet,
-  Logout,
   Menu,
   ChevronLeft,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
-export default function ProviderSidebar() {
+export default function ProviderSidebar({ open, setOpen }) {
   const location = useLocation();
-  const [open, setOpen] = useState(true); // collapsed/open state
 
   const navItems = [
-    { text: 'Dashboard', icon: <Dashboard />, path: '/provider/dashboard' },
-    { text: 'Requests', icon: <Description />, path: '#' },
-    { text: 'Bookings', icon: <CalendarMonth />,path: '#' },
-    { text: 'History', icon: <History />, path: '#' },
-    { text: 'Profile', icon: <Person />, path: '#' },
-    { text: 'Wallet', icon: <AccountBalanceWallet />, path: '#'},
+    { text: "Dashboard", icon: <Dashboard />, path: "/provider/dashboard" },
+    { text: "Requests", icon: <Description />, path: "#" },
+    { text: "Bookings", icon: <CalendarMonth />, path: "#" },
+    { text: "History", icon: <History />, path: "#" },
+    { text: "Profile", icon: <Person />, path: "#" },
+    { text: "Wallet", icon: <AccountBalanceWallet />, path: "#" },
   ];
 
   return (
     <Box
       sx={{
         width: open ? 200 : 70,
-        height: '100vh',
-        backgroundColor: '#fff',
-        borderRight: '1px solid #eee',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'width 0.3s',
+        position: "fixed", // makes sidebar fixed
+        left: 0,
+        top: 0,
+        bottom: 0,
+        height: "100vh",
+        backgroundColor: "#fff",
+        borderRight: "1px solid #eee",
+        display: "flex",
+        flexDirection: "column",
+        transition: "width 0.3s",
+        zIndex: 1200,
       }}
     >
       {/* Top: Brand + Toggle */}
       <Box
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: open ? 'space-between' : 'center',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: open ? "space-between" : "center",
           p: 2,
-          borderBottom: '1px solid #eee',
+          borderBottom: "1px solid #eee",
         }}
       >
         {open && (
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-            <span style={{ color: '#cddc39' }}>Home</span> <span>Lift</span>
+          <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+            <span style={{ color: "#cddc39" }}>Home</span> Lift
           </Typography>
         )}
         <IconButton size="small" onClick={() => setOpen(!open)}>
@@ -74,27 +76,26 @@ export default function ProviderSidebar() {
           const isActive = location.pathname === item.path;
           return (
             <ListItemButton
-            component={Link}
-            to={item.path}
-            key={item.text}
-            sx={{
-                backgroundColor: isActive ? '#f4e04d' : 'transparent',
-                borderRadius: '12px',
+              component={Link}
+              to={item.path}
+              key={item.text}
+              sx={{
+                backgroundColor: isActive ? "#f4e04d" : "transparent",
+                borderRadius: "12px",
                 mb: 1,
                 py: 1.5,
-                justifyContent: open ? 'initial' : 'center',
-                px: open ? 2 : 1.5, // small padding when collapsed
-                '&:hover': { backgroundColor: '#fff9c4' },
-                transition: 'all 0.3s',
-            }}
+                justifyContent: open ? "initial" : "center",
+                px: open ? 2 : 1.5,
+                "&:hover": { backgroundColor: "#fff9c4" },
+                transition: "all 0.3s",
+              }}
             >
-
               <ListItemIcon
                 sx={{
-                  minWidth: 'unset',
+                  minWidth: "unset",
                   mr: open ? 2 : 0,
-                  justifyContent: 'center',
-                  color: '#000',
+                  justifyContent: "center",
+                  color: "#000",
                 }}
               >
                 {item.icon}
@@ -103,15 +104,14 @@ export default function ProviderSidebar() {
             </ListItemButton>
           );
         })}
+
+        {/* Logout */}
         <Box sx={{ mt: 2 }}>
           <LogoutButton collapsed={!open} />
         </Box>
       </List>
 
       <Divider />
-
-      {/* Logout */}
-
     </Box>
   );
 }
