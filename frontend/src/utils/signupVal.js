@@ -6,7 +6,7 @@ export function validateSignupForm({
   phone,
   pass1,
   pass2,
-  agreed,
+  // agreed,
 }) {
   const errors = [];
 
@@ -55,7 +55,7 @@ export function validateSignupForm({
   else if (pass1 && pass1 !== pass2) errors.push('Passwords do not match');
 
   // --- Terms Agreement ---
-  if (!agreed) errors.push('You must agree to the terms');
+  // if (!agreed) errors.push('You must agree to the terms');
 
   // Return all messages as a comma-separated string
   return errors.length > 0 ? errors.join(', ') : null;

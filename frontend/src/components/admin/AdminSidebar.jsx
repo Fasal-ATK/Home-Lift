@@ -1,25 +1,11 @@
 // src/layouts/AdminSidebar.jsx
-import { useState, useEffect } from 'react';
-import {
-  Box, List, ListItemButton, ListItemIcon, ListItemText, Typography, Divider, Tooltip, Paper
-} from '@mui/material';
-import {
-  Dashboard, Group, Category, Report, LocalOffer,
-  BookOnline, PeopleAltOutlined, ChevronLeft, ChevronRight
-} from '@mui/icons-material';
+import { Box, List, ListItemButton, ListItemIcon, ListItemText, Typography, Divider, Tooltip, Paper } from '@mui/material';
+import { Dashboard, Group, Category, Report, LocalOffer, BookOnline, PeopleAltOutlined, ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import LogoutButton from '../common/Logout';
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ collapsed, setCollapsed }) => {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
-  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
-
-  useEffect(() => {
-    const handleResize = () => setWindowHeight(window.innerHeight);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const navItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
@@ -35,6 +21,7 @@ const AdminSidebar = () => {
     <Box
       sx={{
         width: collapsed ? '80px' : '240px',
+        position: "fixed",
         height: '100vh',
         backgroundColor: '#fff',
         borderRight: '1px solid #ddd',
@@ -43,7 +30,6 @@ const AdminSidebar = () => {
         flexDirection: 'column',
         justifyContent: 'space-between',
         transition: 'width 0.3s ease-in-out',
-        position: 'relative',
       }}
     >
       <Box>
@@ -78,11 +64,7 @@ const AdminSidebar = () => {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Tooltip
-                title={collapsed ? item.text : ''}
-                placement="right"
-                key={item.text}
-              >
+              <Tooltip title={collapsed ? item.text : ''} placement="right" key={item.text}>
                 <ListItemButton
                   component={Link}
                   to={item.path}
@@ -92,6 +74,7 @@ const AdminSidebar = () => {
                     mb: 1,
                     justifyContent: collapsed ? 'center' : 'flex-start',
                     '&:hover': { backgroundColor: '#ffe082' },
+                    transition: 'all 0.3s',
                   }}
                 >
                   <ListItemIcon
@@ -111,7 +94,7 @@ const AdminSidebar = () => {
           })}
         </List>
 
-        {/* ✅ Logout Button */}
+        {/* Logout Button */}
         <Box sx={{ mt: 2 }}>
           <LogoutButton collapsed={collapsed} />
         </Box>
@@ -122,7 +105,8 @@ const AdminSidebar = () => {
         elevation={4}
         sx={{
           position: 'absolute',
-          top: windowHeight / 2 - 24,
+          top: '50%',
+          transform: 'translateY(-50%)',
           right: -16,
           zIndex: 10,
           width: '32px',

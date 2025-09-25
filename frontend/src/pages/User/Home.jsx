@@ -9,7 +9,7 @@ import { fetchServices } from "../../redux/slices/serviceSlice";
 import { fetchProviderApplicationStatus } from "../../redux/slices/user/userSlice";
 import { useNavigate } from "react-router-dom";
 
-import { setProvider } from "../../redux/slices/authSlice"; // import the action
+import { setProvider } from "../../redux/slices/authSlice"; 
 
 // assets
 import moreImg from "../../assets/user/home/more.png";
