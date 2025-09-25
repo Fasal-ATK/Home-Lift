@@ -23,6 +23,7 @@ def handle_approved_application(sender, instance, created, **kwargs):
                 price=app_service.price,
                 experience_years=app_service.experience_years
             )
+            
         # ✅ Set user as provider
         user = instance.user
         if not user.is_provider:

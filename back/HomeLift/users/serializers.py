@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import CustomUser
-from django.contrib.auth.password_validation import validate_password
 import re
 
 
@@ -21,7 +20,7 @@ class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
         required=True,
-        validators=[validate_password],
+
         error_messages={
             'required': 'Password is required',
             'blank': 'Password cannot be blank',

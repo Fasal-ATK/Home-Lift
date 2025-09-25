@@ -220,7 +220,6 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        print('logout called')
         try:
             refresh_token = request.COOKIES.get("refresh")
             if not refresh_token:
