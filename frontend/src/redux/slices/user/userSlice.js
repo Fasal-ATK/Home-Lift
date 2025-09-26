@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { providerService } from '../../../services/apiServices';
-
+import { providerService, userService } from '../../../services/apiServices';
 
 // ------------------- Thunks ------------------- //
 
@@ -11,10 +10,8 @@ export const applyProvider = createAsyncThunk(
     try {
       const formData = new FormData();
 
-      // Attach provider’s main ID document
       formData.append('id_doc', applicationData.id_doc);
 
-      // Send services metadata as JSON
       const servicesPayload = applicationData.services.map((s, index) => {
         return {
           service: s.service_id,
@@ -24,14 +21,12 @@ export const applyProvider = createAsyncThunk(
 
       formData.append('services', JSON.stringify(servicesPayload));
 
-      // Append actual files with predictable keys
       applicationData.services.forEach((s, index) => {
         if (s.doc) {
           formData.append(`service_doc_${index}`, s.doc);
         }
       });
 
-      // ✅ Send to API (multipart/form-data automatically handled by Axios)
       return await providerService.apply(formData);
     } catch (err) {
       console.error('❌ Apply provider error:', err);
@@ -58,22 +53,36 @@ export const fetchProviderApplicationStatus = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await providerService.fetchApplicationStatus();
-      return response.data; // Only return JSON data
+      return response.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
   }
 );
 
-// ------------------- Slice ------------------- //
+// ✅ Update user profile
+export const updateUser = createAsyncThunk(
+  'user/updateUser',
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await userService.updateProfile(data);
+      return response; // { user: {...} }
+    } catch (err) {
+      console.error('❌ Update user error:', err);
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
 
+
+// ------------------- Slice ------------------- //
 const userSlice = createSlice({
   name: 'user',
   initialState: {
-    providerData: null,           // renamed from 'provider'
+    providerData: null,
     loading: false,
     error: null,
-    providerApplicationStatus: null, // pending, approved, rejected
+    providerApplicationStatus: null,
     rejectionReason: null,
   },
   reducers: {
@@ -126,10 +135,23 @@ const userSlice = createSlice({
         state.error = action.payload;
         state.providerApplicationStatus = null;
         state.rejectionReason = null;
+      })
+
+      // ✅ Update User
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUser.fulfilled, (state) => {
+        state.loading = false;
+        // optional: you could store updated user in slice if needed
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
-
 
 export const { clearUserState } = userSlice.actions;
 export default userSlice.reducer;

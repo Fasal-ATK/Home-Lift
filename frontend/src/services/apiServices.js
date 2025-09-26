@@ -36,6 +36,13 @@ export const otpService = {
     },
   };
 
+export const userService = {
+    updateProfile: async (data) => {
+        const response = await api.patch(apiEndpoints.user.updateProfile,data);
+        return response.data;
+    },
+};
+
 export const providerService = {
     apply: async (formData) => {
       const response = await api.post(apiEndpoints.provider.apply, formData, {
@@ -70,7 +77,7 @@ export const adminServiceManagementService = {
         return response.data;
     },
 
-    // Services
+// Services
     getServices: async () => {
         const response = await api.get(apiEndpoints.adminServiceManagement.listServices);
         return response.data;

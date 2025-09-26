@@ -16,6 +16,10 @@ const apiEndpoints = {
         verifyOtp: '/user/verify-otp/',
     },
 
+    user: {
+        updateProfile : '/user/profile/update/'
+    },
+
     adminDashboard: {},
 
     adminCustomerManagement: {
