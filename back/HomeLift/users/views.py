@@ -16,7 +16,7 @@ from rest_framework.exceptions import ValidationError
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-from core.permissions import IsAdminUserCustom
+from core.permissions import IsAdminUserCustom,IsNormalUser,IsProviderUser
 from .models import CustomUser
 from .serializers import UserSerializer, SignupSerializer, LoginSerializer
 
@@ -238,6 +238,48 @@ class LogoutView(APIView):
             logger.error("Logout error: %s", str(e))
             return Response({"error": "internal-error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+class ProfileUpdateView(APIView):
+    permission_classes = [ IsAuthenticated]
+    def put(self, request):
+        """Full update of profile"""
+        try:
+            user = request.user
+            serializer = UserSerializer(user, data=request.data, partial=False)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"message": "Profile updated successfully", "user": serializer.data},
+                    status=status.HTTP_200_OK,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.error(f"Profile PUT error for user {request.user.id}: {str(e)}")
+            return Response(
+                {"error": "internal-error", "message": "Unexpected error while updating profile."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def patch(self, request):
+        """Partial update (e.g. only phone)"""
+        try:
+            user = request.user
+            serializer = UserSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"message": "Profile updated successfully", "user": serializer.data},
+                    status=status.HTTP_200_OK,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.error(f"Profile PATCH error for user {request.user.id}: {str(e)}")
+            return Response(
+                {"error": "internal-error", "message": "Unexpected error while updating profile."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 # -----------------------------
 # Admin User Management

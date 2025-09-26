@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'phone',
             'is_staff', 'is_provider', 'is_active'
         ]
-        read_only_fields = ['id', 'email', 'username']
+        read_only_fields = ['email',]
 
 
 # Signup serializer for users

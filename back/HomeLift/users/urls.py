@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterView, SendOtpView, VerifyOtpView, UserLogin, LogoutView, RefreshtokenView, UserManageView,GoogleLoginAPIView
+from .views import RegisterView, SendOtpView, VerifyOtpView, UserLogin, LogoutView, RefreshtokenView, UserManageView,GoogleLoginAPIView,ProfileUpdateView
 
 urlpatterns = [
     path('register/', RegisterView.as_view()),
@@ -10,6 +10,8 @@ urlpatterns = [
     path('token/refresh/', RefreshtokenView.as_view()),
 
     path('google-auth/', GoogleLoginAPIView.as_view(), name='google-login'),
+
+    path('profile/update/', ProfileUpdateView.as_view()),
     
     # admin user management 
     path('manage/', UserManageView.as_view()),
