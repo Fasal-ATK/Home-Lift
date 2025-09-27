@@ -103,6 +103,7 @@ class RegisterView(APIView):
 # -----------------------------
 # Send OTP
 # -----------------------------
+
 class SendOtpView(APIView):
     permission_classes = [AllowAny]
 
@@ -130,6 +131,7 @@ class SendOtpView(APIView):
 # -----------------------------
 # Verify OTP
 # -----------------------------
+
 class VerifyOtpView(APIView):
     permission_classes = [AllowAny]
 
