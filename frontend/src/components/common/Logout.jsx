@@ -28,14 +28,13 @@ const LogoutButton = ({ collapsed, color = 'red' }) => {
 
   const handleLogout = async () => {
     try {
-      await performLogout();
+      await performLogout(true);
       ShowToast('Logged out successfully', 'success');
     } catch (error) {
       console.error(error);
       ShowToast('Logout failed. Try again.', 'error');
     }
   };
-
 
   const { backgroundColor, hoverColor } = colorPresets[color] || colorPresets.red;
 

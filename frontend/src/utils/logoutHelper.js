@@ -1,10 +1,13 @@
+// logoutHelper.js
 import { authService } from '../services/apiServices';
 import store from '../redux/store/store';
 import { logout } from '../redux/slices/authSlice';
 
-export const performLogout = async () => {
+export const performLogout = async (callBackend = true) => {
   try {
-    await authService.logout(); 
+    if (callBackend) {
+      await authService.logout(); // only if still authorized
+    }
   } catch (err) {
     console.warn("Backend logout failed or token already invalid:", err);
   } finally {
