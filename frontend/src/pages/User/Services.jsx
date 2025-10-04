@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Grid, Paper, Typography, Box } from "@mui/material";
+import { Grid, Paper, Typography, Box, Container } from "@mui/material";
 import { useSelector } from "react-redux";
 import allCategory from "../../assets/services/All.png";
 
@@ -7,7 +7,7 @@ const Card = ({ name, icon, onClick, selected }) => (
   <Paper
     onClick={onClick}
     sx={{
-      width: 130,
+      width: 120,
       height: 140,
       textAlign: "center",
       backgroundColor: selected ? "#f0f8ff" : "white",
@@ -56,11 +56,13 @@ function Services() {
       : services.filter((srv) => srv.category === selectedCategory);
 
   return (
-    <div>
-      <h1>Services</h1>
+    <Container maxWidth="lg" sx={{ py: 2 }}>
+      <Typography variant="h5" fontWeight="bold" mb={3}>
+        Services
+      </Typography>
 
       {/* Categories */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* Static All Services button */}
         <Grid item xs={6} sm={4} md={2}>
           <Card
@@ -85,20 +87,20 @@ function Services() {
       </Grid>
 
       {/* Selected category services */}
-      <h2>
+      <Typography variant="h6" fontWeight="bold" mb={2}>
         {selectedCategory === null
           ? "All Services"
           : categories.find((c) => c.id === selectedCategory)?.name}
-      </h2>
+      </Typography>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={3}>
         {filteredServices.map((srv) => (
           <Grid item xs={6} sm={4} md={2} key={srv.id}>
             <Card name={srv.name} icon={srv.icon} />
           </Grid>
         ))}
       </Grid>
-    </div>
+    </Container>
   );
 }
 
