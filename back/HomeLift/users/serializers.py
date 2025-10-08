@@ -5,10 +5,12 @@ import re
 
 class UserSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(required=False, allow_blank=True)
+    profile_picture = serializers.ImageField(required=False, allow_null=True, use_url=True)
+
     class Meta:
         model = CustomUser
         fields = [
-            'id', 'email', 'username',
+            'id', 'email', 'username','profile_picture',
             'first_name', 'last_name', 'phone',
             'is_staff', 'is_provider', 'is_active'
         ]

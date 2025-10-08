@@ -2,7 +2,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastWrapper } from './components/common/Toast';  // ✅ import toast wrapper
 
-// Pages
 // User Pages
 import Login from './pages/User/Login';
 import Home from './pages/User/Home';
@@ -24,6 +23,7 @@ import Coupons from './pages/Admin/Coupons';
 import BookingMng from './pages/Admin/BookingMng';
 import EmployeeReq from './components/admin/emp/ProviderApplications';
 
+// Provider Pages
 import ProviderDashboard from './pages/Provider/ProviderDashboard';
 import Landing from './pages/Landing';
 
@@ -36,11 +36,14 @@ import ProviderLayout from './layouts/ProviderLayout';
 import PublicRoute from './routes/PublicRoute';
 import PrivateRoute from './routes/PrivateRoute';
 
+import ScrollToTop from './components/common/ScrollToTop';
+
 function App() {
   return (
     <>
       {/* ✅ Toast container globally mounted */}
       <ToastWrapper />  
+      {/* <ScrollToTop /> */}
 
       <Routes>
         {/* Public Pages */}
@@ -55,7 +58,7 @@ function App() {
             <Login />
           </PublicRoute>
         } />
-          
+
         <Route path='/signup' element={
           <PublicRoute>
             <Signup />
