@@ -76,10 +76,11 @@ const Home = () => {
   const { isProvider } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    dispatch(fetchCategories());
-    dispatch(fetchServices());
-    dispatch(fetchProviderApplicationStatus());
-  }, [dispatch]);
+    if (!categories.length) dispatch(fetchCategories());
+    if (!services.length) dispatch(fetchServices());
+    if (!providerApplicationStatus) dispatch(fetchProviderApplicationStatus());
+  }, [dispatch, categories.length, services.length, providerApplicationStatus]);
+
 
   useEffect(() => {
   if (providerApplicationStatus?.toLowerCase() === "approved") {

@@ -38,7 +38,7 @@ export const otpService = {
 
 export const userService = {
     updateProfile: async (data) => {
-        const response = await api.patch(apiEndpoints.user.updateProfile,data);
+        const response = await api.patch(apiEndpoints.user.updateProfile,data,);
         return response.data;
     },
 };

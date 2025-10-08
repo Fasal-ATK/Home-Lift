@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Grid, Paper, Typography, Box, Container } from "@mui/material";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux"; // ✅ <-- Add useDispatch
+import { fetchCategories } from "../../redux/slices/categorySlice";
+import { fetchServices } from "../../redux/slices/serviceSlice";
 import allCategory from "../../assets/services/All.png";
 
 const Card = ({ name, icon, onClick, selected }) => (
@@ -35,7 +37,11 @@ const Card = ({ name, icon, onClick, selected }) => (
     <Typography
       variant="body2"
       fontWeight="bold"
-      sx={{ textAlign: "center", whiteSpace: "normal", wordBreak: "break-word" }}
+      sx={{
+        textAlign: "center",
+        whiteSpace: "normal",
+        wordBreak: "break-word",
+      }}
     >
       {name}
     </Typography>
@@ -43,13 +49,20 @@ const Card = ({ name, icon, onClick, selected }) => (
 );
 
 function Services() {
-  const { list: categories } = useSelector((state) => state.categories);
-  const { list: services } = useSelector((state) => state.services);
+  const dispatch = useDispatch(); // ✅ Correct hook
 
-  // Track selected category (null means "All")
+  const { list: categories } = useSelector((state) => state.categories);
+  const { list: services, loading: servicesLoading } = useSelector(
+    (state) => state.services
+  );
+
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // Filter services based on selected category
+  useEffect(() => {
+    if (!categories.length) dispatch(fetchCategories());
+    if (!services.length) dispatch(fetchServices());
+  }, [dispatch, categories.length, services.length]);
+
   const filteredServices =
     selectedCategory === null
       ? services
@@ -63,7 +76,7 @@ function Services() {
 
       {/* Categories */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        {/* Static All Services button */}
+        {/* All Services */}
         <Grid item xs={6} sm={4} md={2}>
           <Card
             name="All Services"
@@ -73,7 +86,6 @@ function Services() {
           />
         </Grid>
 
-        {/* Dynamic categories from Redux */}
         {categories.map((cat) => (
           <Grid item xs={6} sm={4} md={2} key={cat.id}>
             <Card
@@ -86,19 +98,23 @@ function Services() {
         ))}
       </Grid>
 
-      {/* Selected category services */}
       <Typography variant="h6" fontWeight="bold" mb={2}>
         {selectedCategory === null
           ? "All Services"
           : categories.find((c) => c.id === selectedCategory)?.name}
       </Typography>
 
+      {/* Services */}
       <Grid container spacing={3}>
-        {filteredServices.map((srv) => (
-          <Grid item xs={6} sm={4} md={2} key={srv.id}>
-            <Card name={srv.name} icon={srv.icon} />
-          </Grid>
-        ))}
+        {servicesLoading ? (
+          <Typography>Loading...</Typography>
+        ) : (
+          filteredServices.map((srv) => (
+            <Grid item xs={6} sm={4} md={2} key={srv.id}>
+              <Card name={srv.name} icon={srv.icon} />
+            </Grid>
+          ))
+        )}
       </Grid>
     </Container>
   );
