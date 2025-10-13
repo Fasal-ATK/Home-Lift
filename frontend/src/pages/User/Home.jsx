@@ -19,8 +19,9 @@ import productivityIcon from "../../assets/user/home/partner/Improve-Productivit
 import customerBaseIcon from "../../assets/user/home/partner/Large-Customer-Base.png";
 
 // ------------------- Reusable Components ------------------- //
-const ServiceCard = ({ name, icon, isMore }) => (
+const ServiceCard = ({ name, icon, isMore, onClick }) => (
   <Paper
+    onClick={onClick}
     sx={{
       width: 130,
       height: 140,
@@ -40,7 +41,13 @@ const ServiceCard = ({ name, icon, isMore }) => (
       component="img"
       src={icon}
       alt={name}
-      sx={{ width: 60, height: 60, objectFit: "contain", mb: isMore ? 1 : 2, pt: isMore ? 0 : 2 }}
+      sx={{
+        width: 60,
+        height: 60,
+        objectFit: "contain",
+        mb: isMore ? 1 : 2,
+        pt: isMore ? 0 : 2,
+      }}
     />
     <Typography
       variant="body2"
@@ -184,17 +191,30 @@ const Home = () => {
       ) : servicesError ? (
         <Typography color="error">Failed to load services</Typography>
       ) : (
-        <Grid container spacing={2}>
-          {services.slice(0, 9).map((srv) => (
-            <Grid item xs={6} sm={4} md={2} key={srv.id}>
-              <ServiceCard name={srv.name} icon={srv.icon || ""} />
-            </Grid>
-          ))}
-          <Grid item xs={6} sm={4} md={2}>
-            <ServiceCard name="More Services" icon={moreImg} isMore />
+
+      <Grid container spacing={2}>
+        {services.slice(0, 9).map((srv) => (
+          <Grid item xs={6} sm={4} md={2} key={srv.id}>
+            <ServiceCard
+              name={srv.name}
+              icon={srv.icon || ""}
+              onClick={() => navigate(`/#`)} // optional
+            />
           </Grid>
+        ))}
+
+        <Grid item xs={6} sm={4} md={2}>
+          <ServiceCard
+            name="More Services"
+            icon={moreImg}
+            isMore
+            onClick={() => navigate("/services")}
+          />
         </Grid>
+      </Grid>
+
       )}
+      
 
       {/* Call to Action */}
       <Box

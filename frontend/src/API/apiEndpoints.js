@@ -20,6 +20,11 @@ const apiEndpoints = {
         updateProfile : '/user/profile/update/'
     },
 
+    notification:{
+        list: 'user/notifications/',
+        markRead: (id) => `user/notifications/${id}/read/`,
+    },
+
     adminDashboard: {},
 
     adminCustomerManagement: {

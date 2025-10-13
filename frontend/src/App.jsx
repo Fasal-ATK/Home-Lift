@@ -81,9 +81,9 @@ function App() {
           <Route path='home' element={<Home />} />
           <Route path='about' element={<About />} />
           <Route path='profile' element={<Profile />} />
-          <Route path='notifications' element={<Notifications />} />
           <Route path='services' element={<Services />} />
           <Route path='bookings' element={<Bookings />} />
+          <Route path='notifications' element={<Notifications />} />
 
         </Route>
 

@@ -8,6 +8,7 @@ import adminCustomerReducer from '../slices/adminCustomerSlice';
 import userReducer from '../slices/user/userSlice'; 
 import providerReducer from '../slices/admin/providerSlice';
 import applicationReducer from '../slices/admin/applicationsSlice';
+import notificationReducer from '../slices/notificationSlice';
 
 // store.js
 const appReducer = combineReducers({
@@ -18,6 +19,8 @@ const appReducer = combineReducers({
   adminCustomers: adminCustomerReducer,
   providers: providerReducer,
   applications: applicationReducer,
+  notifications: notificationReducer,
+
 });
 
 const rootReducer = (state, action) => {
@@ -30,8 +33,7 @@ const rootReducer = (state, action) => {
         adminCustomers: undefined,
         providers: undefined,
         applications: undefined,
-        categories: undefined,
-        services: undefined,
+        notifications: undefined,
       },
       action
     );

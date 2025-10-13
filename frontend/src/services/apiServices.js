@@ -43,6 +43,17 @@ export const userService = {
     },
 };
 
+export const notificationService = {
+    list: async () => {
+        const response = await api.get(apiEndpoints.notification.list);
+        return response.data;
+    },
+    markRead: async (id) => {
+        const response = await api.post(apiEndpoints.notification.markRead(id));
+        return response.data;
+    },
+};
+
 export const providerService = {
     apply: async (formData) => {
       const response = await api.post(apiEndpoints.provider.apply, formData, {
