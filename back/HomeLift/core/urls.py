@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import VerifyOtpView, SendOtpView
+from .views import VerifyOtpView, SendOtpView, RefreshtokenView
 
 urlpatterns = [
     path('send-otp/', SendOtpView.as_view()),

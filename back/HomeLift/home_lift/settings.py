@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     'reviews',
     'payments',
     'core',
+    'notifications',
 
     'rest_framework',
     'corsheaders',

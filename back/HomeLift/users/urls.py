@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path,include
 from .views import RegisterView, SendOtpView, VerifyOtpView, UserLogin, LogoutView, RefreshtokenView, UserManageView,GoogleLoginAPIView,ProfileUpdateView
 
 urlpatterns = [
@@ -8,6 +8,8 @@ urlpatterns = [
     path('token/refresh/', RefreshtokenView.as_view()),
     path('login/', UserLogin.as_view()),  
     path('logout/', LogoutView.as_view() ),
+
+    path('notifications/', include('notifications.urls')),
 
     path('google-auth/', GoogleLoginAPIView.as_view(), name='google-login'),
 
