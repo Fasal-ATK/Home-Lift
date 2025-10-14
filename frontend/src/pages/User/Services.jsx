@@ -71,7 +71,7 @@ function Services() {
   return (
     <Container maxWidth="lg" sx={{ py: 2 }}>
       <Typography variant="h5" fontWeight="bold" mb={3}>
-        Services
+        Categories
       </Typography>
 
       {/* Categories */}

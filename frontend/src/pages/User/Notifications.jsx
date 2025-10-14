@@ -11,8 +11,21 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  IconButton,
+  Divider,
+  Tooltip,
 } from "@mui/material";
-import { Notifications as NotificationsIcon } from "@mui/icons-material";
+import {
+  Notifications as NotificationsIcon,
+  CheckCircle,
+  DoneAll,
+  Close,
+} from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
 import {
   fetchNotifications,
@@ -22,15 +35,25 @@ import {
 const Notifications = () => {
   const dispatch = useDispatch();
   const { list, loading, error } = useSelector((state) => state.notifications);
-  const [filter, setFilter] = useState("all"); // all, read, unread
-  const [sortOrder, setSortOrder] = useState("newest"); // newest, oldest
+
+  const [filter, setFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest");
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
 
   useEffect(() => {
     dispatch(fetchNotifications());
   }, [dispatch]);
 
-  const handleMarkRead = (id) => {
-    dispatch(markNotificationRead(id));
+  const handleOpenModal = (note) => {
+    setSelectedNote(note);
+    setOpenModal(true);
+    if (!note.is_read) dispatch(markNotificationRead(note.id));
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setSelectedNote(null);
   };
 
   const handleFilterChange = (event, newFilter) => {
@@ -119,7 +142,7 @@ const Notifications = () => {
             <Paper
               key={note.id}
               elevation={2}
-              onClick={() => handleMarkRead(note.id)}
+              onClick={() => handleOpenModal(note)}
               sx={{
                 display: "flex",
                 alignItems: "flex-start",
@@ -134,25 +157,92 @@ const Notifications = () => {
                 transition: "0.2s ease-in-out",
               }}
             >
-              <Avatar sx={{ bgcolor: "#0066CC", mr: 2 }}>
+              <Avatar sx={{ bgcolor: "#0066CC", mr: 3 }}>
                 <NotificationsIcon />
               </Avatar>
               <Box>
                 <Typography variant="subtitle1" fontWeight="bold">
                   {note.title || note.type.toUpperCase()}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {note.message}
-                </Typography>
+
                 <Typography variant="caption" color="text.secondary">
-                  From: {note.sender_name || "System"} | Received by:{" "}
-                  {note.recipient_name || "You"}
+                  From: {note.sender_name || "System"} |{" "}
+                  {new Date(note.created_at).toLocaleString()}
                 </Typography>
               </Box>
             </Paper>
           ))}
         </Box>
       )}
+
+      {/* 🧾 View Notification Modal */}
+      <Dialog
+        open={openModal}
+        onClose={handleCloseModal}
+        maxWidth="sm"
+        fullWidth
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: 3,
+            p: 2,
+          },
+        }}
+      >
+        {selectedNote && (
+          <>
+            <DialogTitle
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <Typography variant="h6" fontWeight="bold">
+                {selectedNote.title || "Notification"}
+              </Typography>
+              <Box flexGrow={1} />
+              <Tooltip
+                title={selectedNote.is_read ? "Read" : "Unread"}
+                arrow
+              >
+                <IconButton
+                  color={selectedNote.is_read ? "success" : "default"}
+                  size="small"
+                >
+                  {selectedNote.is_read ? <DoneAll /> : <CheckCircle />}
+                </IconButton>
+              </Tooltip>
+              <IconButton onClick={handleCloseModal}>
+                <Close />
+              </IconButton>
+            </DialogTitle>
+
+            <Divider />
+
+            <DialogContent>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                {selectedNote.message}
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  mt: 1,
+                }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  From: {selectedNote.sender_name || "System"}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {new Date(selectedNote.created_at).toLocaleString()}
+                </Typography>
+              </Box>
+            </DialogContent>
+
+            <DialogActions>
+              <Button onClick={handleCloseModal} variant="contained">
+                Close
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
     </Box>
   );
 };

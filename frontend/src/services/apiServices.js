@@ -49,7 +49,7 @@ export const notificationService = {
         return response.data;
     },
     markRead: async (id) => {
-        const response = await api.post(apiEndpoints.notification.markRead(id));
+        const response = await api.patch(apiEndpoints.notification.markRead(id));
         return response.data;
     },
 };
