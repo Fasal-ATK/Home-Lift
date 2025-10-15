@@ -17,7 +17,7 @@ const AdminLayout = () => {
           p: 3,
           bgcolor: '#f5f5f5',
           minHeight: '100vh',
-          ml: collapsed ? '80px' : '240px', // dynamic margin
+          ml: collapsed ? '100px' : '250px', // dynamic margin
           transition: 'margin-left 0.3s ease-in-out',
         }}
       >

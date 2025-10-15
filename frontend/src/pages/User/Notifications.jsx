@@ -31,6 +31,9 @@ import {
   fetchNotifications,
   markNotificationRead,
 } from "../../redux/slices/notificationSlice";
+import MarkEmailReadIcon from "@mui/icons-material/MarkEmailRead";
+import MarkEmailUnreadIcon from "@mui/icons-material/MarkEmailUnread";
+
 
 const Notifications = () => {
   const dispatch = useDispatch();
@@ -125,56 +128,69 @@ const Notifications = () => {
         </FormControl>
       </Box>
 
-      {/* 🔔 Notification List */}
-      {loading ? (
-        <Box display="flex" justifyContent="center" mt={6}>
-          <CircularProgress />
-        </Box>
-      ) : error ? (
-        <Typography color="error">
-          Failed to load notifications: {error}
-        </Typography>
-      ) : sortedNotifications.length === 0 ? (
-        <Typography>No notifications found.</Typography>
-      ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {sortedNotifications.map((note) => (
-            <Paper
-              key={note.id}
-              elevation={2}
-              onClick={() => handleOpenModal(note)}
-              sx={{
-                display: "flex",
-                alignItems: "flex-start",
-                p: 2,
-                borderRadius: 2,
-                cursor: "pointer",
-                backgroundColor: note.is_read ? "#f5f5f5" : "#fff",
-                borderLeft: note.is_read
-                  ? "5px solid transparent"
-                  : "5px solid #007bff",
-                "&:hover": { boxShadow: 6 },
-                transition: "0.2s ease-in-out",
-              }}
+{/* 🔔 Notification List */}
+{loading ? (
+  <Box display="flex" justifyContent="center" mt={6}>
+    <CircularProgress />
+  </Box>
+) : error ? (
+  <Typography color="error">
+    Failed to load notifications: {error}
+  </Typography>
+) : sortedNotifications.length === 0 ? (
+  <Typography>No notifications found.</Typography>
+) : (
+  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+    {sortedNotifications.map((note) => (
+      <Paper
+        key={note.id}
+        elevation={note.is_read ? 1 : 4}
+        onClick={() => handleOpenModal(note)}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          p: 2,
+          borderRadius: 2,
+          cursor: "pointer",
+          backgroundColor: note.is_read ? "#f8f9fa" : "#e8f1ff",
+          borderLeft: note.is_read
+            ? "5px solid #cfd8dc"
+            : "5px solid #007bff",
+          "&:hover": { boxShadow: 6 },
+          transition: "0.2s ease-in-out",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+          <Avatar sx={{ bgcolor: note.is_read ? "#90caf9" : "#007bff", mr: 3 }}>
+            <NotificationsIcon />
+          </Avatar>
+          <Box>
+            <Typography
+              variant="subtitle1"
+              fontWeight={note.is_read ? "500" : "bold"}
+              color={note.is_read ? "text.secondary" : "text.primary"}
             >
-              <Avatar sx={{ bgcolor: "#0066CC", mr: 3 }}>
-                <NotificationsIcon />
-              </Avatar>
-              <Box>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {note.title || note.type.toUpperCase()}
-                </Typography>
+              {note.title || note.type.toUpperCase()}
+            </Typography>
 
-                <Typography variant="caption" color="text.secondary">
-                  From: {note.sender_name || "System"} |{" "}
-                  {new Date(note.created_at).toLocaleString()}
-                </Typography>
-              </Box>
-            </Paper>
-          ))}
+            <Typography variant="caption" color="text.secondary">
+              From: {note.sender_name || "System"} |{" "}
+              {new Date(note.created_at).toLocaleString()}
+            </Typography>
+          </Box>
         </Box>
-      )}
 
+        {/* ✅ Read/Unread Icon */}
+        {note.is_read ? (
+          <MarkEmailReadIcon sx={{ color: "#4caf50" }} />
+        ) : (
+          <MarkEmailUnreadIcon sx={{ color: "#ff9800" }} />
+        )}
+      </Paper>
+    ))}
+  </Box>
+)}
       {/* 🧾 View Notification Modal */}
       <Dialog
         open={openModal}

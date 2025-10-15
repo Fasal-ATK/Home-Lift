@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Grid, Paper, Typography, Box, Container } from "@mui/material";
-import { useSelector, useDispatch } from "react-redux"; // ✅ <-- Add useDispatch
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom"; // ✅ Add this
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
 import allCategory from "../../assets/services/All.png";
@@ -21,6 +22,7 @@ const Card = ({ name, icon, onClick, selected }) => (
       alignItems: "center",
       justifyContent: "center",
       "&:hover": { backgroundColor: "#f9f9f9" },
+      transition: "0.2s ease",
     }}
   >
     <Box
@@ -28,8 +30,8 @@ const Card = ({ name, icon, onClick, selected }) => (
       src={icon}
       alt={name}
       sx={{
-        width: 60,
-        height: 60,
+        width: 50,
+        height: 50,
         objectFit: "contain",
         mb: 2,
       }}
@@ -49,7 +51,8 @@ const Card = ({ name, icon, onClick, selected }) => (
 );
 
 function Services() {
-  const dispatch = useDispatch(); // ✅ Correct hook
+  const dispatch = useDispatch();
+  const navigate = useNavigate(); // ✅ Initialize navigate
 
   const { list: categories } = useSelector((state) => state.categories);
   const { list: services, loading: servicesLoading } = useSelector(
@@ -68,6 +71,11 @@ function Services() {
       ? services
       : services.filter((srv) => srv.category === selectedCategory);
 
+  // ✅ Navigate to ServiceBooking when service card clicked
+  const handleServiceClick = (srv) => {
+    navigate("/service-booking", { state: { service: srv } });
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 2 }}>
       <Typography variant="h5" fontWeight="bold" mb={3}>
@@ -76,7 +84,6 @@ function Services() {
 
       {/* Categories */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        {/* All Services */}
         <Grid item xs={6} sm={4} md={2}>
           <Card
             name="All Services"
@@ -111,7 +118,11 @@ function Services() {
         ) : (
           filteredServices.map((srv) => (
             <Grid item xs={6} sm={4} md={2} key={srv.id}>
-              <Card name={srv.name} icon={srv.icon} />
+              <Card
+                name={srv.name}
+                icon={srv.icon}
+                onClick={() => handleServiceClick(srv)} // ✅ Redirect with service data
+              />
             </Grid>
           ))
         )}

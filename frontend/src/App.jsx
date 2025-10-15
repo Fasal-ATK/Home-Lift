@@ -37,6 +37,7 @@ import PublicRoute from './routes/PublicRoute';
 import PrivateRoute from './routes/PrivateRoute';
 
 import ScrollToTop from './components/common/ScrollToTop';
+import ServiceBooking from './components/user/booking/ServiceBooking';
 
 function App() {
   return (
@@ -82,6 +83,7 @@ function App() {
           <Route path='about' element={<About />} />
           <Route path='profile' element={<Profile />} />
           <Route path='services' element={<Services />} />
+          <Route path='service-booking' element={<ServiceBooking/>} />
           <Route path='bookings' element={<Bookings />} />
           <Route path='notifications' element={<Notifications />} />
 

@@ -20,7 +20,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
   return (
     <Box
       sx={{
-        width: collapsed ? '80px' : '240px',
+        width: collapsed ? '80px' : '230px',
         position: "fixed",
         height: '100vh',
         backgroundColor: '#fff',
