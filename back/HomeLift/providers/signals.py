@@ -74,6 +74,6 @@ def reset_user_is_provider(sender, instance, **kwargs):
             sender=None,
             type='system',
             title='Provider Profile Removed',
-            message='Your provider profile has been removed from the system.'
+            message='Your provider profile has been removed , please reapply the provider application if you want to be a provider. or contact support for more details.'
         )
 

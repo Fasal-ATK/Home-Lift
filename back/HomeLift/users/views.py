@@ -290,7 +290,7 @@ class UserManageView(APIView):
     permission_classes = [IsAdminUserCustom]
 
     def get(self, request):
-        users = CustomUser.objects.filter(is_staff=False, is_provider=False)
+        users = CustomUser.objects.filter(is_staff=False)
         return Response(UserSerializer(users, many=True).data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk=None):
