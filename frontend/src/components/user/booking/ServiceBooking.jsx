@@ -37,9 +37,15 @@ const ServiceBooking = () => {
         <Typography variant="h4" fontWeight="bold">
           {service.name}
         </Typography>
-        <Button variant="contained" color="warning" size="large">
+        <Button
+          variant="contained"
+          color="warning"
+          size="large"
+          onClick={() => navigate("/booking-form", { state: { service } })}
+        >
           Book Now
         </Button>
+
       </Box>
 
       <Typography variant="body2" mb={2}>

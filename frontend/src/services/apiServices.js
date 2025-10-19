@@ -41,6 +41,30 @@ export const userService = {
         const response = await api.patch(apiEndpoints.user.updateProfile,data,);
         return response.data;
     },
+
+};
+
+export const bookingService = {
+    createBooking: async (data) => {
+        const response = await api.post(apiEndpoints.user.booking, data);
+        return response.data;
+    },
+
+    getBookings: async () => {
+        const response = await api.get(apiEndpoints.user.booking);
+        return response.data;
+    },
+
+    getBookingDetails: async (id) => {
+        const response = await api.get(apiEndpoints.user.updateBooking(id));    
+        return response.data;
+    },
+
+    updateBooking: async (id, data) => {
+        const response = await api.patch(apiEndpoints.user.updateBooking(id), data);
+        return response.data;
+    },
+    
 };
 
 export const notificationService = {
@@ -67,7 +91,6 @@ export const providerService = {
     },
      fetchApplicationStatus: () => api.get(apiEndpoints.provider.applicationStatus), 
   };
-  
 
 export const adminServiceManagementService = {
     // Categories
@@ -106,6 +129,7 @@ export const adminServiceManagementService = {
         return response.data;
     },
 };
+
 
 export const adminCustomerManagementService = {
     getCustomers: async () => {

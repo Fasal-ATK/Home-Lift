@@ -9,6 +9,7 @@ import userReducer from '../slices/user/userSlice';
 import providerReducer from '../slices/admin/providerSlice';
 import applicationReducer from '../slices/admin/applicationsSlice';
 import notificationReducer from '../slices/notificationSlice';
+import bookingReducer from '../slices/bookingSlice';
 
 // store.js
 const appReducer = combineReducers({
@@ -20,6 +21,8 @@ const appReducer = combineReducers({
   providers: providerReducer,
   applications: applicationReducer,
   notifications: notificationReducer,
+  bookings: bookingReducer,
+
 
 });
 

@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from services.models import Service  # assuming your Service model is in 'services' app
+from services.models import Service
 
 
 class Booking(models.Model):
@@ -13,14 +13,14 @@ class Booking(models.Model):
     ]
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name="bookings"
     )
 
     service = models.ForeignKey(
-        Service, 
-        on_delete=models.CASCADE, 
+        Service,
+        on_delete=models.CASCADE,
         related_name="bookings"
     )
 
@@ -34,13 +34,31 @@ class Booking(models.Model):
     )
 
     full_name = models.CharField(max_length=100)
-    email = models.EmailField()
     phone = models.CharField(max_length=15)
-
     address = models.TextField(blank=True, null=True)
-    appointment_date = models.DateTimeField(blank=True, null=True)
-
     notes = models.TextField(blank=True, null=True)
+
+    # 🗓️ Appointment details
+    booking_date = models.DateField(
+        help_text="Date when the service is scheduled"
+    )
+    booking_time = models.TimeField(
+        help_text="Time when the service should start"
+    )
+
+    # 💰 Price fields
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Base service price"
+    )
+
+    advance = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        help_text="Advance amount (2% of price, capped at ₹200)"
+    )
 
     status = models.CharField(
         max_length=20,
@@ -50,6 +68,13 @@ class Booking(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        """Automatically calculate advance before saving."""
+        if self.price:
+            calculated_advance = self.price * 0.02
+            self.advance = min(calculated_advance, 200)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Booking #{self.id} - {self.service.name} ({self.status})"

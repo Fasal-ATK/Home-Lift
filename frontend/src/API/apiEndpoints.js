@@ -17,7 +17,11 @@ const apiEndpoints = {
     },
 
     user: {
-        updateProfile : '/user/profile/update/'
+        updateProfile : '/user/profile/update/',
+
+        booking : '/user/booking/',
+        updateBooking : (id) => `/user/booking/${id}/`,
+
     },
 
     notification:{

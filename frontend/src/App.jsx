@@ -38,6 +38,7 @@ import PrivateRoute from './routes/PrivateRoute';
 
 import ScrollToTop from './components/common/ScrollToTop';
 import ServiceBooking from './components/user/booking/ServiceBooking';
+import BookingForm from './components/user/booking/BookingForm';
 
 function App() {
   return (
@@ -84,6 +85,7 @@ function App() {
           <Route path='profile' element={<Profile />} />
           <Route path='services' element={<Services />} />
           <Route path='service-booking' element={<ServiceBooking/>} />
+          <Route path='booking-form' element={<BookingForm/>} />
           <Route path='bookings' element={<Bookings />} />
           <Route path='notifications' element={<Notifications />} />
 
@@ -95,6 +97,7 @@ function App() {
             <AdminLayout />
           </PrivateRoute>
         }>
+
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path='dashboard' element={<Dashboard />} />
           <Route path='users' element={<UserManager />} />
