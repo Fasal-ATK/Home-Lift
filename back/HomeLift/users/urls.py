@@ -10,6 +10,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view() ),
 
     path('notifications/', include('notifications.urls')),
+    path('booking/', include('bookings.urls')),
 
     path('google-auth/', GoogleLoginAPIView.as_view(), name='google-login'),
 
