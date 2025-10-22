@@ -73,7 +73,7 @@ function Services() {
 
   // ✅ Navigate to ServiceBooking when service card clicked
   const handleServiceClick = (srv) => {
-    navigate("/service-booking", { state: { service: srv } });
+    navigate("/service-details", { state: { service: srv } });
   };
 
   return (

@@ -37,15 +37,15 @@ import PublicRoute from './routes/PublicRoute';
 import PrivateRoute from './routes/PrivateRoute';
 
 import ScrollToTop from './components/common/ScrollToTop';
-import ServiceBooking from './components/user/booking/ServiceBooking';
-import BookingForm from './components/user/booking/BookingForm';
+import ServiceDetails from './components/user/booking/ServiceDetails';
+import BookingPage from './components/user/booking/BookingPage';
 
 function App() {
   return (
     <>
       {/* ✅ Toast container globally mounted */}
       <ToastWrapper />  
-      {/* <ScrollToTop /> */}
+      <ScrollToTop />
 
       <Routes>
         {/* Public Pages */}
@@ -84,8 +84,8 @@ function App() {
           <Route path='about' element={<About />} />
           <Route path='profile' element={<Profile />} />
           <Route path='services' element={<Services />} />
-          <Route path='service-booking' element={<ServiceBooking/>} />
-          <Route path='booking-form' element={<BookingForm/>} />
+          <Route path='service-details' element={<ServiceDetails/>} />
+          <Route path='booking-page' element={<BookingPage/>} />
           <Route path='bookings' element={<Bookings />} />
           <Route path='notifications' element={<Notifications />} />
 

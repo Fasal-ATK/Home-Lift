@@ -15,11 +15,11 @@ import { useSelector } from "react-redux";
 
 
 
-const ServiceBooking = () => {
+const ServiceDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const service = location.state?.service;
-  const allServices = useSelector((state) => state.services.list); // Adjust key as per your slice
+  const allServices = useSelector((state) => state.services.list); 
 
   if (!service) {
     navigate("/services");
@@ -41,7 +41,7 @@ const ServiceBooking = () => {
           variant="contained"
           color="warning"
           size="large"
-          onClick={() => navigate("/booking-form", { state: { service } })}
+          onClick={() => navigate("/booking-page", { state: { service } })}
         >
           Book Now
         </Button>
@@ -141,5 +141,6 @@ const ServiceBooking = () => {
     </Container>
   );
 };
+;
 
-export default ServiceBooking;
+export default ServiceDetails;
