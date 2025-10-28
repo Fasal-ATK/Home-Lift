@@ -9,6 +9,7 @@ urlpatterns = [
     path('login/', UserLogin.as_view()),  
     path('logout/', LogoutView.as_view() ),
 
+    path('core/', include('core.urls')),
     path('notifications/', include('notifications.urls')),
     path('booking/', include('bookings.urls')),
 
