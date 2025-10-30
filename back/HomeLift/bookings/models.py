@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from services.models import Service
+from core.models import Address  # ✅ Import Address from core app
 
 
 class Booking(models.Model):
@@ -33,26 +34,26 @@ class Booking(models.Model):
         help_text="Service provider assigned to this booking"
     )
 
+    # ✅ Instead of plain text, use ForeignKey to Address
+    address = models.ForeignKey(
+        Address,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="bookings",
+        help_text="User’s saved address used for this booking"
+    )
+
     full_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
-    address = models.TextField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
 
     # 🗓️ Appointment details
-    booking_date = models.DateField(
-        help_text="Date when the service is scheduled"
-    )
-    booking_time = models.TimeField(
-        help_text="Time when the service should start"
-    )
+    booking_date = models.DateField(help_text="Date when the service is scheduled")
+    booking_time = models.TimeField(help_text="Time when the service should start")
 
     # 💰 Price fields
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text="Base service price"
-    )
-
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Base service price")
     advance = models.DecimalField(
         max_digits=10,
         decimal_places=2,

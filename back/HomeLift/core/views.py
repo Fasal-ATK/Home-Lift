@@ -81,25 +81,62 @@
 #             return Response({"error": "internal-error", "message": "Unexpected error. Try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
-from rest_framework import viewsets, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from django.shortcuts import get_object_or_404
 from .models import Address
 from .serializers import AddressSerializer
 
-class AddressViewSet(viewsets.ModelViewSet):
+
+class AddressListCreateView(APIView):
     """
-    API Endpoints:
-    - GET /addresses/ → List all user addresses
-    - POST /addresses/ → Create a new address
-    - PUT /addresses/<id>/ → Update an address
-    - PATCH /addresses/<id>/ → Partial update
-    - DELETE /addresses/<id>/ → Delete an address
+    Handles:
+    - GET /user/address/ → List all user addresses
+    - POST /user/address/ → Create a new address
     """
-    serializer_class = AddressSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return Address.objects.filter(user=self.request.user)
+    def get(self, request):
+        addresses = Address.objects.filter(user=request.user)
+        serializer = AddressSerializer(addresses, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def post(self, request):
+        serializer = AddressSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddressDetailView(APIView):
+    """
+    Handles:
+    - GET /user/address/<id>/ → Retrieve single address
+    - PATCH /user/address/<id>/ → Update address
+    - DELETE /user/address/<id>/ → Delete address
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self, pk, user):
+        return get_object_or_404(Address, pk=pk, user=user)
+
+    def get(self, request, pk):
+        address = self.get_object(pk, request.user)
+        serializer = AddressSerializer(address)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        address = self.get_object(pk, request.user)
+        serializer = AddressSerializer(address, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        address = self.get_object(pk, request.user)
+        address.delete()
+        return Response({"message": "Address deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+

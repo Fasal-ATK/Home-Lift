@@ -1,17 +1,11 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import AddressViewSet
-
 # from .views import VerifyOtpView, SendOtpView, RefreshtokenView
 
-router = DefaultRouter()
-router.register(r'addresses', AddressViewSet, basename='address')
+# core/urls/addresses.py
+from django.urls import path
+from .views import AddressListCreateView, AddressDetailView
 
 urlpatterns = [
-    # Mount router under its own clear path
-    path('addresses/', include(router.urls)),
-
-    # path('send-otp/', SendOtpView.as_view()),
-    # path('verify-otp/', VerifyOtpView.as_view()),
-    # path('token/refresh/', RefreshtokenView.as_view()),
+    path('addresses/', AddressListCreateView.as_view(), name='address-list-create'),
+    path('address/<int:pk>/', AddressDetailView.as_view(), name='address-detail'),
 ]
+

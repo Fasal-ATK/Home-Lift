@@ -3,11 +3,7 @@ from django.db import models
 from django.conf import settings
 
 class Address(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="addresses"
-    )
+    user = models.ForeignKey( settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="addresses")
     title = models.CharField(max_length=50, default="Home")
     address_line = models.CharField(max_length=255)
     city = models.CharField(max_length=100)
