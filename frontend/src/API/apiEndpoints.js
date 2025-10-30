@@ -22,6 +22,9 @@ const apiEndpoints = {
         booking : '/user/booking/',
         updateBooking : (id) => `/user/booking/${id}/`,
 
+        // Addresses
+        addresses: '/user/core/addresses/',
+        addressDetail: (id) => `/user/core/address/${id}/`,
     },
 
     notification:{

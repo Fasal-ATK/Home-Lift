@@ -11,6 +11,7 @@ import Signup from './pages/User/Signup';
 import Notifications from './pages/User/Notifications';
 import Services from './pages/User/Services';
 import Bookings from './pages/User/Bookings';
+import Addresses from './components/user/profile/Addresses';
 
 // Admin Pages
 import AdminLogin from './pages/Admin/Login';
@@ -39,6 +40,7 @@ import PrivateRoute from './routes/PrivateRoute';
 import ScrollToTop from './components/common/ScrollToTop';
 import ServiceDetails from './components/user/booking/ServiceDetails';
 import ServiceBooking from './components/user/booking/ServiceBooking';
+
 
 function App() {
   return (
@@ -88,6 +90,8 @@ function App() {
           <Route path='booking-page' element={<ServiceBooking />} />
           <Route path='bookings' element={<Bookings />} />
           <Route path='notifications' element={<Notifications />} />
+
+          <Route path='addresses' element={<Addresses />} />
 
         </Route>
 

@@ -16,6 +16,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import ImageUploading from "react-images-uploading";
+import { useNavigate } from 'react-router-dom';
 
 import ReusableFormModal from "../../components/user/modals/EditFormModal";
 import { updateUser } from "../../redux/slices/user/userSlice";
@@ -25,6 +26,7 @@ import { ShowToast } from "../../components/common/Toast";
 export default function Profile() {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
   const [images, setImages] = useState([]);
@@ -238,7 +240,15 @@ export default function Profile() {
               >
                 Edit Profile
               </Button>
-
+              {/* New My Addresses Button */}
+              <Button
+                variant="contained"
+                color="secondary"
+                sx={{ ml: 2 }}
+                onClick={() => navigate("/addresses")}
+              >
+                My Addresses
+              </Button>
               {images.length > 0 && (
                 <Button
                   variant="contained"

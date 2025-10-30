@@ -75,6 +75,56 @@ export const updateUser = createAsyncThunk(
 );
 
 
+// ------------------- Addresses Thunks ------------------- //
+export const fetchAddresses = createAsyncThunk(
+  'user/fetchAddresses',
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await userService.listAddresses();
+      return Array.isArray(data) ? data : data?.results || [];
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const createAddress = createAsyncThunk(
+  'user/createAddress',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const created = await userService.createAddress(payload);
+      return created;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const updateAddress = createAsyncThunk(
+  'user/updateAddress',
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const updated = await userService.updateAddress(id, data);
+      return updated;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const deleteAddress = createAsyncThunk(
+  'user/deleteAddress',
+  async (id, { rejectWithValue }) => {
+    try {
+      await userService.deleteAddress(id);
+      return id;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+
 // ------------------- Slice ------------------- //
 const userSlice = createSlice({
   name: 'user',
@@ -84,6 +134,10 @@ const userSlice = createSlice({
     error: null,
     providerApplicationStatus: null,
     rejectionReason: null,
+    // addresses
+    addresses: [],
+    addressesLoading: false,
+    addressesError: null,
   },
   reducers: {
     clearUserState: (state) => {
@@ -92,6 +146,9 @@ const userSlice = createSlice({
       state.error = null;
       state.providerApplicationStatus = null;
       state.rejectionReason = null;
+      state.addresses = [];
+      state.addressesLoading = false;
+      state.addressesError = null;
     },
   },
   extraReducers: (builder) => {
@@ -149,6 +206,69 @@ const userSlice = createSlice({
       .addCase(updateUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      // Addresses
+      .addCase(fetchAddresses.pending, (state) => {
+        state.addressesLoading = true;
+        state.addressesError = null;
+      })
+      .addCase(fetchAddresses.fulfilled, (state, action) => {
+        state.addressesLoading = false;
+        state.addresses = action.payload;
+      })
+      .addCase(fetchAddresses.rejected, (state, action) => {
+        state.addressesLoading = false;
+        state.addressesError = action.payload;
+      })
+
+      .addCase(createAddress.pending, (state) => {
+        state.addressesLoading = true;
+        state.addressesError = null;
+      })
+      .addCase(createAddress.fulfilled, (state, action) => {
+        state.addressesLoading = false;
+        // If created is default, unset default on others
+        const created = action.payload;
+        if (created?.is_default) {
+          state.addresses = state.addresses.map((a) => ({ ...a, is_default: a.id === created.id }));
+        }
+        state.addresses.unshift(created);
+      })
+      .addCase(createAddress.rejected, (state, action) => {
+        state.addressesLoading = false;
+        state.addressesError = action.payload;
+      })
+
+      .addCase(updateAddress.pending, (state) => {
+        state.addressesLoading = true;
+        state.addressesError = null;
+      })
+      .addCase(updateAddress.fulfilled, (state, action) => {
+        state.addressesLoading = false;
+        const updated = action.payload;
+        state.addresses = state.addresses.map((a) => (a.id === updated.id ? updated : a));
+        if (updated?.is_default) {
+          state.addresses = state.addresses.map((a) => ({ ...a, is_default: a.id === updated.id }));
+        }
+      })
+      .addCase(updateAddress.rejected, (state, action) => {
+        state.addressesLoading = false;
+        state.addressesError = action.payload;
+      })
+
+      .addCase(deleteAddress.pending, (state) => {
+        state.addressesLoading = true;
+        state.addressesError = null;
+      })
+      .addCase(deleteAddress.fulfilled, (state, action) => {
+        state.addressesLoading = false;
+        const id = action.payload;
+        state.addresses = state.addresses.filter((a) => a.id !== id);
+      })
+      .addCase(deleteAddress.rejected, (state, action) => {
+        state.addressesLoading = false;
+        state.addressesError = action.payload;
       });
   },
 });

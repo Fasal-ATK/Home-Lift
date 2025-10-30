@@ -42,6 +42,24 @@ export const userService = {
         return response.data;
     },
 
+     // Addresses
+    listAddresses: async () => {
+        const response = await api.get(apiEndpoints.user.addresses);
+        return response.data;
+    },
+    createAddress: async (data) => {
+        const response = await api.post(apiEndpoints.user.addresses, data);
+        return response.data;
+    },
+    updateAddress: async (id, data) => {
+        const response = await api.patch(apiEndpoints.user.addressDetail(id), data);
+        return response.data;
+    },
+    deleteAddress: async (id) => {
+        const response = await api.delete(apiEndpoints.user.addressDetail(id));
+        return response.data;
+    },
+
 };
 
 export const bookingService = {

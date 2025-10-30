@@ -12,15 +12,24 @@ import {
   Box,
   Divider,
 } from "@mui/material";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { createBooking, fetchBookings } from "../../../redux/slices/bookingSlice";
+import Autocomplete from "@mui/material/Autocomplete";
+import { fetchAddresses } from "../../../redux/slices/user/userSlice";
 
 const BookingPage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const selectedService = location.state?.service || null;
-  const { bookings, loading, error } = useSelector((state) => state.bookings);
+  const { loading, error } = useSelector((state) => state.bookings);
   const { handleSubmit, control, reset, watch, setValue } = useForm();
+  const userAddresses = useSelector(state => state.user.addresses);
+  const addressesLoading = useSelector(state => state.user.addressesLoading);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (userAddresses.length === 0) dispatch(fetchAddresses());
+  }, [dispatch, userAddresses.length]);
 
   const timeSlots = ["08:00-10:00", "11:00-13:00", "14:00-16:00", "17:00-19:00"];
   const price = watch("price");
@@ -40,6 +49,7 @@ const BookingPage = () => {
       .then(() => {
         reset();
         dispatch(fetchBookings());
+        navigate("/bookings");
       });
 
   // Generic Field component
@@ -127,7 +137,37 @@ const BookingPage = () => {
 
               <Field name="full_name" label="Full Name" rules={{ required: "Full name is required" }} />
               <Field name="phone" label="Phone Number" rules={{ required: "Phone number is required" }} />
-              <Field name="address" label="Address" multiline rows={2} />
+              <Controller
+                name="address"
+                control={control}
+                rules={{ required: "Pick a service address" }}
+                defaultValue=""
+                render={({ field, fieldState }) => (
+                  <Autocomplete
+                    options={userAddresses}
+                    getOptionLabel={opt =>
+                      opt
+                        ? `${opt.title}: ${opt.address_line}, ${opt.city}, ${opt.state} ${opt.postal_code}`
+                        : ""
+                    }
+                    loading={addressesLoading}
+                    value={userAddresses.find(a => a.id === field.value) || null}
+                    onChange={(_e, val) => field.onChange(val ? val.id : "")}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        label="Service Address"
+                        margin="normal"
+                        fullWidth
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                      />
+                    )}
+                    disabled={addressesLoading}
+                    isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                  />
+                )}
+              />
               <Field name="notes" label="Notes (optional)" multiline rows={2} />
 
               <Field
@@ -190,4 +230,4 @@ const BookingPage = () => {
   );
 };
 
-export default BookingPage;-
+export default BookingPage;
