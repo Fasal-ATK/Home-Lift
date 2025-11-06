@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from decimal import Decimal
 from services.models import Service
 from core.models import Address  # ✅ Import Address from core app
 
@@ -73,8 +74,8 @@ class Booking(models.Model):
     def save(self, *args, **kwargs):
         """Automatically calculate advance before saving."""
         if self.price:
-            calculated_advance = self.price * 0.02
-            self.advance = min(calculated_advance, 200)
+            calculated_advance = self.price * Decimal('0.02')
+            self.advance = min(calculated_advance, Decimal('200.00'))
         super().save(*args, **kwargs)
 
     def __str__(self):
