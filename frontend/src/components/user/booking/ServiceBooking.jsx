@@ -43,14 +43,24 @@ const BookingPage = () => {
     }
   }, [selectedService, setValue]);
 
-  const onSubmit = (data) =>
+  const onSubmit = (data) => {
+    // Ensure service is included
+    if (!data.service && selectedService) {
+      data.service = selectedService.id;
+    }
+    
     dispatch(createBooking(data))
       .unwrap()
       .then(() => {
         reset();
         dispatch(fetchBookings());
         navigate("/bookings");
+      })
+      .catch((error) => {
+        // Error is already handled by Redux, but we can log it here
+        console.error("Booking error:", error);
       });
+  };
 
   // Generic Field component
   const Field = ({
@@ -63,13 +73,14 @@ const BookingPage = () => {
     select,
     options,
     readOnly,
+    defaultValue,
     ...props
   }) => (
     <Controller
       name={name}
       control={control}
       rules={rules}
-      defaultValue=""
+      defaultValue={defaultValue !== undefined ? defaultValue : ""}
       render={({ field, fieldState }) => (
         <TextField
           {...field}
@@ -133,7 +144,16 @@ const BookingPage = () => {
                 </Typography>
               )}
 
-              <input type="hidden" {...control.register("service")} defaultValue={selectedService?.id} />
+              {/* Service field - hidden but controlled */}
+              <Controller
+                name="service"
+                control={control}
+                rules={{ required: "Service is required" }}
+                defaultValue={selectedService?.id || ""}
+                render={({ field }) => (
+                  <input type="hidden" {...field} />
+                )}
+              />
 
               <Field name="full_name" label="Full Name" rules={{ required: "Full name is required" }} />
               <Field name="phone" label="Phone Number" rules={{ required: "Phone number is required" }} />
@@ -220,7 +240,9 @@ const BookingPage = () => {
 
             {error && (
               <Typography color="error" mt={2}>
-                {error.message || error}
+                {typeof error === 'string' 
+                  ? error 
+                  : error.message || error.error || JSON.stringify(error)}
               </Typography>
             )}
           </Paper>
