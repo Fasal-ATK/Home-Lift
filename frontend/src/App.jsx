@@ -12,6 +12,7 @@ import Notifications from './pages/User/Notifications';
 import Services from './pages/User/Services';
 import Bookings from './pages/User/Bookings';
 import Addresses from './components/user/profile/Addresses';
+import BookingDetails from './components/user/booking/BookingDetails';
 
 // Admin Pages
 import AdminLogin from './pages/Admin/Login';
@@ -88,7 +89,11 @@ function App() {
           <Route path='services' element={<Services />} />
           <Route path='service-details' element={<ServiceDetails/>} />
           <Route path='booking-page' element={<ServiceBooking />} />
-          <Route path='bookings' element={<Bookings />} />
+          <Route path="bookings">
+            <Route index element={<Bookings />} />
+            <Route path="details" element={<BookingDetails />} />
+          </Route>
+          <Route path='booking-details' element ={<BookingDetails />} />
           <Route path='notifications' element={<Notifications />} />
 
           <Route path='addresses' element={<Addresses />} />

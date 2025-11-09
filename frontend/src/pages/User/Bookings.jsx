@@ -1,3 +1,4 @@
+// src/pages/User/Bookings.jsx
 import React, { useEffect } from "react";
 import {
   Box,
@@ -88,7 +89,11 @@ const BookingCard = ({ booking, onView }) => {
         </Stack>
 
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" size="small" onClick={() => onView(booking.id)}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => onView(booking.id)}
+          >
             View
           </Button>
         </Stack>
@@ -106,8 +111,9 @@ export default function Bookings() {
     dispatch(fetchBookings());
   }, [dispatch]);
 
+  // navigate to /bookings/details and pass bookingId via location.state
   const handleView = (id) => {
-    navigate(`/bookings/${id}`);
+    navigate("/bookings/details", { state: { bookingId: id } });
   };
 
   return (

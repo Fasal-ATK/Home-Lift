@@ -20,7 +20,7 @@ const apiEndpoints = {
         updateProfile : '/user/profile/update/',
 
         booking : '/user/booking/',
-        updateBooking : (id) => `/user/booking/${id}/`,
+        updateBooking : (id) => `/user/booking/details/${id}/`,
 
         // Addresses
         addresses: '/user/core/addresses/',

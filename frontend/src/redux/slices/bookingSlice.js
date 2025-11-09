@@ -6,7 +6,7 @@ export const fetchBookings = createAsyncThunk(
   'booking/fetchBookings',
   async (_, { rejectWithValue }) => {
     try {
-      const data = await bookingService.getBookings();
+      const data = await bookingService.getBookings(); // expects response.data (array)
       return data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -18,36 +18,26 @@ export const createBooking = createAsyncThunk(
   'booking/createBooking',
   async (bookingData, { rejectWithValue }) => {
     try {
-      // Transform booking_time from "HH:MM-HH:MM" to "HH:MM:SS" format for Django
       const transformedData = { ...bookingData };
       if (transformedData.booking_time && transformedData.booking_time.includes('-')) {
-        // Extract start time from range (e.g., "08:00-10:00" -> "08:00:00")
         const startTime = transformedData.booking_time.split('-')[0].trim();
-        transformedData.booking_time = `${startTime}:00`; // Add seconds for Django TimeField
+        transformedData.booking_time = `${startTime}:00`;
       } else if (transformedData.booking_time && transformedData.booking_time.match(/^\d{2}:\d{2}$/)) {
-        // Handle case where time is "HH:MM" format (needs seconds)
         transformedData.booking_time = `${transformedData.booking_time}:00`;
       }
-      
-      // Remove advance from the payload - backend calculates it
       delete transformedData.advance;
-      
-      // Ensure address is an integer if it's a string
       if (transformedData.address && typeof transformedData.address === 'string') {
         transformedData.address = parseInt(transformedData.address, 10);
       }
-      
-      // Ensure service is an integer if it's a string
       if (transformedData.service && typeof transformedData.service === 'string') {
         transformedData.service = parseInt(transformedData.service, 10);
       }
-      
-      const data = await bookingService.createBooking(transformedData);
+
+      const data = await bookingService.createBooking(transformedData); // expects response.data (could be {message,data} or booking)
       return data;
     } catch (error) {
-      // Better error handling - extract meaningful error message
-      const errorMessage = error.response?.data?.error 
-        || error.response?.data?.message 
+      const errorMessage = error.response?.data?.error
+        || error.response?.data?.message
         || (typeof error.response?.data === 'object' ? JSON.stringify(error.response.data) : error.response?.data)
         || error.message
         || 'Failed to create booking';
@@ -72,13 +62,24 @@ export const fetchBookingDetails = createAsyncThunk(
   'booking/fetchBookingDetails',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await bookingService.getBookingDetails(id);
+      const response = await bookingService.getBookingDetails(id); // expects response.data (booking object)
       return response;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
+
+// Helper: extract booking object from various backend shapes
+const normalizeBooking = (payload) => {
+  // payload could be:
+  // - booking object
+  // - { message, data: booking }
+  // - maybe { data: booking } depending on earlier implementations
+  if (!payload) return null;
+  if (payload.data && (typeof payload.data === 'object')) return payload.data;
+  return payload;
+};
 
 // Slice
 const bookingSlice = createSlice({
@@ -106,7 +107,8 @@ const bookingSlice = createSlice({
       })
       .addCase(fetchBookings.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookings = action.payload;
+        // action.payload expected to be an array of bookings (response.data)
+        state.bookings = Array.isArray(action.payload) ? action.payload : (action.payload?.data ?? []);
       })
       .addCase(fetchBookings.rejected, (state, action) => {
         state.loading = false;
@@ -120,7 +122,9 @@ const bookingSlice = createSlice({
       })
       .addCase(createBooking.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookings.push(action.payload.data); // backend returns {message, data}
+        // backend might return { message, data } or raw booking object
+        const created = normalizeBooking(action.payload) || action.payload;
+        if (created) state.bookings.push(created);
       })
       .addCase(createBooking.rejected, (state, action) => {
         state.loading = false;
@@ -134,10 +138,15 @@ const bookingSlice = createSlice({
       })
       .addCase(updateBooking.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.bookings.findIndex(
-          (b) => b.id === action.payload.data.id
-        );
-        if (index !== -1) state.bookings[index] = action.payload.data;
+        const updated = normalizeBooking(action.payload) || action.payload;
+        if (updated && updated.id) {
+          const index = state.bookings.findIndex((b) => b.id === updated.id);
+          if (index !== -1) state.bookings[index] = updated;
+          // also update currentBooking if it's the same id
+          if (state.currentBooking && (state.currentBooking.id === updated.id || state.currentBooking?.data?.id === updated.id)) {
+            state.currentBooking = updated;
+          }
+        }
       })
       .addCase(updateBooking.rejected, (state, action) => {
         state.loading = false;
@@ -151,7 +160,8 @@ const bookingSlice = createSlice({
       })
       .addCase(fetchBookingDetails.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentBooking = action.payload.data;
+        // action.payload expected to be booking object (response.data)
+        state.currentBooking = normalizeBooking(action.payload) || action.payload;
       })
       .addCase(fetchBookingDetails.rejected, (state, action) => {
         state.loading = false;
