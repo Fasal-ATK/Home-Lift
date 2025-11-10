@@ -1,18 +1,37 @@
 // src/pages/User/Bookings.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
-  Grid,
   Paper,
   Typography,
   Button,
   Stack,
   Chip,
   CircularProgress,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Pagination,
+  Divider,
+  IconButton,
+  Tooltip,
+  InputAdornment,
+  Avatar,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchBookings } from "../../redux/slices/bookingSlice";
+import { fetchServices } from "../../redux/slices/serviceSlice";
+import { fetchCategories } from "../../redux/slices/categorySlice";
 import { useNavigate } from "react-router-dom";
+
+const STATUSES = ["pending", "confirmed", "in_progress", "completed", "cancelled"];
 
 const statusColor = (status) => {
   switch (status) {
@@ -31,120 +50,424 @@ const statusColor = (status) => {
   }
 };
 
-const BookingCard = ({ booking, onView }) => {
-  const addr = booking.address_details;
-  return (
-    <Paper
-      elevation={1}
-      sx={{
-        p: 2,
-        borderRadius: 2,
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-      }}
-    >
-      <Box>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={1}>
-          <Box>
-            <Typography variant="subtitle1" fontWeight={700}>
-              {booking.service_name || booking.service}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {booking.full_name} • {booking.phone}
-            </Typography>
-          </Box>
+const DEFAULT_STATUS = [];
 
-          <Chip label={booking.status} color={statusColor(booking.status)} size="small" />
-        </Stack>
-
-        <Typography variant="body2" sx={{ mb: 1 }}>
-          <strong>Date:</strong> {booking.booking_date} &nbsp; <strong>Time:</strong> {booking.booking_time}
-        </Typography>
-
-        {addr ? (
-          <Typography variant="body2" sx={{ whiteSpace: "pre-line", mb: 1 }}>
-            <strong>Address:</strong> {addr.title} — {addr.address_line}
-            <br />
-            {addr.city}, {addr.district ? `${addr.district}, ` : ""}{addr.state} {addr.postal_code}
-          </Typography>
-        ) : booking.address ? (
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            <strong>Address:</strong> {booking.address}
-          </Typography>
-        ) : null}
-
-        {booking.notes && (
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            <strong>Notes:</strong> {booking.notes}
-          </Typography>
-        )}
-      </Box>
-
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
-        <Stack>
-          <Typography variant="body2">Price: ₹{booking.price}</Typography>
-          <Typography variant="body2">Advance: ₹{booking.advance}</Typography>
-        </Stack>
-
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => onView(booking.id)}
-          >
-            View
-          </Button>
-        </Stack>
-      </Stack>
-    </Paper>
-  );
+const fmtDate = (d) => {
+  if (!d) return "-";
+  try {
+    const date = new Date(d);
+    return date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+  } catch {
+    return d;
+  }
 };
 
+const fmtTime = (t) => (t ? t : "-");
+
+/* ---- small helpers ---- */
+const resolveThumb = (booking, services) => {
+  if (!booking) return null;
+  if (booking.service_icon) return booking.service_icon;
+  // try find service in services list by id
+  const svc = services?.find((s) => String(s.id) === String(booking.service));
+  if (svc) return svc.icon || svc.thumbnail || null;
+  return null;
+};
+
+/* ---- OrderCard (uses services list & shows city/state only in header) ---- */
+function OrderCard({ booking, onView, services }) {
+  const addr = booking.address_details;
+  const thumb = resolveThumb(booking, services);
+  const svcName = booking.service_name || (services?.find((s) => String(s.id) === String(booking.service))?.name) || booking.service || "Service";
+  const initials = svcName.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+
+  return (
+    <Paper sx={{ mb: 3, borderRadius: 1.5, overflow: "hidden", boxShadow: 1 }}>
+      {/* header */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, px: 2, py: 1.25, bgcolor: "grey.100", flexWrap: "wrap" }}>
+        <Box sx={{ minWidth: 140 }}>
+          <Typography variant="caption" color="text.secondary">ORDER PLACED</Typography>
+          <Typography variant="body2" fontWeight={700}>{fmtDate(booking.created_at || booking.booking_date)}</Typography>
+        </Box>
+
+        <Box sx={{ minWidth: 120 }}>
+          <Typography variant="caption" color="text.secondary">TOTAL</Typography>
+          <Typography variant="body2" fontWeight={700}>₹{booking.price}</Typography>
+        </Box>
+
+        <Box sx={{ minWidth: 220, flex: 1 }}>
+          <Typography variant="caption" color="text.secondary">SHIP TO</Typography>
+          <Typography variant="body2" fontWeight={700} noWrap>
+            {addr ? `${addr.city}, ${addr.state}` : booking.full_name}
+          </Typography>
+        </Box>
+
+        <Box sx={{ minWidth: 220, textAlign: "right" }}>
+          <Typography variant="caption" color="text.secondary">ORDER # {booking.id}</Typography>
+          <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+            <Button size="small" variant="text" onClick={() => onView(booking.id)} sx={{ textTransform: "none" }}>
+              View order details
+            </Button>
+            <Button size="small" variant="text" sx={{ textTransform: "none" }}>
+              Invoice ▾
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
+
+      <Divider />
+
+      {/* body */}
+      <Box sx={{ px: { xs: 2, md: 3 }, py: 2 }}>
+        <Typography variant="h6" fontWeight={800} sx={{ mb: 1 }}>
+          {booking.status === "completed" || booking.status === "confirmed"
+            ? "Delivered"
+            : booking.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+          {booking.status === "completed" && booking.booking_date ? ` ${fmtDate(booking.booking_date)}` : ""}
+        </Typography>
+
+        {/* product area */}
+        <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <Box sx={{ width: 92, height: 92, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "background.paper", borderRadius: 1, overflow: "hidden", border: "1px solid rgba(0,0,0,0.05)" }}>
+            {thumb ? (
+              <Box component="img" src={thumb} alt="thumb" sx={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }} />
+            ) : (
+              <Avatar sx={{ width: 64, height: 64, bgcolor: "primary.light", fontWeight: 700 }}>{initials}</Avatar>
+            )}
+          </Box>
+
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.5 }}>
+              {svcName}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {booking.full_name} • {booking.phone}
+            </Typography>
+
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              <strong>Date:</strong> {booking.booking_date || fmtDate(booking.created_at)} &nbsp; <strong>Time:</strong> {fmtTime(booking.booking_time)}
+            </Typography>
+
+            {addr ? (
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <strong>Address:</strong> {addr.title} — {addr.address_line}
+                <br />
+                <Typography component="span" variant="body2" color="text.secondary">
+                  {addr.city}{addr.district ? `, ${addr.district}` : ""}, {addr.state} {addr.postal_code}
+                </Typography>
+              </Typography>
+            ) : booking.address ? (
+              <Typography variant="body2" sx={{ mb: 1 }}><strong>Address:</strong> {booking.address}</Typography>
+            ) : null}
+
+            {booking.notes && (
+              <Typography variant="body2" color="text.secondary">
+                <strong>Notes:</strong> {booking.notes}
+              </Typography>
+            )}
+          </Box>
+
+          <Box sx={{ minWidth: 100, textAlign: "right" }}>
+            <Chip label={booking.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())} color={statusColor(booking.status)} sx={{ fontWeight: 700, textTransform: "capitalize" }} />
+          </Box>
+        </Box>
+      </Box>
+    </Paper>
+  );
+}
+
+/* ---- Page ---- */
 export default function Bookings() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { bookings, loading, error } = useSelector((state) => state.bookings);
+
+  // redux slices
+  const { bookings = [], loading, error } = useSelector((s) => s.bookings);
+  const services = useSelector((s) => s.services.list || []);
+  const categories = useSelector((s) => s.categories.list || []);
+
+  // local state
+  const [statusFilter, setStatusFilter] = useState(DEFAULT_STATUS);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [sortBy, setSortBy] = useState("date_desc");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [search, setSearch] = useState("");
+  const [pastRange, setPastRange] = useState("past3m");
 
   useEffect(() => {
     dispatch(fetchBookings());
-  }, [dispatch]);
+    if (!services.length) dispatch(fetchServices());
+    if (!categories.length) dispatch(fetchCategories());
+  }, [dispatch, services.length, categories.length]);
 
-  // navigate to /bookings/details and pass bookingId via location.state
-  const handleView = (id) => {
-    navigate("/bookings/details", { state: { bookingId: id } });
+  useEffect(() => setPage(1), [statusFilter, selectedCategory, dateFrom, dateTo, sortBy, perPage, search, pastRange]);
+
+  const toggleStatus = (s) => setStatusFilter((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+  const clearStatusSelection = () => setStatusFilter(DEFAULT_STATUS);
+  const clearFilters = () => {
+    setStatusFilter(DEFAULT_STATUS);
+    setSelectedCategory("");
+    setDateFrom("");
+    setDateTo("");
+    setSortBy("date_desc");
+    setPerPage(10);
+    setPage(1);
+    setSearch("");
+    setPastRange("past3m");
   };
 
-  return (
-    <Box sx={{ py: 4, px: { xs: 2, md: 4 } }}>
-      <Typography variant="h4" mb={3} fontWeight={700}>
-        My Bookings
-      </Typography>
+  // date presets; "this_week" = today → today+6 days (7 days total)
+  const applyPastRangeToDates = (range) => {
+    const now = new Date();
+    const pad = (d) => d.toISOString().slice(0, 10);
+    if (range === "today") {
+      const d = pad(now);
+      setDateFrom(d);
+      setDateTo(d);
+      return;
+    }
+    if (range === "this_week") {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setDate(end.getDate() + 6); // today + 6
+      end.setHours(23, 59, 59, 999);
+      setDateFrom(pad(start));
+      setDateTo(pad(end));
+      return;
+    }
+    if (range === "this_month") {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      setDateFrom(pad(start));
+      setDateTo(pad(end));
+      return;
+    }
+    if (range === "past3m") {
+      const start = new Date();
+      start.setMonth(start.getMonth() - 3);
+      setDateFrom(start.toISOString().slice(0, 10));
+      setDateTo("");
+      return;
+    }
+  };
 
-      {loading && bookings.length === 0 ? (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 6 }}>
-          <CircularProgress />
+  useEffect(() => {
+    applyPastRangeToDates(pastRange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pastRange]);
+
+  // filtering + sorting (client side)
+  const filteredSorted = useMemo(() => {
+    let list = Array.isArray(bookings) ? bookings.slice() : [];
+
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter((b) => {
+        const combined = `${b.service_name || ""} ${b.service || ""} ${b.full_name || ""} ${b.phone || ""}`.toLowerCase();
+        return combined.includes(q);
+      });
+    }
+
+    // category: use categories list — match services that belong to selectedCategory
+    if (selectedCategory) {
+      const serviceIdsForCat = services
+        .filter((s) => {
+          const cat = s.category;
+          if (!cat) return false;
+          if (typeof cat === "object") return String(cat.id ?? cat.name) === String(selectedCategory);
+          return String(cat) === String(selectedCategory) || String(s.category_name) === String(selectedCategory);
+        })
+        .map((s) => String(s.id));
+      list = list.filter((b) => serviceIdsForCat.includes(String(b.service)));
+    }
+
+    if (statusFilter && statusFilter.length) {
+      list = list.filter((b) => statusFilter.includes(b.status));
+    }
+
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      from.setHours(0, 0, 0, 0);
+      list = list.filter((b) => {
+        if (!b.booking_date) return false;
+        const d = new Date(b.booking_date);
+        d.setHours(0, 0, 0, 0);
+        return d >= from;
+      });
+    }
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      list = list.filter((b) => {
+        if (!b.booking_date) return false;
+        const d = new Date(b.booking_date);
+        d.setHours(0, 0, 0, 0);
+        return d <= to;
+      });
+    }
+
+    list.sort((a, b) => {
+      if (sortBy === "date_desc") return new Date(b.booking_date || b.created_at) - new Date(a.booking_date || a.created_at);
+      if (sortBy === "date_asc") return new Date(a.booking_date || a.created_at) - new Date(b.booking_date || b.created_at);
+      if (sortBy === "price_desc") return Number(b.price || 0) - Number(a.price || 0);
+      if (sortBy === "price_asc") return Number(a.price || 0) - Number(b.price || 0);
+      return 0;
+    });
+
+    return list;
+  }, [bookings, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, search, services]);
+
+  const total = filteredSorted.length;
+  const pageCount = Math.max(1, Math.ceil(total / perPage));
+  const paginated = useMemo(() => {
+    const start = (page - 1) * perPage;
+    return filteredSorted.slice(start, start + perPage);
+  }, [filteredSorted, page, perPage]);
+
+  const handleView = (id) => navigate("/bookings/details", { state: { bookingId: id } });
+
+  return (
+    <Box sx={{ py: 4, px: { xs: 2, md: 6 }, maxWidth: 1200, mx: "auto" }}>
+      {/* header */}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+        <Box>
+          <Typography variant="h4" fontWeight={800}>Your Orders</Typography>
+          <Typography variant="body2" color="text.secondary">Orders placed in your account</Typography>
         </Box>
+
+        <Stack direction="row" spacing={1} alignItems="center">
+          <TextField
+            size="small"
+            placeholder="Search orders"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (<InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>),
+              endAdornment: search ? (<InputAdornment position="end"><IconButton size="small" onClick={() => setSearch("")}><ClearIcon fontSize="small" /></IconButton></InputAdornment>) : null
+            }}
+            sx={{ minWidth: 320, bgcolor: "background.paper", borderRadius: 1 }}
+          />
+          <Button variant="contained" startIcon={<FilterListIcon />}>Search Orders</Button>
+        </Stack>
+      </Stack>
+
+      {/* filter row */}
+      <Paper sx={{ p: 2, mb: 3, borderRadius: 1 }}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center" justifyContent="space-between">
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="body2"><strong>{bookings.length}</strong> orders placed in</Typography>
+            <FormControl size="small">
+              <Select value={pastRange} onChange={(e) => setPastRange(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+                <MenuItem value="today">Today</MenuItem>
+                <MenuItem value="this_week">This week</MenuItem>
+                <MenuItem value="this_month">This month</MenuItem>
+                <MenuItem value="past3m">Past 3 months</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+
+          <Stack direction="row" spacing={1} alignItems="center">
+            {/* category selector (avatar + name) */}
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={selectedCategory}
+                label="Category"
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                renderValue={(val) => {
+                  if (!val) return "All categories";
+                  const cat = categories.find(c => String(c.id) === String(val));
+                  return cat ? cat.name : "Selected";
+                }}
+              >
+                <MenuItem value="">All categories</MenuItem>
+                {categories.map((c) => (
+                  <MenuItem key={c.id} value={String(c.id)}>
+                    <ListItemIcon>
+                      {c.icon ? (
+                        <Avatar src={c.icon} sx={{ width: 28, height: 28 }} />
+                      ) : (
+                        <Avatar sx={{ width: 28, height: 28 }}>{(c.name || "C")[0]}</Avatar>
+                      )}
+                    </ListItemIcon>
+                    <ListItemText primary={c.name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* clear category button only visible when selected */}
+            {selectedCategory ? (
+              <Tooltip title="Clear category">
+                <IconButton size="small" onClick={() => setSelectedCategory("")}>
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            ) : null}
+
+            <Button variant="outlined" onClick={clearFilters}>Reset filters</Button>
+
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel>Sort</InputLabel>
+              <Select value={sortBy} label="Sort" onChange={(e) => setSortBy(e.target.value)}>
+                <MenuItem value="date_desc">Date (new → old)</MenuItem>
+                <MenuItem value="date_asc">Date (old → new)</MenuItem>
+                <MenuItem value="price_desc">Price (high → low)</MenuItem>
+                <MenuItem value="price_asc">Price (low → high)</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 110 }}>
+              <InputLabel>Per page</InputLabel>
+              <Select value={perPage} label="Per page" onChange={(e) => setPerPage(Number(e.target.value))}>
+                <MenuItem value={5}>5</MenuItem>
+                <MenuItem value={10}>10</MenuItem>
+                <MenuItem value={20}>20</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        </Stack>
+
+        {/* status chips */}
+        <Stack direction="row" spacing={1} alignItems="center" mt={2} sx={{ flexWrap: "wrap" }}>
+          {STATUSES.map((s) => (
+            <Chip
+              key={s}
+              label={s.replace("_", " ")}
+              size="small"
+              clickable
+              onClick={() => toggleStatus(s)}
+              color={statusFilter.includes(s) ? statusColor(s) : "default"}
+              variant={statusFilter.includes(s) ? "filled" : "outlined"}
+              sx={{ textTransform: "capitalize", fontWeight: 600, borderRadius: 2 }}
+            />
+          ))}
+
+          {JSON.stringify(statusFilter) !== JSON.stringify(DEFAULT_STATUS) && (
+            <Button size="small" onClick={clearStatusSelection} sx={{ ml: 1 }}>
+              Clear status
+            </Button>
+          )}
+        </Stack>
+      </Paper>
+
+      {/* list */}
+      {loading && bookings.length === 0 ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : null}
 
-      {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {typeof error === "string" ? error : JSON.stringify(error)}
-        </Typography>
-      )}
+      {paginated.map((b) => (
+        <OrderCard key={b.id} booking={b} onView={handleView} services={services} />
+      ))}
 
-      {!loading && bookings.length === 0 && (
-        <Typography color="text.secondary">No bookings found.</Typography>
-      )}
-
-      <Grid container spacing={3} sx={{ mt: 1 }}>
-        {bookings.map((b) => (
-          <Grid item xs={12} sm={6} md={4} key={b.id}>
-            <BookingCard booking={b} onView={handleView} />
-          </Grid>
-        ))}
-      </Grid>
+      {/* pagination */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+        <Pagination count={pageCount} page={page} onChange={(_, p) => setPage(p)} color="primary" showFirstButton showLastButton />
+      </Box>
     </Box>
   );
 }
