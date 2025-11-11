@@ -74,11 +74,31 @@ const resolveThumb = (booking, services) => {
   return null;
 };
 
+// normalize a date string/timestamp to local YYYY-MM-DD (works for 'YYYY-MM-DD' and ISO timestamps)
+const toLocalYMD = (dateStr) => {
+  if (!dateStr) return null;
+  try {
+    // If already in YYYY-MM-DD format, return that
+    const simpleMatch = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
+    if (simpleMatch) return dateStr;
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return null;
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  } catch {
+    return null;
+  }
+};
+
 /* ---- OrderCard (uses services list & shows city/state only in header) ---- */
 function OrderCard({ booking, onView, services }) {
   const addr = booking.address_details;
   const thumb = resolveThumb(booking, services);
-  const svcName = booking.service_name || (services?.find((s) => String(s.id) === String(booking.service))?.name) || booking.service || "Service";
+  const svcName =
+    booking.service_name ||
+    (services?.find((s) => String(s.id) === String(booking.service))?.name) ||
+    booking.service ||
+    "Service";
   const initials = svcName.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
   return (
@@ -98,7 +118,7 @@ function OrderCard({ booking, onView, services }) {
         <Box sx={{ minWidth: 220, flex: 1 }}>
           <Typography variant="caption" color="text.secondary">SHIP TO</Typography>
           <Typography variant="body2" fontWeight={700} noWrap>
-            {addr ? `${addr.city}, ${addr.state}` : booking.full_name}
+            {addr ? addr.title : booking.full_name}
           </Typography>
         </Box>
 
@@ -195,7 +215,8 @@ export default function Bookings() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [search, setSearch] = useState("");
-  const [pastRange, setPastRange] = useState("past3m");
+  // default to 'all' as requested
+  const [pastRange, setPastRange] = useState("all");
 
   useEffect(() => {
     dispatch(fetchBookings());
@@ -216,29 +237,39 @@ export default function Bookings() {
     setPerPage(10);
     setPage(1);
     setSearch("");
-    setPastRange("past3m");
+    setPastRange("all");
   };
 
   // date presets; "this_week" = today → today+6 days (7 days total)
   const applyPastRangeToDates = (range) => {
     const now = new Date();
     const pad = (d) => d.toISOString().slice(0, 10);
-    if (range === "today") {
-      const d = pad(now);
-      setDateFrom(d);
-      setDateTo(d);
+
+    if (range === "all") {
+      // clear bounds — show everything
+      setDateFrom("");
+      setDateTo("");
       return;
     }
+
+    if (range === "today") {
+      // set exact local YYYY-MM-DD for today as both from and to
+      const ymd = pad(now);
+      setDateFrom(ymd);
+      setDateTo(ymd);
+      return;
+    }
+
     if (range === "this_week") {
       const start = new Date(now);
       start.setHours(0, 0, 0, 0);
       const end = new Date(now);
       end.setDate(end.getDate() + 6); // today + 6
-      end.setHours(23, 59, 59, 999);
       setDateFrom(pad(start));
       setDateTo(pad(end));
       return;
     }
+
     if (range === "this_month") {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -246,11 +277,13 @@ export default function Bookings() {
       setDateTo(pad(end));
       return;
     }
+
     if (range === "past3m") {
-      const start = new Date();
+      const start = new Date(now);
       start.setMonth(start.getMonth() - 3);
+      // start from that date, up to today
       setDateFrom(start.toISOString().slice(0, 10));
-      setDateTo("");
+      setDateTo(pad(now));
       return;
     }
   };
@@ -260,7 +293,34 @@ export default function Bookings() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pastRange]);
 
-  // filtering + sorting (client side)
+  // ---------- compute orders count within the currently selected date range (always uses created_at) ----------
+  const ordersInRange = useMemo(() => {
+    if (!Array.isArray(bookings) || bookings.length === 0) return 0;
+
+    // If user picked "all", show total
+    if (pastRange === "all") return bookings.length;
+
+    // Build local YMD strings for bounds
+    const fromStr = dateFrom || null;
+    const toStr =
+      dateTo ||
+      (() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      })();
+
+    return bookings.reduce((acc, b) => {
+      // Always use created_at for "order placed"
+      const raw = b.created_at || b.booking_date;
+      const dStr = toLocalYMD(raw);
+      if (!dStr) return acc;
+      if (fromStr && dStr < fromStr) return acc;
+      if (toStr && dStr > toStr) return acc;
+      return acc + 1;
+    }, 0);
+  }, [bookings, dateFrom, dateTo, pastRange]);
+
+  // filtering + sorting (client side) — date filtering always uses created_at (order placed)
   const filteredSorted = useMemo(() => {
     let list = Array.isArray(bookings) ? bookings.slice() : [];
 
@@ -289,24 +349,23 @@ export default function Bookings() {
       list = list.filter((b) => statusFilter.includes(b.status));
     }
 
-    if (dateFrom) {
-      const from = new Date(dateFrom);
-      from.setHours(0, 0, 0, 0);
+    // apply date filtering for "order placed" only if user didn't pick 'all'
+    if (pastRange !== "all") {
+      const fromStr = dateFrom || null;
+      const toStr =
+        dateTo ||
+        (() => {
+          const now = new Date();
+          return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        })();
+
       list = list.filter((b) => {
-        if (!b.booking_date) return false;
-        const d = new Date(b.booking_date);
-        d.setHours(0, 0, 0, 0);
-        return d >= from;
-      });
-    }
-    if (dateTo) {
-      const to = new Date(dateTo);
-      to.setHours(23, 59, 59, 999);
-      list = list.filter((b) => {
-        if (!b.booking_date) return false;
-        const d = new Date(b.booking_date);
-        d.setHours(0, 0, 0, 0);
-        return d <= to;
+        const raw = b.created_at || b.booking_date;
+        const dStr = toLocalYMD(raw);
+        if (!dStr) return false;
+        if (fromStr && dStr < fromStr) return false;
+        if (toStr && dStr > toStr) return false;
+        return true;
       });
     }
 
@@ -319,7 +378,7 @@ export default function Bookings() {
     });
 
     return list;
-  }, [bookings, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, search, services]);
+  }, [bookings, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, search, services, pastRange]);
 
   const total = filteredSorted.length;
   const pageCount = Math.max(1, Math.ceil(total / perPage));
@@ -359,9 +418,12 @@ export default function Bookings() {
       <Paper sx={{ p: 2, mb: 3, borderRadius: 1 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center" justifyContent="space-between">
           <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="body2"><strong>{bookings.length}</strong> orders placed in</Typography>
+            <Typography variant="body2"><strong>{ordersInRange}</strong> orders placed in</Typography>
+
+            {/* Past range */}
             <FormControl size="small">
               <Select value={pastRange} onChange={(e) => setPastRange(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+                <MenuItem value="all">All</MenuItem>
                 <MenuItem value="today">Today</MenuItem>
                 <MenuItem value="this_week">This week</MenuItem>
                 <MenuItem value="this_month">This month</MenuItem>
