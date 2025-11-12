@@ -26,11 +26,11 @@ export default function ProviderSidebar({ open, setOpen }) {
 
   const navItems = [
     { text: "Dashboard", icon: <Dashboard />, path: "/provider/dashboard" },
-    { text: "Requests", icon: <Description />, path: "#" },
-    { text: "Bookings", icon: <CalendarMonth />, path: "#" },
-    { text: "History", icon: <History />, path: "#" },
-    { text: "Profile", icon: <Person />, path: "#" },
-    { text: "Wallet", icon: <AccountBalanceWallet />, path: "#" },
+    { text: "Job Requests", icon: <Description />, path: "/provider/job-requests" },
+    { text: "Appointments", icon: <CalendarMonth />, path: "/provider/appointments" },
+    { text: "Bio", icon: <Person />, path: "/provider/bio" },
+    { text: "History", icon: <History />, path: "/provider/history" },
+    { text: "Wallet", icon: <AccountBalanceWallet />, path: "/provider/wallet" },
   ];
 
   return (

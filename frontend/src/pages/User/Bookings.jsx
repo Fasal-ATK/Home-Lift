@@ -21,12 +21,14 @@ import {
   Avatar,
   ListItemIcon,
   ListItemText,
+  Alert,
+  Snackbar,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchBookings } from "../../redux/slices/bookingSlice";
+import { fetchBookings, clearError } from "../../redux/slices/bookingSlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import { useNavigate } from "react-router-dom";
@@ -87,6 +89,22 @@ const toLocalYMD = (dateStr) => {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   } catch {
     return null;
+  }
+};
+
+// convert error payload to readable string
+const stringifyError = (err) => {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  try {
+    if (err.message) return err.message;
+    if (err.error) return err.error;
+    // If it's an object (e.g. { detail: ..., ... }), try common keys
+    if (err.detail) return err.detail;
+    if (err.non_field_errors) return Array.isArray(err.non_field_errors) ? err.non_field_errors.join(", ") : String(err.non_field_errors);
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
   }
 };
 
@@ -218,6 +236,9 @@ export default function Bookings() {
   // default to 'all' as requested
   const [pastRange, setPastRange] = useState("all");
 
+  // snackbar state for transient error display
+  const [snackOpen, setSnackOpen] = useState(false);
+
   useEffect(() => {
     dispatch(fetchBookings());
     if (!services.length) dispatch(fetchServices());
@@ -225,6 +246,11 @@ export default function Bookings() {
   }, [dispatch, services.length, categories.length]);
 
   useEffect(() => setPage(1), [statusFilter, selectedCategory, dateFrom, dateTo, sortBy, perPage, search, pastRange]);
+
+  // open snackbar automatically when error changes
+  useEffect(() => {
+    if (error) setSnackOpen(true);
+  }, [error]);
 
   const toggleStatus = (s) => setStatusFilter((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
   const clearStatusSelection = () => setStatusFilter(DEFAULT_STATUS);
@@ -238,6 +264,8 @@ export default function Bookings() {
     setPage(1);
     setSearch("");
     setPastRange("all");
+    // clear store error as well when resetting
+    if (error) dispatch(clearError());
   };
 
   // date presets; "this_week" = today → today+6 days (7 days total)
@@ -290,8 +318,18 @@ export default function Bookings() {
 
   useEffect(() => {
     applyPastRangeToDates(pastRange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pastRange]);
+
+  // handlers for snackbar and retry
+  const handleRetry = () => {
+    dispatch(fetchBookings());
+  };
+
+  const handleCloseSnack = (_, reason) => {
+    if (reason === "clickaway") return;
+    setSnackOpen(false);
+    dispatch(clearError());
+  };
 
   // ---------- compute orders count within the currently selected date range (always uses created_at) ----------
   const ordersInRange = useMemo(() => {
@@ -414,6 +452,13 @@ export default function Bookings() {
         </Stack>
       </Stack>
 
+      {/* Snackbar for transient errors */}
+      <Snackbar open={snackOpen} autoHideDuration={6000} onClose={handleCloseSnack}>
+        <Alert onClose={handleCloseSnack} severity="error" sx={{ width: "100%" }}>
+          {stringifyError(error)}
+        </Alert>
+      </Snackbar>
+
       {/* filter row */}
       <Paper sx={{ p: 2, mb: 3, borderRadius: 1 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center" justifyContent="space-between">
@@ -522,9 +567,24 @@ export default function Bookings() {
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : null}
 
-      {paginated.map((b) => (
-        <OrderCard key={b.id} booking={b} onView={handleView} services={services} />
-      ))}
+      {/* If there's an error and no bookings, show full fallback; otherwise show list */}
+      {!loading && error && bookings.length === 0 ? (
+        <Box sx={{ py: 10, textAlign: "center" }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            {stringifyError(error)}
+          </Typography>
+          <Button variant="contained" onClick={handleRetry} sx={{ mr: 1 }}>
+            Retry
+          </Button>
+          <Button variant="outlined" onClick={() => dispatch(clearError())}>
+            Dismiss
+          </Button>
+        </Box>
+      ) : (
+        paginated.map((b) => (
+          <OrderCard key={b.id} booking={b} onView={handleView} services={services} />
+        ))
+      )}
 
       {/* pagination */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>

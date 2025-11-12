@@ -23,11 +23,16 @@ import ServiceCategroies from './pages/Admin/ServiceCategroies';
 import Reports from './pages/Admin/Reports';
 import Coupons from './pages/Admin/Coupons';
 import BookingMng from './pages/Admin/BookingMng';
-import EmployeeReq from './components/admin/emp/ProviderApplications';
+
+import Landing from './pages/Landing';
 
 // Provider Pages
 import ProviderDashboard from './pages/Provider/ProviderDashboard';
-import Landing from './pages/Landing';
+import JobRequests from './pages/Provider/JobRequests';
+import Appointments from './pages/Provider/Appointments';
+import Bio from './pages/Provider/Bio';
+import History from './pages/Provider/History';
+import Wallet from './pages/Provider/Wallet';
 
 // Layouts
 import AdminLayout from './layouts/AdminLayout';
@@ -121,13 +126,19 @@ function App() {
         {/* Provider Routes */}
         <Route path='provider' element={
           <PrivateRoute providerOnly={true} role="provider">
-          <ProviderLayout />
+            <ProviderLayout />
           </PrivateRoute>
         }>
-
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path='dashboard' element={<ProviderDashboard />} />
+          <Route path='job-requests' element={<JobRequests/>} />
+          <Route path='appointments' element={<Appointments />} />
+          <Route path='bio' element={<Bio />} />
+          <Route path='history' element={<History />} />
+          <Route path='wallet' element={<Wallet />} />
+
         </Route>
+
 
         {/* 404 Fallback */}
         <Route path="*" element={<div>404 - Page Not Found</div>} />

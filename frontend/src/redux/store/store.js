@@ -23,7 +23,6 @@ const appReducer = combineReducers({
   notifications: notificationReducer,
   bookings: bookingReducer,
 
-
 });
 
 const rootReducer = (state, action) => {
@@ -37,6 +36,8 @@ const rootReducer = (state, action) => {
         providers: undefined,
         applications: undefined,
         notifications: undefined,
+        bookings: undefined,
+
       },
       action
     );
