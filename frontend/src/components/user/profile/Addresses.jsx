@@ -258,9 +258,14 @@ export default function Addresses() {
             <TextField
               label="Postal Code"
               value={form.postal_code}
-              onChange={(e) => setForm((p) => ({ ...p, postal_code: e.target.value }))}
+              inputProps={{ maxLength: 6, inputMode: "numeric", pattern: "[0-9]*" }}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, ""); // remove NON-digits
+                setForm((p) => ({ ...p, postal_code: value }));
+              }}
               fullWidth
             />
+
             <TextField
               label="Country"
               value={form.country}

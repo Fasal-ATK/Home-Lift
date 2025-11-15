@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+// src/pages/provider/JobRequests.jsx
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -14,233 +15,311 @@ import {
   Snackbar,
   Alert,
   Pagination,
+  List,
+  ListItemButton,
+  ListItemText,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchProviderJobs,
+  fetchPendingJobs,
+  acceptJob,
+} from '../../redux/slices/provider/providerJobSlice'; 
 
-const DEMO_DATA = [
-  {
-    id: 101,
-    customer_name: "Devon Lane",
-    service_name: "Vehicle Maintenance",
-    city: "Bengaluru",
-    date: "2025-11-12",
-    time: "09:00 AM",
-    price: 1200,
-    notes: "Check AC and brakes",
-  },
-  {
-    id: 102,
-    customer_name: "Anna Roy",
-    service_name: "AC Service",
-    city: "Mumbai",
-    date: "2025-11-13",
-    time: "11:00 AM",
-    price: 999,
-    notes: "Gas refill and temperature check",
-  },
-  {
-    id: 103,
-    customer_name: "Ravi Kumar",
-    service_name: "Home Cleaning",
-    city: "Chennai",
-    date: "2025-11-14",
-    time: "02:30 PM",
-    price: 2500,
-    notes: "2BHK deep clean including windows",
-  },
-  {
-    id: 104,
-    customer_name: "Nisha Sharma",
-    service_name: "Electrician Visit",
-    city: "Delhi",
-    date: "2025-11-15",
-    time: "10:15 AM",
-    price: 650,
-    notes: "Check wiring in kitchen area",
-  },
-  {
-    id: 105,
-    customer_name: "Arjun Patel",
-    service_name: "Plumbing Service",
-    city: "Pune",
-    date: "2025-11-15",
-    time: "12:30 PM",
-    price: 800,
-    notes: "Fix bathroom leakage",
-  },
-  {
-    id: 106,
-    customer_name: "Kavita Menon",
-    service_name: "Gardening",
-    city: "Hyderabad",
-    date: "2025-11-16",
-    time: "09:45 AM",
-    price: 1800,
-    notes: "Trim hedges and lawn cleaning",
-  },
-];
-
-export default function JobRequests() {
+export default function ProviderRequestsWithServices() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const [requests, setRequests] = useState(DEMO_DATA);
-  const [loading, setLoading] = useState(false);
+  // Redux state
+  const {
+    jobs,
+    loading,
+    pending,
+    pendingLoading,
+    acceptLoading,
+    acceptError,
+  } = useSelector((state) => state.providerJobs);
+
+  // Local UI state: search, snack, pagination, selectedService
   const [search, setSearch] = useState("");
   const [snack, setSnack] = useState({ open: false, message: "", severity: "info" });
 
+  // Pagination
   const [page, setPage] = useState(1);
   const perPage = 5;
 
-  const handleAccept = (id) => {
-    setLoading(true);
-    setTimeout(() => {
-      setRequests((prev) => prev.filter((r) => r.id !== id));
-      setSnack({ open: true, message: `Job #${id} accepted successfully!`, severity: "success" });
-      setLoading(false);
-    }, 1000);
+  // Local selected service
+  const [selectedService, setSelectedService] = useState("All Services");
+
+  // Fetch jobs on mount
+  useEffect(() => {
+    dispatch(fetchProviderJobs());
+    // optionally also fetch pending if you need it elsewhere
+    dispatch(fetchPendingJobs());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch]);
+
+  // derive service list from jobs (assigned/available)
+  const serviceList = useMemo(() => {
+    const arr = (jobs || []).map((d) => d.service_name || d.service?.name || "Service");
+    const uniq = Array.from(new Set(arr));
+    return ["All Services", ...uniq];
+  }, [jobs]);
+
+  // Filter by search + selected service
+  const filtered = useMemo(() => {
+    const q = (search || "").trim().toLowerCase();
+    const list = jobs || [];
+    return list.filter((r) => {
+      const customerName = (r.customer_name || r.user_name || r.user?.name || "").toString().toLowerCase();
+      const serviceName = (r.service_name || r.service?.name || "").toString().toLowerCase();
+      const city = (r.city || r.address?.city || "").toString().toLowerCase();
+      const matchesSearch =
+        !q ||
+        customerName.includes(q) ||
+        serviceName.includes(q) ||
+        city.includes(q) ||
+        String(r.id).includes(q);
+
+      const matchesService = selectedService === "All Services" || (r.service_name || r.service?.name) === selectedService;
+      return matchesSearch && matchesService;
+    });
+  }, [jobs, search, selectedService]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
+
+  // handlers
+  const handleAccept = async (id) => {
+    try {
+      const resultAction = await dispatch(acceptJob(id));
+      if (acceptJob.fulfilled.match(resultAction)) {
+        setSnack({ open: true, message: `Job #${id} accepted successfully!`, severity: "success" });
+      } else {
+        // rejected
+        setSnack({ open: true, message: resultAction.payload || "Failed to accept job", severity: "error" });
+      }
+    } catch (err) {
+      setSnack({ open: true, message: err.message || "Failed to accept job", severity: "error" });
+    }
   };
 
   const handleView = (id) => {
     navigate(`/provider/job-requests/${id}`, { state: { id } });
   };
 
-  const handleCloseSnack = () => setSnack({ ...snack, open: false });
+  const handleCloseSnack = () => setSnack((s) => ({ ...s, open: false }));
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return requests;
-    return requests.filter(
-      (r) =>
-        r.customer_name.toLowerCase().includes(q) ||
-        r.service_name.toLowerCase().includes(q) ||
-        r.city.toLowerCase().includes(q) ||
-        String(r.id).includes(q)
-    );
-  }, [requests, search]);
-
-  const totalPages = Math.ceil(filtered.length / perPage);
-  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
-
+  // UI rendering
   return (
-    <Box sx={{ p: 3, maxWidth: 1100, mx: "auto" }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Job Requests
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Review and accept available job requests.
-          </Typography>
-        </Box>
-
-        <TextField
-          size="small"
-          placeholder="Search by name, service or city"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
+    <Box sx={{ p: 3 }}>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
+        {/* Sidebar */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: "100%", md: 240 },
+            bgcolor: "#f5f5f5",
+            p: 1,
+            borderRadius: 2,
+            minHeight: 420,
           }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
-            endAdornment: search ? (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearch("")}>
-                  ×
-                </IconButton>
-              </InputAdornment>
-            ) : null,
-          }}
-          sx={{ width: 300 }}
-        />
-      </Stack>
+        >
+          <List disablePadding>
+            <Typography sx={{ fontWeight: 700, mb: 1, px: 1 }}>Services</Typography>
 
-      <Paper sx={{ p: 2 }}>
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-            <CircularProgress />
-          </Box>
-        ) : paginated.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 6 }}>
-            <Typography>No job requests found.</Typography>
-          </Box>
-        ) : (
-          <Stack spacing={2}>
-            {paginated.map((r) => (
-              <Paper key={r.id} sx={{ p: 2 }}>
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  alignItems={{ xs: "flex-start", sm: "center" }}
-                  justifyContent="space-between"
-                  spacing={2}
+            {serviceList.map((svc) => {
+              const active = svc === selectedService;
+              return (
+                <ListItemButton
+                  key={svc}
+                  onClick={() => {
+                    setSelectedService(svc);
+                    setPage(1);
+                  }}
+                  sx={{
+                    mb: 1,
+                    borderRadius: 1,
+                    bgcolor: active ? "#e9f500" : "#fff",
+                    px: 2,
+                    py: 1,
+                    boxShadow: active ? "0 0 0 2px rgba(230,245,0,0.12)" : "none",
+                    "&:hover": { bgcolor: active ? "#e9f500" : "#fafafa" },
+                  }}
                 >
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar sx={{ bgcolor: "primary.light", width: 48, height: 48 }}>
-                      {r.customer_name.charAt(0)}
-                    </Avatar>
-                    <Box>
-                      <Typography fontWeight={700}>
-                        {r.customer_name} —{" "}
-                        <Typography
-                          component="span"
-                          variant="body2"
-                          color="text.secondary"
-                        >
-                          {r.service_name}
-                        </Typography>
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {r.city} • {r.date} {r.time && `• ${r.time}`} • ₹{r.price}
-                      </Typography>
-                      {r.notes && (
+                  <ListItemText
+                    primary={<Typography sx={{ fontWeight: 700, fontSize: 14 }}>{svc}</Typography>}
+                    secondary={
+                      svc !== "All Services" ? (
                         <Typography variant="caption" color="text.secondary">
-                          Notes: {r.notes}
+                          {(jobs || []).filter((r) => (r.service_name || r.service?.name) === svc).length} requests
                         </Typography>
-                      )}
-                    </Box>
-                  </Stack>
+                      ) : null
+                    }
+                  />
+                </ListItemButton>
+              );
+            })}
+          </List>
 
-                  <Stack direction="row" spacing={1}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleView(r.id)}
-                    >
-                      View
-                    </Button>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      color="success"
-                      onClick={() => handleAccept(r.id)}
-                      disabled={loading}
-                    >
-                      Accept
-                    </Button>
-                  </Stack>
-                </Stack>
-              </Paper>
-            ))}
-          </Stack>
-        )}
+          <Divider sx={{ my: 2 }} />
 
-        {/* Pagination */}
-        {paginated.length > 0 && (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={(_, val) => setPage(val)}
-              color="primary"
+          <Typography sx={{ fontWeight: 600, px: 1, color: "text.secondary" }}>
+            Quick Filters
+          </Typography>
+          <List disablePadding>
+            <ListItemButton
+              onClick={() => {
+                setSelectedService("All Services");
+                setPage(1);
+              }}
+              sx={{ mt: 1, borderRadius: 1 }}
+            >
+              <ListItemText primary="All Requests" />
+            </ListItemButton>
+            <ListItemButton onClick={() => alert("Feature: show analytics")} sx={{ mt: 1, borderRadius: 1 }}>
+              <ListItemText primary="Analytics" />
+            </ListItemButton>
+          </List>
+        </Paper>
+
+        {/* Right: list */}
+        <Box sx={{ flex: 1 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                {selectedService === "All Services" ? "Job Requests" : selectedService}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {selectedService === "All Services"
+                  ? "Review and accept available job requests."
+                  : `Requests for ${selectedService}`}
+              </Typography>
+            </Box>
+
+            <TextField
+              size="small"
+              placeholder="Search by name, service or city"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: search ? (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearch("")}>
+                      ×
+                    </IconButton>
+                  </InputAdornment>
+                ) : null,
+              }}
+              sx={{ width: 360 }}
             />
-          </Box>
-        )}
-      </Paper>
+          </Stack>
+
+          <Paper sx={{ p: 2, minHeight: 420 }}>
+            {loading || pendingLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+                <CircularProgress />
+              </Box>
+            ) : paginated.length === 0 ? (
+              <Box sx={{ textAlign: "center", py: 6 }}>
+                <Typography>No job requests found.</Typography>
+              </Box>
+            ) : (
+              <Stack spacing={2}>
+                {paginated.map((r) => (
+                  <Paper
+                    key={r.id}
+                    sx={{
+                      p: 2,
+                      bgcolor: "#fafafa",
+                      borderRadius: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                    elevation={0}
+                  >
+                    <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
+                      <Avatar sx={{ bgcolor: "primary.light", width: 48, height: 48 }}>
+                        {(r.customer_name || (r.user && r.user.username) || "U").charAt(0)}
+                      </Avatar>
+
+                      <Box>
+                        <Typography fontWeight={700}>
+                          {r.customer_name || (r.user && r.user.username)} —{" "}
+                          <Typography component="span" variant="body2" color="text.secondary">
+                            {r.service_name || r.service?.name}
+                          </Typography>
+                        </Typography>
+
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                          {(r.city || r.address?.city) || "—"} • {r.booking_date} {r.booking_time && `• ${r.booking_time}`} • ₹{r.price}
+                        </Typography>
+
+                        {r.notes && (
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+                            Summary: {r.notes}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Stack>
+
+                    <Stack direction="row" spacing={1} sx={{ ml: 2 }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() => handleView(r.id)}
+                        sx={{
+                          bgcolor: "#eede2b",
+                          color: "#000",
+                          textTransform: "none",
+                          fontWeight: 700,
+                          "&:hover": { bgcolor: "#e6d31a" },
+                        }}
+                      >
+                        View Details
+                      </Button>
+
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="success"
+                        onClick={() => handleAccept(r.id)}
+                        disabled={acceptLoading}
+                        sx={{ textTransform: "none" }}
+                      >
+                        {acceptLoading ? <CircularProgress size={18} /> : "Accept"}
+                      </Button>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+
+            {/* Pagination */}
+            {paginated.length > 0 && (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={(_, val) => setPage(val)}
+                  color="primary"
+                />
+              </Box>
+            )}
+          </Paper>
+        </Box>
+      </Stack>
 
       <Snackbar
         open={snack.open}

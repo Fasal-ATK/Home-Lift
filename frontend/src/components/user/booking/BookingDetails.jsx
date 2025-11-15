@@ -30,7 +30,8 @@ export default function BookingDetails() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentBooking, loading, error } = useSelector((s) => s.bookings);
-  const booking = currentBooking?.data || currentBooking;
+  // support both shapes: { data: {...} } or plain object
+  const booking = currentBooking?.data ?? currentBooking;
   const [busy, setBusy] = useState(false);
 
   // get id from location.state.bookingId OR query param ?id=123
@@ -41,24 +42,30 @@ export default function BookingDetails() {
 
   useEffect(() => {
     if (!bookingId) {
-      // no id — go back to listings
       navigate("/bookings", { replace: true });
       return;
     }
     dispatch(fetchBookingDetails(bookingId));
   }, [dispatch, bookingId, navigate]);
 
-  const canCancel = (s) => s && !["cancelled", "completed"].includes(s);
+  const canCancel = (s) => {
+    if (!s) return false;
+    return !["cancelled", "completed"].includes(s);
+  };
 
   const handleCancel = async () => {
     if (!bookingId) return;
     setBusy(true);
     try {
+      // updateBooking will update slice and backend
       await dispatch(updateBooking({ id: bookingId, data: { status: "cancelled" } })).unwrap();
+      // refresh list + details to reflect change
       await dispatch(fetchBookings());
       await dispatch(fetchBookingDetails(bookingId));
     } catch (e) {
-      // error handled by slice
+      // keep silent; slice stores error
+      // you can show toast here if you have a notification system
+      console.error("Cancel booking failed:", e);
     } finally {
       setBusy(false);
     }

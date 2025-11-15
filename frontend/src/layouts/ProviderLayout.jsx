@@ -17,9 +17,9 @@ const ProviderLayout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 0,
           bgcolor: "#f5f5f5",
-          ml: `${open ? 200 : 70}px`, // matches sidebar width
+          ml: `${open ? 190 : 70}px`, // matches sidebar width
           transition: "margin-left 0.3s ease",
         }}
       >

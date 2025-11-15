@@ -13,6 +13,7 @@ class BookingSerializer(serializers.ModelSerializer):
     )
     address_details = AddressSerializer(source='address', read_only=True)
 
+
     class Meta:
         model = Booking
         fields = [
@@ -20,7 +21,7 @@ class BookingSerializer(serializers.ModelSerializer):
             'service', 'service_name',
             'provider', 'provider_name',
             'full_name', 'phone',
-            'address', 'address_details',  # include both for flexibility
+            'address', 'address_details',  
             'notes', 'booking_date', 'booking_time',
             'status', 'price', 'advance',
             'created_at', 'updated_at',

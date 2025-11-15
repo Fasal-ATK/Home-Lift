@@ -63,8 +63,13 @@ const apiEndpoints = {
         apply: '/provider/apply/',
         applicationStatus: '/provider/status/',
         me: '/provider/me/',
-      },
-      
+        jobs: {
+            list: '/provider/jobs/appointments',
+            pending: '/provider/jobs/appointments/pending',
+            accept: (id) => `/provider/jobs/appointments/${id}/accept`,
+        },
+    },
+
 
 };
 

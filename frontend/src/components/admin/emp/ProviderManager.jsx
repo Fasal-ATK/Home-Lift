@@ -5,7 +5,7 @@ import { Block, LockOpen } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import DataTable from '../DataTable';
 import SearchBarWithFilter from '../SearchBar';
-import { fetchProviders, toggleProviderStatus } from '../../../redux/slices/admin/providerSlice';
+import { fetchProviders, toggleProviderStatus } from '../../../redux/slices/admin/providerMngSlice';
 import ConfirmModal from '../../common/Confirm';
 
 export default function ProviderManager() {

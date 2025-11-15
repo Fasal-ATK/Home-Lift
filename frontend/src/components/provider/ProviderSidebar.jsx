@@ -1,5 +1,4 @@
-import { useLocation, Link } from "react-router-dom";
-import LogoutButton from "../common/Logout";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Box,
   List,
@@ -19,10 +18,12 @@ import {
   AccountBalanceWallet,
   Menu,
   ChevronLeft,
+  Home as HomeIcon,
 } from "@mui/icons-material";
 
 export default function ProviderSidebar({ open, setOpen }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
     { text: "Dashboard", icon: <Dashboard />, path: "/provider/dashboard" },
@@ -36,8 +37,8 @@ export default function ProviderSidebar({ open, setOpen }) {
   return (
     <Box
       sx={{
-        width: open ? 200 : 70,
-        position: "fixed", // makes sidebar fixed
+        width: open ? 190 : 70,
+        position: "fixed",
         left: 0,
         top: 0,
         bottom: 0,
@@ -50,14 +51,12 @@ export default function ProviderSidebar({ open, setOpen }) {
         zIndex: 1200,
       }}
     >
-      {/* Top: Brand + Toggle */}
+      {/* Brand */}
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: open ? "space-between" : "center",
           p: 2,
           borderBottom: "1px solid #eee",
+          textAlign: "center",
         }}
       >
         {open && (
@@ -65,10 +64,26 @@ export default function ProviderSidebar({ open, setOpen }) {
             <span style={{ color: "#cddc39" }}>Home</span> Lift
           </Typography>
         )}
-        <IconButton size="small" onClick={() => setOpen(!open)}>
-          {open ? <ChevronLeft /> : <Menu />}
-        </IconButton>
       </Box>
+
+      {/* Center Toggle Button */}
+      <IconButton
+        size="small"
+        onClick={() => setOpen(!open)}
+        sx={{
+          position: "absolute",
+          right: -17,
+          top: "50%",
+          transform: "translateY(-50%)",
+          bgcolor: "#fff",
+          border: "1px solid #ddd",
+          boxShadow: 2,
+          "&:hover": { bgcolor: "#f4f4f4" },
+          zIndex: 1500,
+        }}
+      >
+        {open ? <ChevronLeft /> : <Menu />}
+      </IconButton>
 
       {/* Navigation */}
       <List sx={{ flex: 1, mt: 2 }}>
@@ -83,7 +98,7 @@ export default function ProviderSidebar({ open, setOpen }) {
                 backgroundColor: isActive ? "#f4e04d" : "transparent",
                 borderRadius: "12px",
                 mb: 1,
-                py: 1.5,
+                py: 1.4,
                 justifyContent: open ? "initial" : "center",
                 px: open ? 2 : 1.5,
                 "&:hover": { backgroundColor: "#fff9c4" },
@@ -105,10 +120,31 @@ export default function ProviderSidebar({ open, setOpen }) {
           );
         })}
 
-        {/* Logout */}
-        <Box sx={{ mt: 2 }}>
-          <LogoutButton collapsed={!open} />
-        </Box>
+        {/* ➤ Back to Home Button */}
+        <ListItemButton
+          onClick={() => navigate("/home")}
+          sx={{
+            borderRadius: "12px",
+            mb: 1,
+            py: 1.5,
+            justifyContent: open ? "initial" : "center",
+            px: open ? 1.5 : 1.5,
+            "&:hover": { backgroundColor: "#e8f5e9" },
+            transition: "all 0.3s",
+          }}
+        >
+          <ListItemIcon
+            sx={{
+              minWidth: "unset",
+              mr: open ? 1.5 : 0,
+              justifyContent: "center",
+              color: "#2e7d32",
+            }}
+          >
+            <HomeIcon />
+          </ListItemIcon>
+          {open && <ListItemText primary="Back to Home" />}
+        </ListItemButton>
       </List>
 
       <Divider />

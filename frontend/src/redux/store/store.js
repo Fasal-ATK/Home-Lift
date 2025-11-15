@@ -6,10 +6,12 @@ import categoryReducer from '../slices/categorySlice';
 import serviceReducer from '../slices/serviceSlice';
 import adminCustomerReducer from '../slices/adminCustomerSlice';  
 import userReducer from '../slices/user/userSlice'; 
-import providerReducer from '../slices/admin/providerSlice';
+import providerReducer from '../slices/admin/providerMngSlice';
 import applicationReducer from '../slices/admin/applicationsSlice';
 import notificationReducer from '../slices/notificationSlice';
 import bookingReducer from '../slices/bookingSlice';
+import providerJobsReducer from '../slices/provider/providerJobSlice';
+
 
 // store.js
 const appReducer = combineReducers({
@@ -22,6 +24,8 @@ const appReducer = combineReducers({
   applications: applicationReducer,
   notifications: notificationReducer,
   bookings: bookingReducer,
+  
+  providerJobs: providerJobsReducer,
 
 });
 

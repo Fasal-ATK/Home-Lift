@@ -239,6 +239,7 @@ export default function Bookings() {
   // snackbar state for transient error display
   const [snackOpen, setSnackOpen] = useState(false);
 
+
   useEffect(() => {
     dispatch(fetchBookings());
     if (!services.length) dispatch(fetchServices());

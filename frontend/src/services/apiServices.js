@@ -78,12 +78,31 @@ export const bookingService = {
         return response.data;
     },
 
-    updateBooking: async (id, data) => {
-        const response = await api.patch(apiEndpoints.user.updateBooking(id), data);
+    cancelBooking: async (id, data) => {
+        const response = await api.delete(apiEndpoints.user.updateBooking(id), data);
         return response.data;
     },
     
 };
+
+
+export const providerJobService = {
+    getProviderJobs: async () => {
+        const response = await api.get(apiEndpoints.provider.jobs.list);
+        return response.data;
+    },
+
+    getPendingJobs: async () => {
+        const response = await api.get(apiEndpoints.provider.jobs.pending);
+        return response.data;
+    },
+
+    acceptJob: async (id) => {
+        const response = await api.post(apiEndpoints.provider.jobs.accept(id));
+        return response.data;
+    },
+};
+
 
 export const notificationService = {
     list: async () => {

@@ -1,3 +1,5 @@
+// src/components/user/booking/ServiceBookingPage.jsx
+
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm, Controller } from "react-hook-form";
@@ -57,7 +59,6 @@ const BookingPage = () => {
         navigate("/bookings");
       })
       .catch((error) => {
-        // Error is already handled by Redux, but we can log it here
         console.error("Booking error:", error);
       });
   };
@@ -156,7 +157,37 @@ const BookingPage = () => {
               />
 
               <Field name="full_name" label="Full Name" rules={{ required: "Full name is required" }} />
-              <Field name="phone" label="Phone Number" rules={{ required: "Phone number is required" }} />
+
+              {/* Phone Controller: numbers-only, maxLength 10, exact 10 digits validation */}
+              <Controller
+                name="phone"
+                control={control}
+                defaultValue=""
+                rules={{
+                  required: "Phone number is required",
+                  pattern: { value: /^\d{10}$/, message: "Phone number must be exactly 10 digits" },
+                }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Phone Number"
+                    margin="normal"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    inputProps={{
+                      inputMode: "numeric",
+                      maxLength: 10,
+                      pattern: "[0-9]*",
+                    }}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      field.onChange(digits);
+                    }}
+                  />
+                )}
+              />
+
               <Controller
                 name="address"
                 control={control}
