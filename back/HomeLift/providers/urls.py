@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path,include
 from .views import (
     ProviderApplicationCreateAPIView,
     ProviderApplicationStatusView,
@@ -13,6 +13,8 @@ from .views import (
 urlpatterns = [
     path('apply/', ProviderApplicationCreateAPIView.as_view()),
     path('status/', ProviderApplicationStatusView.as_view()),
+
+    path('jobs/',include('bookings.urls')),
 
     # Admin
     path('applications/', ProviderApplicationListAPIView.as_view()),  

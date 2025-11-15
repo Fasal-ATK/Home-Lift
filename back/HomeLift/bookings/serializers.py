@@ -9,10 +9,13 @@ class BookingSerializer(serializers.ModelSerializer):
     service_name = serializers.ReadOnlyField(source='service.name')
     provider_name = serializers.ReadOnlyField(source='provider.username')
     address = serializers.PrimaryKeyRelatedField(
-        queryset=Address.objects.all(), write_only=True
+        queryset=Address.objects.all(), write_only=True, required=False, allow_null=True
     )
     address_details = AddressSerializer(source='address', read_only=True)
 
+    # helpful flags for front-end
+    is_owner = serializers.SerializerMethodField(read_only=True)
+    is_assigned_to_user = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Booking
@@ -21,17 +24,31 @@ class BookingSerializer(serializers.ModelSerializer):
             'service', 'service_name',
             'provider', 'provider_name',
             'full_name', 'phone',
-            'address', 'address_details',  
+            'address', 'address_details',
             'notes', 'booking_date', 'booking_time',
             'status', 'price', 'advance',
             'created_at', 'updated_at',
+            # UI helpers
+            'is_owner', 'is_assigned_to_user',
         ]
-        read_only_fields = ('advance', 'created_at', 'updated_at')
+        read_only_fields = ('advance', 'created_at', 'updated_at', 'is_owner', 'is_assigned_to_user')
+
+    def get_is_owner(self, obj):
+        request = self.context.get('request', None)
+        if not request or not getattr(request, "user", None):
+            return False
+        return bool(obj.user_id == request.user.id)
+
+    def get_is_assigned_to_user(self, obj):
+        request = self.context.get('request', None)
+        if not request or not getattr(request, "user", None):
+            return False
+        return bool(obj.provider_id == request.user.id)
 
     def validate_address(self, address):
         """Ensure the selected address belongs to the current user."""
         user = self.context['request'].user
-        if address.user != user:
+        if address and address.user != user:
             raise serializers.ValidationError("You can only use your own saved addresses.")
         return address
 
