@@ -36,10 +36,10 @@ export default function ProviderRequestsWithServices() {
   const {
     jobs,
     loading,
-    pending,
+    // pending,
     pendingLoading,
     acceptLoading,
-    acceptError,
+    // acceptError,
   } = useSelector((state) => state.providerJobs);
 
   // Local UI state: search, snack, pagination, selectedService
@@ -56,9 +56,9 @@ export default function ProviderRequestsWithServices() {
   // Fetch jobs on mount
   useEffect(() => {
     dispatch(fetchProviderJobs());
-    // optionally also fetch pending if you need it elsewhere
+
     dispatch(fetchPendingJobs());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [dispatch]);
 
   // derive service list from jobs (assigned/available)
