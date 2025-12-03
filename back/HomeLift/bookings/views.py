@@ -197,7 +197,7 @@ class BookingDetailUpdateView(APIView):
         serializer = BookingSerializer(booking, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @transaction.atomic
+    @transaction.atomic 
     def delete(self, request, pk):
         booking = self._get_object(pk, request.user)
 
