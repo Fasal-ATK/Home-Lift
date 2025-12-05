@@ -34,6 +34,8 @@ import Bio from './pages/Provider/Bio';
 import History from './pages/Provider/History';
 import Wallet from './pages/Provider/Wallet';
 
+import ProviderJobDetail from './components/provider/jobRequests/ProviderJobDetials';
+
 // Layouts
 import AdminLayout from './layouts/AdminLayout';
 import UserLayout from './layouts/UserLayout';
@@ -131,7 +133,10 @@ function App() {
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path='dashboard' element={<ProviderDashboard />} />
-          <Route path='job-requests' element={<JobRequests/>} />
+          <Route path="job-requests">
+            <Route index element={<JobRequests />} />
+            <Route path="details/:id" element={<ProviderJobDetail />} />
+          </Route>
           <Route path='appointments' element={<Appointments />} />
           <Route path='bio' element={<Bio />} />
           <Route path='history' element={<History />} />

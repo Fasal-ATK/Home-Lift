@@ -12,7 +12,7 @@ const apiEndpoints = {
     },
 
     otp: {
-        sendOtp: '/user/send-otp/',
+        sendOtp: '/user/send-otp/', 
         verifyOtp: '/user/verify-otp/',
     },
 

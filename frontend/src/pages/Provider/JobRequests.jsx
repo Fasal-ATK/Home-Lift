@@ -107,7 +107,7 @@ export default function ProviderRequestsWithServices() {
   };
 
   const handleView = (id) => {
-    navigate(`/provider/job-requests/${id}`, { state: { id } });
+    navigate(`/provider/job-requests/details/${id}`);
   };
 
   const handleCloseSnack = () => setSnack((s) => ({ ...s, open: false }));
@@ -288,6 +288,7 @@ export default function ProviderRequestsWithServices() {
                         }}
                       >
                         View Details
+                        
                       </Button>
 
                       <Button

@@ -433,8 +433,8 @@ export default function Bookings() {
       {/* header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
-          <Typography variant="h4" fontWeight={800}>Your Orders</Typography>
-          <Typography variant="body2" color="text.secondary">Orders placed in your account</Typography>
+          <Typography variant="h4" fontWeight={800}>Your Bookings</Typography>
+          <Typography variant="body2" color="text.secondary">Bookings placed in your account</Typography>
         </Box>
 
         <Stack direction="row" spacing={1} alignItems="center">
