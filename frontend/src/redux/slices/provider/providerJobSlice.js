@@ -1,16 +1,32 @@
-// src/store/slices/provider/ProviderJobSlice.js
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { providerJobService } from '../../../services/apiServices'; // adjust path
+// src/redux/slices/provider/providerJobSlice.js
+import { createSlice, createAsyncThunk, createEntityAdapter } from "@reduxjs/toolkit";
+import { providerJobService, bookingService } from "../../../services/apiServices";
 
-// Async thunks
+const jobsAdapter = createEntityAdapter({
+  selectId: (job) => Number(job.id),
+  sortComparer: (a, b) => {
+    if (a.created_at && b.created_at) return b.created_at.localeCompare(a.created_at);
+    return 0;
+  },
+});
+
+const initialState = jobsAdapter.getInitialState({
+  loading: false,
+  pendingLoading: false,
+  error: null,
+  acceptError: null,
+  acceptingIds: [], // per-job accept in-progress
+});
+
+/* Thunks */
 export const fetchProviderJobs = createAsyncThunk(
   "providerJobs/fetchProviderJobs",
   async (_, { rejectWithValue }) => {
     try {
       const data = await providerJobService.getProviderJobs();
-      return data; // assume API returns array
+      return data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message || "Failed to fetch jobs");
+      return rejectWithValue(err.response?.data || err.message || "Failed to fetch provider jobs");
     }
   }
 );
@@ -27,13 +43,24 @@ export const fetchPendingJobs = createAsyncThunk(
   }
 );
 
-// acceptJob expects an id (number/string)
+// Uses bookingService.getBookingDetails (apiServices unchanged)
+export const fetchJobDetail = createAsyncThunk(
+  "providerJobs/fetchJobDetail",
+  async (id, { rejectWithValue }) => {
+    try {
+      const data = await bookingService.getBookingDetails(id);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message || "Failed to fetch job detail");
+    }
+  }
+);
+
 export const acceptJob = createAsyncThunk(
   "providerJobs/acceptJob",
   async (id, { rejectWithValue }) => {
     try {
       const data = await providerJobService.acceptJob(id);
-      // return id so reducer can remove from list; include server data if any
       return { id, data };
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message || "Failed to accept job");
@@ -41,35 +68,21 @@ export const acceptJob = createAsyncThunk(
   }
 );
 
-const initialState = {
-  jobs: [],                 // assigned/available jobs for provider (list endpoint)
-  pending: [],              // pending jobs endpoint
-  loading: false,
-  pendingLoading: false,
-  acceptLoading: false,     // global accept loading (kept for compatibility)
-  acceptingIds: [],         // per-job accept in-progress (array of ids)
-  error: null,
-  acceptError: null,
-};
-
-const providerJobSlice = createSlice({
+const slice = createSlice({
   name: "providerJobs",
   initialState,
   reducers: {
-    // optional local actions
     clearProviderJobError(state) {
       state.error = null;
       state.acceptError = null;
     },
-    // replace jobs (useful for optimistic updates)
     setJobs(state, action) {
-      state.jobs = action.payload;
+      jobsAdapter.setAll(state, action.payload || []);
     },
-    // optional: remove a job locally by id
     removeJobById(state, action) {
-      const id = action.payload;
-      state.jobs = state.jobs.filter((j) => Number(j.id) !== Number(id));
-      state.pending = state.pending.filter((j) => Number(j.id) !== Number(id));
+      const id = Number(action.payload);
+      jobsAdapter.removeOne(state, id);
+      state.acceptingIds = state.acceptingIds.filter((x) => Number(x) !== id);
     },
   },
   extraReducers: (builder) => {
@@ -81,7 +94,7 @@ const providerJobSlice = createSlice({
       })
       .addCase(fetchProviderJobs.fulfilled, (state, action) => {
         state.loading = false;
-        state.jobs = action.payload || [];
+        jobsAdapter.setAll(state, action.payload || []);
       })
       .addCase(fetchProviderJobs.rejected, (state, action) => {
         state.loading = false;
@@ -94,48 +107,50 @@ const providerJobSlice = createSlice({
       })
       .addCase(fetchPendingJobs.fulfilled, (state, action) => {
         state.pendingLoading = false;
-        state.pending = action.payload || [];
+        jobsAdapter.upsertMany(state, action.payload || []);
       })
       .addCase(fetchPendingJobs.rejected, (state, action) => {
         state.pendingLoading = false;
         state.error = action.payload || "Failed to fetch pending jobs";
       })
 
-      // acceptJob (per-job tracking)
+      // fetchJobDetail
+      .addCase(fetchJobDetail.pending, (state) => {
+        // could track id-specific loading if you want
+      })
+      .addCase(fetchJobDetail.fulfilled, (state, action) => {
+        jobsAdapter.upsertOne(state, action.payload);
+      })
+      .addCase(fetchJobDetail.rejected, (state, action) => {
+        state.error = action.payload || "Failed to fetch job detail";
+      })
+
+      // acceptJob: per-id tracking and removal on success
       .addCase(acceptJob.pending, (state, action) => {
-        state.acceptLoading = true;
-        state.acceptError = null;
-        const id = action.meta.arg;
-        // add to acceptingIds if not already present
+        const id = Number(action.meta.arg);
         if (!state.acceptingIds.includes(id)) state.acceptingIds.push(id);
+        state.acceptError = null;
       })
       .addCase(acceptJob.fulfilled, (state, action) => {
-        state.acceptLoading = false;
-        const id = action.payload.id;
-        // remove accepted job from lists
-        state.jobs = state.jobs.filter((j) => Number(j.id) !== Number(id));
-        state.pending = state.pending.filter((j) => Number(j.id) !== Number(id));
-        // remove id from acceptingIds
-        state.acceptingIds = state.acceptingIds.filter((x) => Number(x) !== Number(id));
+        const id = Number(action.payload.id);
+        jobsAdapter.removeOne(state, id);
+        state.acceptingIds = state.acceptingIds.filter((x) => Number(x) !== id);
       })
       .addCase(acceptJob.rejected, (state, action) => {
-        state.acceptLoading = false;
+        const id = Number(action.meta.arg);
         state.acceptError = action.payload || "Failed to accept job";
-        const id = action.meta.arg;
-        // ensure id removed from acceptingIds on failure
-        state.acceptingIds = state.acceptingIds.filter((x) => Number(x) !== Number(id));
+        state.acceptingIds = state.acceptingIds.filter((x) => Number(x) !== id);
       });
   },
 });
 
-export const { clearProviderJobError, setJobs, removeJobById } = providerJobSlice.actions;
+export const { clearProviderJobError, setJobs, removeJobById } = slice.actions;
 
-// Selectors (helpful)
-export const selectProviderJobs = (state) => state.providerJobs.jobs;
-export const selectProviderPending = (state) => state.providerJobs.pending;
+// adapter selectors
+export const jobsSelectors = jobsAdapter.getSelectors((state) => state.providerJobs);
+
 export const selectProviderLoading = (state) => state.providerJobs.loading || state.providerJobs.pendingLoading;
 export const selectAcceptingIds = (state) => state.providerJobs.acceptingIds;
-export const selectAcceptLoading = (state) => state.providerJobs.acceptLoading;
-export const selectProviderJobError = (state) => state.providerJobs.error;
+export const selectProviderError = (state) => state.providerJobs.error;
 
-export default providerJobSlice.reducer;
+export default slice.reducer;

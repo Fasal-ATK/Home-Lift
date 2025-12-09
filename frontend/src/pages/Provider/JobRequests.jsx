@@ -26,23 +26,21 @@ import {
   fetchProviderJobs,
   fetchPendingJobs,
   acceptJob,
-} from '../../redux/slices/provider/providerJobSlice'; 
+  jobsSelectors,
+  selectProviderLoading,
+  selectAcceptingIds,
+} from '../../redux/slices/provider/providerJobSlice';
 
 export default function ProviderRequestsWithServices() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Redux state
-  const {
-    jobs,
-    loading,
-    // pending,
-    pendingLoading,
-    acceptLoading,
-    // acceptError,
-  } = useSelector((state) => state.providerJobs);
+  // selectors
+  const jobs = useSelector((s) => jobsSelectors.selectAll(s)) || [];
+  const loading = useSelector(selectProviderLoading);
+  const acceptingIds = useSelector(selectAcceptingIds);
 
-  // Local UI state: search, snack, pagination, selectedService
+  // Local UI state
   const [search, setSearch] = useState("");
   const [snack, setSnack] = useState({ open: false, message: "", severity: "info" });
 
@@ -56,12 +54,10 @@ export default function ProviderRequestsWithServices() {
   // Fetch jobs on mount
   useEffect(() => {
     dispatch(fetchProviderJobs());
-
     dispatch(fetchPendingJobs());
-
   }, [dispatch]);
 
-  // derive service list from jobs (assigned/available)
+  // derive service list from jobs
   const serviceList = useMemo(() => {
     const arr = (jobs || []).map((d) => d.service_name || d.service?.name || "Service");
     const uniq = Array.from(new Set(arr));
@@ -91,14 +87,16 @@ export default function ProviderRequestsWithServices() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
 
+  // helpers
+  const isAccepting = (id) => acceptingIds.map(String).includes(String(id));
+
   // handlers
   const handleAccept = async (id) => {
     try {
-      const resultAction = await dispatch(acceptJob(id));
+      const resultAction = await dispatch(acceptJob(Number(id)));
       if (acceptJob.fulfilled.match(resultAction)) {
         setSnack({ open: true, message: `Job #${id} accepted successfully!`, severity: "success" });
       } else {
-        // rejected
         setSnack({ open: true, message: resultAction.payload || "Failed to accept job", severity: "error" });
       }
     } catch (err) {
@@ -106,13 +104,13 @@ export default function ProviderRequestsWithServices() {
     }
   };
 
-  const handleView = (id) => {
-    navigate(`/provider/job-requests/details/${id}`);
+  // navigate and pass booking to avoid refetch
+  const handleView = (booking) => {
+    navigate(`details/${booking.id}`, { state: { booking } });
   };
 
   const handleCloseSnack = () => setSnack((s) => ({ ...s, open: false }));
 
-  // UI rendering
   return (
     <Box sx={{ p: 3 }}>
       <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
@@ -226,7 +224,7 @@ export default function ProviderRequestsWithServices() {
           </Stack>
 
           <Paper sx={{ p: 2, minHeight: 420 }}>
-            {loading || pendingLoading ? (
+            {loading ? (
               <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
                 <CircularProgress />
               </Box>
@@ -278,7 +276,7 @@ export default function ProviderRequestsWithServices() {
                       <Button
                         variant="contained"
                         size="small"
-                        onClick={() => handleView(r.id)}
+                        onClick={() => handleView(r)}
                         sx={{
                           bgcolor: "#eede2b",
                           color: "#000",
@@ -288,7 +286,6 @@ export default function ProviderRequestsWithServices() {
                         }}
                       >
                         View Details
-                        
                       </Button>
 
                       <Button
@@ -296,10 +293,10 @@ export default function ProviderRequestsWithServices() {
                         size="small"
                         color="success"
                         onClick={() => handleAccept(r.id)}
-                        disabled={acceptLoading}
+                        disabled={isAccepting(r.id)}
                         sx={{ textTransform: "none" }}
                       >
-                        {acceptLoading ? <CircularProgress size={18} /> : "Accept"}
+                        {isAccepting(r.id) ? <CircularProgress size={18} /> : "Accept"}
                       </Button>
                     </Stack>
                   </Paper>
