@@ -1,8 +1,9 @@
+// src/pages/user/Addresses.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Box, Button, Card, CardActions, CardContent, Chip, Dialog,
   DialogActions, DialogContent, DialogTitle, Grid, IconButton,
-  Stack, TextField, Typography, MenuItem
+  Stack, TextField, Typography
 } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import { Add, Delete, Edit, LocationOn } from "@mui/icons-material";
@@ -15,12 +16,12 @@ import {
   updateAddress as updateAddressThunk,
 } from "../../../redux/slices/user/userSlice";
 
-// ✅ NEW IMPORT
+// country/state/city helper
 import { State, City } from "country-state-city";
 
 export default function Addresses() {
   const dispatch = useDispatch();
-  const addresses = useSelector((s) => s.user.addresses);
+  const addresses = useSelector((s) => s.user.addresses) || [];
   const loading = useSelector((s) => s.user.addressesLoading);
   const error = useSelector((s) => s.user.addressesError);
 
@@ -36,6 +37,8 @@ export default function Addresses() {
     state: "",
     postal_code: "",
     country: "India",
+    latitude: "",
+    longitude: "",
     is_default: false,
   });
 
@@ -43,7 +46,7 @@ export default function Addresses() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
-  // ✅ NEW: states and cities data
+  // states/cities
   const states = useMemo(() => State.getStatesOfCountry("IN"), []);
   const [cities, setCities] = useState([]);
 
@@ -61,6 +64,8 @@ export default function Addresses() {
       state: "",
       postal_code: "",
       country: "India",
+      latitude: "",
+      longitude: "",
       is_default: false,
     });
     setCities([]);
@@ -77,20 +82,25 @@ export default function Addresses() {
       state: address.state || "",
       postal_code: address.postal_code || "",
       country: address.country || "India",
+      latitude: address.latitude ?? "",
+      longitude: address.longitude ?? "",
       is_default: !!address.is_default,
     });
 
-    // ✅ Populate city dropdown for the selected state
+    // populate city dropdown for selected state
     const selectedState = states.find((s) => s.name === address.state);
     if (selectedState) {
       const stateCities = City.getCitiesOfState("IN", selectedState.isoCode);
       setCities(stateCities);
+    } else {
+      setCities([]);
     }
 
     setModalOpen(true);
   };
 
   const handleSave = async () => {
+    // simple validation
     if (
       !form.title ||
       !form.address_line ||
@@ -99,17 +109,21 @@ export default function Addresses() {
       !form.postal_code ||
       !form.country
     ) {
+      // You can surface a better validation UI; keeping simple for now
       return;
     }
 
     const payload = {
       title: form.title,
       address_line: form.address_line,
-      district: form.district,
+      district: form.district || "",
       city: form.city,
       state: form.state,
       postal_code: form.postal_code,
       country: form.country,
+      // send null if empty so serializer gets null not empty string
+      latitude: form.latitude !== "" ? form.latitude : null,
+      longitude: form.longitude !== "" ? form.longitude : null,
       is_default: !!form.is_default,
     };
 
@@ -120,7 +134,9 @@ export default function Addresses() {
           setModalOpen(false);
           setEditing(null);
         })
-        .catch(() => {});
+        .catch(() => {
+          // optionally show error to user
+        });
     } else {
       dispatch(createAddress(payload))
         .unwrap()
@@ -128,7 +144,9 @@ export default function Addresses() {
           setModalOpen(false);
           setEditing(null);
         })
-        .catch(() => {});
+        .catch(() => {
+          // optionally show error to user
+        });
     }
   };
 
@@ -145,7 +163,29 @@ export default function Addresses() {
         setConfirmOpen(false);
         setDeleteId(null);
       })
-      .catch(() => {});
+      .catch(() => {
+        // optionally show error
+      });
+  };
+
+  // helper: use browser geolocation to populate lat/lon
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lon = pos.coords.longitude.toFixed(6);
+        setForm((f) => ({ ...f, latitude: String(lat), longitude: String(lon) }));
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        alert("Unable to fetch location. Please allow location access or enter manually.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   return (
@@ -180,6 +220,13 @@ export default function Addresses() {
                   {addr.city}, {addr.state} {addr.postal_code}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">{addr.country}</Typography>
+
+                {/* show coordinates when present */}
+                {(addr.latitude !== null && addr.longitude !== null) && (
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                    Lat: {addr.latitude} • Lon: {addr.longitude}
+                  </Typography>
+                )}
               </CardContent>
               <CardActions sx={{ justifyContent: "flex-end" }}>
                 <IconButton color="primary" onClick={() => openEditModal(addr)} aria-label="edit">
@@ -212,13 +259,14 @@ export default function Addresses() {
               onChange={(e) => setForm((p) => ({ ...p, address_line: e.target.value }))}
               fullWidth
             />
+
             {/* State Autocomplete w/ search */}
             <Autocomplete
               options={states}
-              getOptionLabel={(option) => option?.name || ''}
+              getOptionLabel={(option) => option?.name || ""}
               value={states.find((s) => s.name === form.state) || null}
               onChange={(_e, value) => {
-                setForm((f) => ({ ...f, state: value ? value.name : '', city: '', district: '' }));
+                setForm((f) => ({ ...f, state: value ? value.name : "", city: "", district: "" }));
                 if (value) {
                   const stateCities = City.getCitiesOfState("IN", value.isoCode);
                   setCities(stateCities);
@@ -226,28 +274,27 @@ export default function Addresses() {
                   setCities([]);
                 }
               }}
-              inputValue={form.state || ''}
+              inputValue={form.state || ""}
               onInputChange={(_e, value) => setForm((f) => ({ ...f, state: value }))}
               renderInput={(params) => <TextField {...params} label="State" fullWidth />}
               fullWidth
               disableClearable={false}
             />
 
-            {/* City/Nearest City as single Autocomplete (no district) */}
+            {/* City/Nearest City as single Autocomplete */}
             <Autocomplete
-              options={cities.map(c => c.name)}
-              getOptionLabel={(option) => option || ''}
+              options={cities.map((c) => c.name)}
+              getOptionLabel={(option) => option || ""}
               value={form.city || null}
               onChange={(_e, value) => {
-                // Optionally also set district if you want: find city and use its district
-                const selectedCity = cities.find(c => c.name === value);
+                const selectedCity = cities.find((c) => c.name === value);
                 setForm((f) => ({
                   ...f,
-                  city: value || '',
-                  district: selectedCity ? selectedCity.district : ''
+                  city: value || "",
+                  district: selectedCity ? selectedCity.district : "",
                 }));
               }}
-              inputValue={form.city || ''}
+              inputValue={form.city || ""}
               onInputChange={(_e, value) => setForm((f) => ({ ...f, city: value }))}
               renderInput={(params) => <TextField {...params} label="City/Nearest City" fullWidth />}
               disabled={!form.state}
@@ -260,7 +307,7 @@ export default function Addresses() {
               value={form.postal_code}
               inputProps={{ maxLength: 6, inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, ""); // remove NON-digits
+                const value = e.target.value.replace(/\D/g, "");
                 setForm((p) => ({ ...p, postal_code: value }));
               }}
               fullWidth
@@ -270,6 +317,35 @@ export default function Addresses() {
               label="Country"
               value={form.country}
               disabled
+              fullWidth
+            />
+
+            {/* Location controls */}
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Button
+                variant="outlined"
+                startIcon={<LocationOn />}
+                onClick={useCurrentLocation}
+              >
+                Use Current Location
+              </Button>
+              <Typography variant="caption" color="text.secondary">
+                (optional) or enter coordinates manually
+              </Typography>
+            </Stack>
+
+            <TextField
+              label="Latitude"
+              value={form.latitude}
+              onChange={(e) => setForm((p) => ({ ...p, latitude: e.target.value }))}
+              helperText="e.g. 12.971599"
+              fullWidth
+            />
+            <TextField
+              label="Longitude"
+              value={form.longitude}
+              onChange={(e) => setForm((p) => ({ ...p, longitude: e.target.value }))}
+              helperText="e.g. 77.594566"
               fullWidth
             />
           </Stack>
