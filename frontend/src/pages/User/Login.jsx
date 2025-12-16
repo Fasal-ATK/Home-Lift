@@ -118,12 +118,27 @@ function Login() {
               }}
             />
 
+            {/* Forgot Password Link */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+              <Link 
+                href="/forgot-password" 
+                underline="hover" 
+                sx={{ 
+                  fontSize: '0.875rem',
+                  color: '#1976d2',
+                  fontWeight: 500
+                }}
+              >
+                Forgot Password?
+              </Link>
+            </Box>
+
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{
-                mt: 3,
+                mt: 2,
                 bgcolor: '#e0dc25',
                 color: 'black',
                 fontWeight: 'bold',
@@ -141,7 +156,7 @@ function Login() {
           </Box>
 
           <Typography variant="body2" sx={{ mt: 2 }}>
-            Don’t have an account?{' '}
+            Don't have an account?{' '}
             <Link href="/signup" underline="hover" sx={{ fontWeight: 'bold' }}>
               Sign Up
             </Link>
