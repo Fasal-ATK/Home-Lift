@@ -16,9 +16,15 @@ from rest_framework.exceptions import ValidationError
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-from core.permissions import IsAdminUserCustom,IsNormalUser,IsProviderUser
+from core.permissions import IsAdminUserCustom, IsNormalUser, IsProviderUser
 from .models import CustomUser
-from .serializers import UserSerializer, SignupSerializer, LoginSerializer
+from .serializers import (
+    UserSerializer, 
+    SignupSerializer, 
+    LoginSerializer,
+    ResetPasswordSerializer,
+    ChangePasswordSerializer
+)
 
 logger = logging.getLogger(__name__)
 
@@ -101,37 +107,50 @@ class RegisterView(APIView):
 
 
 # -----------------------------
-# Send OTP
+# Send OTP (Updated to handle both signup and forgot password)
 # -----------------------------
-
 class SendOtpView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         email = request.data.get("email")
+        purpose = request.data.get("purpose", "signup")  # 'signup' or 'forgot-password'
+        
         if not email:
             return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if CustomUser.objects.filter(email=email).exists():
-            return Response({"error": "Email is already registered"}, status=status.HTTP_400_BAD_REQUEST)
+        # For signup, check if email already exists
+        if purpose == "signup":
+            if CustomUser.objects.filter(email=email).exists():
+                return Response({"error": "Email is already registered"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # For forgot password, check if email exists
+        elif purpose == "forgot-password":
+            if not CustomUser.objects.filter(email=email).exists():
+                return Response({"error": "No account found with this email"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Generate and cache OTP
         otp = str(random.randint(100000, 999999))
-        print(otp)
+        print(f"OTP for {email} ({purpose}): {otp}")
         cache.set(f"otp_{email}", otp, timeout=300)  # 5 minutes
 
-        send_mail(
-            subject="Your OTP Code",
-            message=f"Your OTP is: {otp}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-        )
-        return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
+        # Send email
+        try:
+            send_mail(
+                subject="Your OTP Code",
+                message=f"Your OTP is: {otp}\n\nThis OTP will expire in 5 minutes.",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+            )
+            return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Failed to send OTP to {email}: {str(e)}")
+            return Response({"error": "Failed to send OTP. Please try again."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # -----------------------------
 # Verify OTP
 # -----------------------------
-
 class VerifyOtpView(APIView):
     permission_classes = [AllowAny]
 
@@ -241,8 +260,77 @@ class LogoutView(APIView):
             return Response({"error": "internal-error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# -----------------------------
+# Reset Password (Forgot Password Flow)
+# -----------------------------
+class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            serializer = ResetPasswordSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"message": "Password reset successfully. Please login with your new password."},
+                    status=status.HTTP_200_OK
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.error(f"Reset password error: {str(e)}")
+            return Response(
+                {"error": "internal-error", "message": "Failed to reset password. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+# -----------------------------
+# Change Password (Authenticated Users)
+# -----------------------------
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            serializer = ChangePasswordSerializer(
+                data=request.data,
+                context={'request': request}
+            )
+            
+            if serializer.is_valid():
+                serializer.save()
+                
+                # Optional: Blacklist old refresh tokens for security
+                try:
+                    refresh_token = request.COOKIES.get("refresh")
+                    if refresh_token:
+                        token = RefreshToken(refresh_token)
+                        token.blacklist()
+                except:
+                    pass
+                
+                return Response(
+                    {"message": "Password changed successfully. Please login again."},
+                    status=status.HTTP_200_OK
+                )
+            
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.error(f"Change password error for user {request.user.id}: {str(e)}")
+            return Response(
+                {"error": "internal-error", "message": "Failed to change password. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+# -----------------------------
+# Profile Update
+# -----------------------------
 class ProfileUpdateView(APIView):
-    permission_classes = [ IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+    
     def put(self, request):
         """Full update of profile"""
         try:
@@ -282,6 +370,7 @@ class ProfileUpdateView(APIView):
                 {"error": "internal-error", "message": "Unexpected error while updating profile."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
 
 # -----------------------------
 # Admin User Management

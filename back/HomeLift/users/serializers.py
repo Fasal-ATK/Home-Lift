@@ -113,3 +113,121 @@ class LoginSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+
+
+# ========================================
+# NEW: Password Reset Serializers
+# ========================================
+
+# Reset Password Serializer (for forgot password flow)
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    new_password = serializers.CharField(
+        write_only=True,
+        required=True,
+        min_length=8,
+        error_messages={
+            'required': 'New password is required',
+            'blank': 'Password cannot be blank',
+            'min_length': 'Password must be at least 8 characters long'
+        }
+    )
+
+    def validate_email(self, value):
+        """Check if user with this email exists"""
+        try:
+            user = CustomUser.objects.get(email=value)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError({
+                "error": "email-not-found",
+                "message": "No account found with this email address."
+            })
+        return value
+
+    def validate_new_password(self, value):
+        """Validate password strength"""
+        if len(value) < 8:
+            raise serializers.ValidationError({
+                "error": "password-too-short",
+                "message": "Password must be at least 8 characters long."
+            })
+        
+        # Check for both letters and numbers
+        if not re.search(r'[A-Za-z]', value) or not re.search(r'\d', value):
+            raise serializers.ValidationError({
+                "error": "password-weak",
+                "message": "Password must contain both letters and numbers."
+            })
+        
+        return value
+
+    def save(self):
+        """Update user's password"""
+        email = self.validated_data['email']
+        new_password = self.validated_data['new_password']
+        
+        user = CustomUser.objects.get(email=email)
+        user.set_password(new_password)
+        user.save()
+        
+        return user
+
+
+# Change Password Serializer (for authenticated users)
+class ChangePasswordSerializer(serializers.Serializer):
+    """For authenticated users changing their password"""
+    current_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(
+        write_only=True,
+        required=True,
+        min_length=8,
+        error_messages={
+            'required': 'New password is required',
+            'min_length': 'Password must be at least 8 characters long'
+        }
+    )
+
+    def validate_current_password(self, value):
+        """Verify current password is correct"""
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError({
+                "error": "incorrect-password",
+                "message": "Current password is incorrect."
+            })
+        return value
+
+    def validate_new_password(self, value):
+        """Validate new password strength"""
+        if len(value) < 8:
+            raise serializers.ValidationError({
+                "error": "password-too-short",
+                "message": "Password must be at least 8 characters long."
+            })
+        
+        # Check password is different from current
+        user = self.context['request'].user
+        if user.check_password(value):
+            raise serializers.ValidationError({
+                "error": "same-password",
+                "message": "New password must be different from current password."
+            })
+        
+        # Check for both letters and numbers
+        if not re.search(r'[A-Za-z]', value) or not re.search(r'\d', value):
+            raise serializers.ValidationError({
+                "error": "password-weak",
+                "message": "Password must contain both letters and numbers."
+            })
+        
+        return value
+
+    def save(self):
+        """Update user's password"""
+        user = self.context['request'].user
+        new_password = self.validated_data['new_password']
+        
+        user.set_password(new_password)
+        user.save()
+        
+        return user
