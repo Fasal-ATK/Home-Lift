@@ -13,6 +13,7 @@ import Services from './pages/User/Services';
 import Bookings from './pages/User/Bookings';
 import Addresses from './components/user/profile/Addresses';
 import BookingDetails from './components/user/booking/BookingDetails';
+import NewPassword from './components/user/auth/NewPassword';
 
 // Admin Pages
 import AdminLogin from './pages/Admin/Login';
