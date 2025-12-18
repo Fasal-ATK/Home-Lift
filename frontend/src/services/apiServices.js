@@ -22,6 +22,15 @@ export const authService = {
         return response.data;
     },
 
+    resetPassword: async (data) => {
+        const response = await api.post(apiEndpoints.auth.resetPassword, data);
+        return response.data;
+    },
+    changePassword: async (data) => {
+        const response = await api.post(apiEndpoints.auth.changePassword, data);
+        return response.data;
+    },
+
 };
 
 export const otpService = {

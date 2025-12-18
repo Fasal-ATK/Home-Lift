@@ -1,3 +1,5 @@
+import { ResetTv } from "@mui/icons-material";
+
 const apiEndpoints = {
     auth: {
         signup: '/user/register/',
@@ -5,6 +7,8 @@ const apiEndpoints = {
         logout: '/user/logout/',
         refreshAccessToken: '/user/token/refresh/',
         googleLogin: '/user/google-auth/',
+        changePassword:  '/user/change-password/',
+        resetPassword: '/user/reset-password/',
     },
 
     adminAuth: {

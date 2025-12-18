@@ -110,7 +110,7 @@ function Login() {
 
     setOtpLoading(true);
     try {
-      await otpService.sendOtp({ email });
+      await otpService.sendOtp({ email, purpose: 'forgot-password' });
       ShowToast('OTP sent to your email', 'success');
       setShowOtpModal(true);
     } catch (err) {
@@ -124,7 +124,7 @@ function Login() {
   const handleResendOtp = async () => {
     setResending(true);
     try {
-      await otpService.sendOtp({ email });
+      await otpService.sendOtp({ email, purpose: 'forgot-password' });
       ShowToast('OTP resent successfully', 'success');
     } catch (err) {
       console.error("Resend OTP error:", err);
