@@ -23,7 +23,6 @@ function Signup() {
   const [pass2, setPass2] = useState('');
   const [showPass1, setShowPass1] = useState(false);
   const [showPass2, setShowPass2] = useState(false);
-  // const [agreed, setAgreed] = useState(false);
 
   const [error, setErrorState] = useState('');
   const [success, setSuccess] = useState('');
@@ -33,42 +32,39 @@ function Signup() {
 
   const navigate = useNavigate();
 
-const extractErrorMessage = (data) => {
-  if (!data) return "Something went wrong";
+  const extractErrorMessage = (data) => {
+    if (!data) return "Something went wrong";
 
-  if (typeof data === "string") return data;
-  if (data.message) return data.message;
-  if (data.error) return data.error;
+    if (typeof data === "string") return data;
+    if (data.message) return data.message;
+    if (data.error) return data.error;
 
-  if (typeof data === "object") {
-    for (let key in data) {
-      const val = data[key];
-      if (Array.isArray(val) && val.length > 0) {
-        const first = val[0];
-        if (typeof first === "string") return first;
-        if (first.message) return first.message;
-        if (first.error) return first.error;
-        // Recursively check nested object
-        if (typeof first === "object") return extractErrorMessage(first);
-      } else if (typeof val === "object") {
-        return extractErrorMessage(val);
+    if (typeof data === "object") {
+      for (let key in data) {
+        const val = data[key];
+        if (Array.isArray(val) && val.length > 0) {
+          const first = val[0];
+          if (typeof first === "string") return first;
+          if (first.message) return first.message;
+          if (first.error) return first.error;
+          if (typeof first === "object") return extractErrorMessage(first);
+        } else if (typeof val === "object") {
+          return extractErrorMessage(val);
+        }
       }
     }
-  }
 
-  return "An unknown error occurred";
-};
+    return "An unknown error occurred";
+  };
 
-
-  // 🔹 Form submit: send OTP
+  // Form submit: send OTP
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorState('');
     setSuccess('');
 
     const validationError = validateSignupForm({
-      fname, lname, uname, email, phone, pass1, pass2, 
-      // agreed,
+      fname, lname, uname, email, phone, pass1, pass2,
     });
 
     if (validationError) {
@@ -88,7 +84,7 @@ const extractErrorMessage = (data) => {
     setLoading(false);
   };
 
-  // 🔹 Resend OTP
+  // Resend OTP
   const handleResendOtp = async () => {
     setResending(true);
     try {
@@ -101,7 +97,7 @@ const extractErrorMessage = (data) => {
     setResending(false);
   };
 
-  // 🔹 Verify OTP and register user
+  // Verify OTP and register user
   const handleOtpVerify = async (otp) => {
     setErrorState('');
     try {
@@ -228,16 +224,6 @@ const extractErrorMessage = (data) => {
               }}
             />
 
-            {/* <FormControlLabel
-              control={<Checkbox checked={agreed} onChange={e => setAgreed(e.target.checked)} />}
-              label={
-                <Typography variant="body2">
-                  By proceeding, you agree to the <Link href="#">Terms and Conditions</Link>
-                </Typography>
-              }
-              sx={{ mt: 1, textAlign: 'left' }}
-            /> */}
-
             <Button
               type="submit"
               fullWidth
@@ -254,7 +240,6 @@ const extractErrorMessage = (data) => {
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign up with email'}
             </Button>
           </form>
-
 
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
             <GoogleLoginButton />
@@ -275,6 +260,7 @@ const extractErrorMessage = (data) => {
           email={email}
           onResend={handleResendOtp}
           resending={resending}
+          purpose="signup"
         />
       </Container>
     </Box>

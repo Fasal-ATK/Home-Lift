@@ -1,6 +1,6 @@
 // src/App.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { ToastWrapper } from './components/common/Toast';  // ✅ import toast wrapper
+import { ToastWrapper } from './components/common/Toast';
 
 // User Pages
 import Login from './pages/User/Login';
@@ -13,7 +13,7 @@ import Services from './pages/User/Services';
 import Bookings from './pages/User/Bookings';
 import Addresses from './components/user/profile/Addresses';
 import BookingDetails from './components/user/booking/BookingDetails';
-import NewPassword from './components/user/auth/NewPassword';
+import ForgotPassword from './components/user/auth/NewPassword';
 
 // Admin Pages
 import AdminLogin from './pages/Admin/Login';
@@ -54,7 +54,6 @@ import ServiceBooking from './components/user/booking/ServiceBooking';
 function App() {
   return (
     <>
-      {/* ✅ Toast container globally mounted */}
       <ToastWrapper />  
       <ScrollToTop />
 
@@ -75,6 +74,13 @@ function App() {
         <Route path='/signup' element={
           <PublicRoute>
             <Signup />
+          </PublicRoute>
+        } />
+
+        {/* Forgot Password Route */}
+        <Route path='/forgot-password' element={
+          <PublicRoute>
+            <ForgotPassword />
           </PublicRoute>
         } />
 
@@ -103,9 +109,10 @@ function App() {
           </Route>
           <Route path='booking-details' element ={<BookingDetails />} />
           <Route path='notifications' element={<Notifications />} />
-
           <Route path='addresses' element={<Addresses />} />
-
+          
+          {/* Change Password Route (Protected) */}
+          <Route path='change-password' element={<ForgotPassword />} />
         </Route>
 
         {/* Admin Routes */}
@@ -114,7 +121,6 @@ function App() {
             <AdminLayout />
           </PrivateRoute>
         }>
-
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path='dashboard' element={<Dashboard />} />
           <Route path='users' element={<UserManager />} />
@@ -124,7 +130,6 @@ function App() {
           <Route path='coupons' element={<Coupons />} />
           <Route path='bookings' element={<BookingMng />} />
         </Route>
-
 
         {/* Provider Routes */}
         <Route path='provider' element={
@@ -142,9 +147,7 @@ function App() {
           <Route path='bio' element={<Bio />} />
           <Route path='history' element={<History />} />
           <Route path='wallet' element={<Wallet />} />
-
         </Route>
-
 
         {/* 404 Fallback */}
         <Route path="*" element={<div>404 - Page Not Found</div>} />

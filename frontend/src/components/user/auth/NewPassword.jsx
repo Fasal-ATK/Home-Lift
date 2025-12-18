@@ -1,5 +1,4 @@
-// src/components/user/auth/NewPassword.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container, TextField, Button, Typography, Box, Alert, CircularProgress, Link,
   IconButton, InputAdornment
@@ -7,9 +6,9 @@ import {
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { otpService, authService } from '../../services/apiServices';
-import OtpModal from '../../components/user/otp_modal';
-import { ShowToast } from '../../components/common/Toast';
+import { otpService, authService } from '../../../services/apiServices';
+import OtpModal from '../otp_modal';
+import { ShowToast } from '../../common/Toast';
 
 function ForgotPassword() {
   const location = useLocation();
@@ -18,12 +17,18 @@ function ForgotPassword() {
   // Check if user is authenticated (for change password mode)
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   
+  // Check if coming from login page with OTP already verified
+  const emailFromLogin = location.state?.email;
+  const otpVerifiedFromLogin = location.state?.otpVerified;
+  
   // Determine mode: 'forgot' (before login) or 'change' (after login)
   const mode = location.pathname === '/change-password' && isAuthenticated ? 'change' : 'forgot';
   
   // States
-  const [step, setStep] = useState(mode === 'change' ? 3 : 1); // Skip to step 3 if changing password
-  const [email, setEmail] = useState(user?.email || '');
+  const [step, setStep] = useState(
+    mode === 'change' ? 3 : otpVerifiedFromLogin ? 3 : 1
+  );
+  const [email, setEmail] = useState(emailFromLogin || user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -34,6 +39,14 @@ function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [resending, setResending] = useState(false);
+
+  useEffect(() => {
+    // If OTP was verified from login, skip to password reset
+    if (otpVerifiedFromLogin && emailFromLogin) {
+      setStep(3);
+      setEmail(emailFromLogin);
+    }
+  }, [otpVerifiedFromLogin, emailFromLogin]);
 
   const extractErrorMessage = (data) => {
     if (!data) return "Something went wrong";
@@ -170,8 +183,8 @@ function ForgotPassword() {
 
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-          {/* Step 1: Enter Email (Forgot Password only) */}
-          {mode === 'forgot' && step === 1 && (
+          {/* Step 1: Enter Email (Forgot Password only - if not coming from login) */}
+          {mode === 'forgot' && step === 1 && !otpVerifiedFromLogin && (
             <form onSubmit={handleSendOtp}>
               <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
                 Enter your email address and we'll send you an OTP to reset your password.
@@ -313,8 +326,8 @@ function ForgotPassword() {
           )}
         </Box>
 
-        {/* OTP Modal (Forgot Password only) */}
-        {mode === 'forgot' && (
+        {/* OTP Modal (Forgot Password only - when not coming from login) */}
+        {mode === 'forgot' && !otpVerifiedFromLogin && (
           <OtpModal
             open={showOtpModal}
             onClose={() => setShowOtpModal(false)}
