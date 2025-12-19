@@ -137,17 +137,21 @@ function Login() {
   const handleOtpVerify = async (otp) => {
     setError('');
     try {
-      await otpService.verifyOtp({ email, otp });
+      await otpService.verifyOtp({
+        email,
+        otp,
+        purpose: 'forgot-password',
+      });
+
       setShowOtpModal(false);
       ShowToast('OTP verified! Please set your new password.', 'success');
-      // Navigate to forgot password page with email in state
       navigate('/forgot-password', { state: { email, otpVerified: true } });
     } catch (error) {
-      console.error('OTP verification error:', error);
-      setError(extractErrorMessage(error.response?.data) || 'Invalid OTP');
+      setError(extractErrorMessage(error.response?.data));
       setShowOtpModal(false);
     }
   };
+
 
   const togglePasswordVisibility = () => setShowPass(prev => !prev);
 

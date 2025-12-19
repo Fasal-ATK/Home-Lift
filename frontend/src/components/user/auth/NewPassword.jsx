@@ -1,3 +1,4 @@
+// src/components/user/auth/NewPassword.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Container, TextField, Button, Typography, Box, Alert, CircularProgress, Link,
@@ -77,7 +78,7 @@ function ForgotPassword() {
 
     setLoading(true);
     try {
-      await otpService.sendOtp({ email });
+      await otpService.sendOtp({ email, purpose: 'forgot-password' });
       setShowOtpModal(true);
     } catch (err) {
       console.error("Send OTP error:", err);
@@ -90,7 +91,7 @@ function ForgotPassword() {
   const handleResendOtp = async () => {
     setResending(true);
     try {
-      await otpService.sendOtp({ email });
+      await otpService.sendOtp({ email, purpose: 'forgot-password' });
       ShowToast('OTP resent successfully', 'success');
     } catch (err) {
       console.error("Resend OTP error:", err);
@@ -103,7 +104,7 @@ function ForgotPassword() {
   const handleOtpVerify = async (otp) => {
     setError('');
     try {
-      await otpService.verifyOtp({ email, otp });
+      await otpService.verifyOtp({ email, otp, purpose: 'forgot-password' });
       setShowOtpModal(false);
       setStep(3); // Move to password reset step
     } catch (error) {
@@ -143,12 +144,18 @@ function ForgotPassword() {
     try {
       if (mode === 'change') {
         // Change password (user is logged in)
-        // await authService.changePassword({ currentPassword, newPassword });
-        ShowToast('Password changed successfully!', 'success');
-        setTimeout(() => navigate('/profile'), 1500);
+        await authService.changePassword({ 
+          current_password: currentPassword, 
+          new_password: newPassword 
+        });
+        ShowToast('Password changed successfully! Please login again.', 'success');
+        setTimeout(() => navigate('/login'), 1500);
       } else {
         // Reset password (forgot password flow)
-        // await authService.resetPassword({ email, newPassword });
+        await authService.resetPassword({ 
+          email, 
+          new_password: newPassword 
+        });
         ShowToast('Password reset successful! Please log in.', 'success');
         setTimeout(() => navigate('/login'), 1500);
       }
