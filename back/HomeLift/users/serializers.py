@@ -1,3 +1,4 @@
+from django.core.cache import cache   # ✅ REQUIRED
 from rest_framework import serializers
 from .models import CustomUser
 import re
@@ -10,24 +11,18 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = [
-            'id', 'email', 'username','profile_picture',
+            'id', 'email', 'username', 'profile_picture',
             'first_name', 'last_name', 'phone',
             'is_staff', 'is_provider', 'is_active'
         ]
-        read_only_fields = ['email',]
+        read_only_fields = ['email']
 
 
-# Signup serializer for users
+# ---------------------------
+# Signup        
+# ---------------------------
 class SignupSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True,
-        required=True,
-
-        error_messages={
-            'required': 'Password is required',
-            'blank': 'Password cannot be blank',
-        }
-    )
+    password = serializers.CharField(write_only=True, required=True)
     email = serializers.EmailField(required=True)
     phone = serializers.CharField(required=True)
 
@@ -63,10 +58,9 @@ class SignupSerializer(serializers.ModelSerializer):
                 "message": "This phone number is already in use."
             })
         return value
-        
 
     def create(self, validated_data):
-        user = CustomUser.objects.create_user(
+        return CustomUser.objects.create_user(
             username=validated_data['username'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
@@ -74,10 +68,11 @@ class SignupSerializer(serializers.ModelSerializer):
             phone=validated_data['phone'],
             password=validated_data['password']
         )
-        return user
 
 
-# Login serializer for users
+# ---------------------------
+# Login
+# ---------------------------
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True)
@@ -101,94 +96,50 @@ class LoginSerializer(serializers.Serializer):
             })
 
         if not user.is_active:
-            if not user.last_login:
-                raise serializers.ValidationError({
-                    "error": "account-not-activated",
-                    "message": "Your account has been blocked. Please contact support."
-                })
             raise serializers.ValidationError({
                 "error": "account-blocked",
-                "message": "Your account has been blocked. Contact support."
+                "message": "Your account has been blocked."
             })
 
         attrs['user'] = user
         return attrs
 
 
-# ========================================
-# NEW: Password Reset Serializers
-# ========================================
-
-# Reset Password Serializer (for forgot password flow)
+# ---------------------------
+# Reset Password (Forgot Flow)
+# ---------------------------
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
-    new_password = serializers.CharField(
-        write_only=True,
-        required=True,
-        min_length=8,
-        error_messages={
-            'required': 'New password is required',
-            'blank': 'Password cannot be blank',
-            'min_length': 'Password must be at least 8 characters long'
-        }
-    )
-
-    def validate_email(self, value):
-        """Check if user with this email exists"""
-        try:
-            user = CustomUser.objects.get(email=value)
-        except CustomUser.DoesNotExist:
-            raise serializers.ValidationError({
-                "error": "email-not-found",
-                "message": "No account found with this email address."
-            })
-        return value
-
-    def validate_new_password(self, value):
-        """Validate password strength"""
-        if len(value) < 8:
-            raise serializers.ValidationError({
-                "error": "password-too-short",
-                "message": "Password must be at least 8 characters long."
-            })
-        
-        # Check for both letters and numbers
-        if not re.search(r'[A-Za-z]', value) or not re.search(r'\d', value):
-            raise serializers.ValidationError({
-                "error": "password-weak",
-                "message": "Password must contain both letters and numbers."
-            })
-        
-        return value
+    new_password = serializers.CharField(write_only=True, min_length=8)
 
     def save(self):
-        """Update user's password"""
-        email = self.validated_data['email']
-        new_password = self.validated_data['new_password']
-        
+        email = self.validated_data["email"]
+
+        # 🔐 OTP VERIFICATION CHECK
+        if not cache.get(f"otp_verified_forgot-password_{email}"):
+            raise serializers.ValidationError({
+                "error": "otp-not-verified",
+                "message": "OTP verification required."
+            })
+
         user = CustomUser.objects.get(email=email)
-        user.set_password(new_password)
-        user.save()
-        
+        user.set_password(self.validated_data["new_password"])
+        user.save(update_fields=["password"])
+
+        # cleanup
+        cache.delete(f"otp_verified_forgot-password_{email}")
+
         return user
 
 
-# Change Password Serializer (for authenticated users)
+# ---------------------------
+# Change Password (Logged-in)
+# ---------------------------
 class ChangePasswordSerializer(serializers.Serializer):
-    """For authenticated users changing their password"""
-    current_password = serializers.CharField(write_only=True, required=True)
-    new_password = serializers.CharField(
-        write_only=True,
-        required=True,
-        min_length=8,
-        error_messages={
-            'required': 'New password is required',
-            'min_length': 'Password must be at least 8 characters long'
-        }
-    )
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
 
     def validate_current_password(self, value):
-        """Verify current password is correct"""
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError({
@@ -198,36 +149,24 @@ class ChangePasswordSerializer(serializers.Serializer):
         return value
 
     def validate_new_password(self, value):
-        """Validate new password strength"""
-        if len(value) < 8:
-            raise serializers.ValidationError({
-                "error": "password-too-short",
-                "message": "Password must be at least 8 characters long."
-            })
-        
-        # Check password is different from current
         user = self.context['request'].user
+
         if user.check_password(value):
             raise serializers.ValidationError({
                 "error": "same-password",
-                "message": "New password must be different from current password."
+                "message": "New password must be different."
             })
-        
-        # Check for both letters and numbers
+
         if not re.search(r'[A-Za-z]', value) or not re.search(r'\d', value):
             raise serializers.ValidationError({
                 "error": "password-weak",
-                "message": "Password must contain both letters and numbers."
+                "message": "Password must contain letters and numbers."
             })
-        
+
         return value
 
     def save(self):
-        """Update user's password"""
         user = self.context['request'].user
-        new_password = self.validated_data['new_password']
-        
-        user.set_password(new_password)
-        user.save()
-        
+        user.set_password(self.validated_data['new_password'])
+        user.save(update_fields=["password"])
         return user

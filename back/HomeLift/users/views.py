@@ -113,39 +113,37 @@ class SendOtpView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print(f'Request data: {request.data}')
         email = request.data.get("email")
-        purpose = request.data.get("purpose", "signup")  # 'signup' or 'forgot-password'
-        
-        if not email:
-            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+        purpose = request.data.get("purpose", "signup") 
 
-        # For signup, check if email already exists
+        if not email:
+            return Response({"error": "Email is required"}, status=400)
+
         if purpose == "signup":
             if CustomUser.objects.filter(email=email).exists():
-                return Response({"error": "Email is already registered"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # For forgot password, check if email exists
-        elif purpose == "forgot-password":
+                return Response({"error": "Email already registered"}, status=400)
+
+        if purpose == "forgot-password":
             if not CustomUser.objects.filter(email=email).exists():
-                return Response({"error": "No account found with this email"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "No account found with this email"}, status=400)
 
-        # Generate and cache OTP
         otp = str(random.randint(100000, 999999))
-        print(f"OTP for {email} ({purpose}): {otp}")
-        cache.set(f"otp_{email}", otp, timeout=300)  # 5 minutes
+        print(otp)
 
-        # Send email
-        try:
-            send_mail(
-                subject="Your OTP Code",
-                message=f"Your OTP is: {otp}\n\nThis OTP will expire in 5 minutes.",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-            )
-            return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.error(f"Failed to send OTP to {email}: {str(e)}")
-            return Response({"error": "Failed to send OTP. Please try again."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        cache.set(
+            f"otp_{purpose}_{email}",
+            otp,
+            timeout=300
+        )
+        send_mail(
+            subject="Your OTP Code",
+            message=f"Your OTP is {otp}. It expires in 5 minutes.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+        )
+
+        return Response({"message": "OTP sent successfully"}, status=200)
 
 
 # -----------------------------
@@ -155,17 +153,29 @@ class VerifyOtpView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print('Request data for OTP verification:', request.data)
         email = request.data.get("email")
         otp = request.data.get("otp")
-        if not email or not otp:
-            return Response({"error": "Email and OTP are required"}, status=status.HTTP_400_BAD_REQUEST)
+        purpose = request.data.get("purpose", "signup")
 
-        cached_otp = cache.get(f"otp_{email}")
-        if cached_otp == otp:
-            cache.delete(f"otp_{email}")
-            return Response({"message": "OTP verified"}, status=status.HTTP_200_OK)
+        key = f"otp_{purpose}_{email}"
+        cached_otp = cache.get(key)
 
-        return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
+        print("CACHED OTP:", cached_otp)
+        print("RECEIVED OTP:", otp)
+
+        if not cached_otp or str(cached_otp) != str(otp):
+            return Response({"error": "Invalid or expired OTP"}, status=400)
+
+        cache.set(
+            f"otp_verified_{purpose}_{email}",
+            True,
+            timeout=300
+        )
+        cache.delete(key)
+
+        return Response({"message": "OTP verified"}, status=200)
+
 
 
 # -----------------------------
@@ -267,27 +277,19 @@ class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        try:
-            serializer = ResetPasswordSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(
-                    {"message": "Password reset successfully. Please login with your new password."},
-                    status=status.HTTP_200_OK
-                )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        except Exception as e:
-            logger.error(f"Reset password error: {str(e)}")
+        serializer = ResetPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
             return Response(
-                {"error": "internal-error", "message": "Failed to reset password. Please try again."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"message": "Password reset successfully. Please login."},
+                status=200
             )
-
+        return Response(serializer.errors, status=400)
 
 # -----------------------------
 # Change Password (Authenticated Users)
 # -----------------------------
+
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
