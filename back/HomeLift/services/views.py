@@ -57,6 +57,7 @@ class CategoryDetailView(APIView):
 
 
 # ---------------- Service Views ----------------
+
 class ServiceListCreateView(APIView):
     permission_classes = [AllowAnyCustom]
 
