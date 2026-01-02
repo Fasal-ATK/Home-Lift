@@ -102,7 +102,28 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = SignupSerializer(data=request.data.get('userData', {}))
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
+            
+            # Send Welcome Email
+            try:
+                email_message = (
+                    f"Hello {user.username},\n\n"
+                    f"Welcome to HomeLift! We are excited to have you on board.\n\n"
+                    f"Your account has been successfully created.\n"
+                    f"You can now login and explore our services.\n\n"
+                    f"Best regards,\n"
+                    f"The HomeLift Team"
+                )
+                send_mail(
+                    subject="Welcome to HomeLift!",
+                    message=email_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                logger.error(f"Failed to send welcome email to {user.email}: {str(e)}")
+
             return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
