@@ -1,5 +1,6 @@
 import random
 import logging
+import time
 
 from django.conf import settings
 from django.core.cache import cache
@@ -131,6 +132,7 @@ class SendOtpView(APIView):
         otp = str(random.randint(100000, 999999))
         print(otp)
 
+        expiry_timestamp = time.time() + 300
         cache.set(
             f"otp_{purpose}_{email}",
             otp,
@@ -143,7 +145,10 @@ class SendOtpView(APIView):
             recipient_list=[email],
         )
 
-        return Response({"message": "OTP sent successfully"}, status=200)
+        return Response({
+            "message": "OTP sent successfully", 
+            "expiry_timestamp": expiry_timestamp
+        }, status=200)
 
 
 # -----------------------------
