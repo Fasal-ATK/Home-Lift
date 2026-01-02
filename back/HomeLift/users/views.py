@@ -138,9 +138,18 @@ class SendOtpView(APIView):
             otp,
             timeout=300
         )
+        email_message = (
+            f"Hello,\n\n"
+            f"Your OTP code for HomeLift is: {otp}\n\n"
+            f"This code will expire in 5 minutes.\n"
+            f"If you did not request this, please ignore this email.\n\n"
+            f"Best regards,\n"
+            f"The HomeLift Team"
+        )
+
         send_mail(
-            subject="Your OTP Code",
-            message=f"Your OTP is {otp}. It expires in 5 minutes.",
+            subject="Your HomeLift OTP Code",
+            message=email_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],
         )
