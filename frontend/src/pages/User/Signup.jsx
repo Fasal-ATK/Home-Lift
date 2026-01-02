@@ -130,8 +130,10 @@ function Signup() {
       setTimeout(() => navigate('/login'), 1500);
     } catch (error) {
       console.error('Error during OTP verification or registration:', error.response?.data || error.message);
-      setErrorState(extractErrorMessage(error.response?.data) || 'Invalid OTP or Registration failed');
-      setShowOtpModal(false);
+      // Don't close modal on error, allow retry
+      // setShowOtpModal(false); 
+      const msg = extractErrorMessage(error.response?.data) || 'Invalid OTP or Registration failed';
+      throw new Error(msg);
     }
   };
 

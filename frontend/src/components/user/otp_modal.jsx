@@ -48,7 +48,7 @@ export default function OtpModal({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (!otp) {
       setError('Please enter the OTP');
       return;
@@ -59,7 +59,11 @@ export default function OtpModal({
       return;
     }
     console.log('Submitting OTP:', cleanOtp);
-    onVerify(cleanOtp);
+    try {
+      await onVerify(cleanOtp);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   // Customize text based on purpose
