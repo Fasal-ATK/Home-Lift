@@ -372,8 +372,13 @@ class ProfileUpdateView(APIView):
         """Full update of profile"""
         try:
             user = request.user
+            print(f"DEBUG: Profile Update PUT request for user {user.id}")
+            print(f"DEBUG: Request Data: {request.data}")
+            print(f"DEBUG: Request Files: {request.FILES}")
+            
             serializer = UserSerializer(user, data=request.data, partial=False)
             if serializer.is_valid():
+                print("DEBUG: Serializer is valid. Saving...")
                 serializer.save()
                 return Response(
                     {"message": "Profile updated successfully", "user": serializer.data},
@@ -392,8 +397,13 @@ class ProfileUpdateView(APIView):
         """Partial update (e.g. only phone)"""
         try:
             user = request.user
+            print(f"DEBUG: Profile Update PATCH request for user {user.id}")
+            print(f"DEBUG: Request Data: {request.data}")
+            print(f"DEBUG: Request Files: {request.FILES}")
+            
             serializer = UserSerializer(user, data=request.data, partial=True)
             if serializer.is_valid():
+                print("DEBUG: Serializer is valid. Saving...")
                 serializer.save()
                 return Response(
                     {"message": "Profile updated successfully", "user": serializer.data},

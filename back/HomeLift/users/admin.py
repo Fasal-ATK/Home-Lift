@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.utils.html import format_html
 from .models import CustomUser
 
 
@@ -21,11 +22,13 @@ class CustomUserAdmin(UserAdmin):
 
     # Allow inline editing of is_provider, is_active, is_staff
     list_editable = ("is_provider", "is_active", "is_staff")
+    
+    readonly_fields = ("profile_picture_preview",)
 
     # Fields layout in the admin detail/edit page
     fieldsets = (
         (None, {"fields": ("email", "username", "password")}),
-        ("Personal Info", {"fields": ("first_name", "last_name", "phone")}),
+        ("Personal Info", {"fields": ("first_name", "last_name", "phone", "profile_picture", "profile_picture_preview")}),
         ("Permissions", {
             "fields": (
                 "is_active",
@@ -38,6 +41,13 @@ class CustomUserAdmin(UserAdmin):
         }),
         ("Important Dates", {"fields": ("last_login", "date_joined")}),
     )
+    
+    def profile_picture_preview(self, obj):
+        if obj.profile_picture:
+            return format_html('<img src="{}" width="50" height="50" style="border-radius: 5px;" />', obj.profile_picture.url)
+        return "No Image"
+    
+    profile_picture_preview.short_description = "Profile Picture"
 
     # Fields when creating a new user in the admin
     add_fieldsets = (

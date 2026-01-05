@@ -6,7 +6,7 @@ import re
 
 class UserSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(required=False, allow_blank=True)
-    profile_picture = serializers.ImageField(required=False, allow_null=True, use_url=True)
+    profile_picture = serializers.ImageField(required=False, allow_null=False, use_url=True)
 
     class Meta:
         model = CustomUser
