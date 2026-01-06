@@ -6,25 +6,27 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { otpService, authService } from '../../../services/apiServices';
+import { logout } from '../../../redux/slices/authSlice';
 import OtpModal from '../otp_modal';
 import { ShowToast } from '../../common/Toast';
 
 function ForgotPassword() {
   const location = useLocation();
   const navigate = useNavigate();
-  
+  const dispatch = useDispatch();
+
   // Check if user is authenticated (for change password mode)
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  
+
   // Check if coming from login page with OTP already verified
   const emailFromLogin = location.state?.email;
   const otpVerifiedFromLogin = location.state?.otpVerified;
-  
+
   // Determine mode: 'forgot' (before login) or 'change' (after login)
   const mode = location.pathname === '/change-password' && isAuthenticated ? 'change' : 'forgot';
-  
+
   // States
   const [step, setStep] = useState(
     mode === 'change' ? 3 : otpVerifiedFromLogin ? 3 : 1
@@ -144,17 +146,21 @@ function ForgotPassword() {
     try {
       if (mode === 'change') {
         // Change password (user is logged in)
-        await authService.changePassword({ 
-          current_password: currentPassword, 
-          new_password: newPassword 
+        await authService.changePassword({
+          current_password: currentPassword,
+          new_password: newPassword
         });
+
+        // Logout user after password change
+        dispatch(logout());
+
         ShowToast('Password changed successfully! Please login again.', 'success');
         setTimeout(() => navigate('/login'), 1500);
       } else {
         // Reset password (forgot password flow)
-        await authService.resetPassword({ 
-          email, 
-          new_password: newPassword 
+        await authService.resetPassword({
+          email,
+          new_password: newPassword
         });
         ShowToast('Password reset successful! Please log in.', 'success');
         setTimeout(() => navigate('/login'), 1500);
@@ -181,10 +187,10 @@ function ForgotPassword() {
           }}
         >
           <Typography variant="h5" fontWeight="bold" gutterBottom>
-            {mode === 'change' 
-              ? 'Change Password' 
-              : step === 1 
-                ? 'Forgot Password' 
+            {mode === 'change'
+              ? 'Change Password'
+              : step === 1
+                ? 'Forgot Password'
                 : 'Reset Password'}
           </Typography>
 
@@ -227,8 +233,8 @@ function ForgotPassword() {
           {step === 3 && (
             <form onSubmit={handlePasswordSubmit}>
               <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
-                {mode === 'change' 
-                  ? 'Enter your current password and choose a new password.' 
+                {mode === 'change'
+                  ? 'Enter your current password and choose a new password.'
                   : 'Enter your new password below.'}
               </Typography>
 

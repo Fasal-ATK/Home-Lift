@@ -174,7 +174,23 @@ export default function Profile() {
             <Typography variant="body2">
               <strong>Email:</strong> {user.email || "Not provided"}
             </Typography>
+
+            <Divider sx={{ my: 2 }} />
+
+            <Box display="flex" justifyContent="center">
+              <Button
+                variant="outlined"
+                color="secondary"
+                size="small"
+                onClick={() => navigate('/change-password')}
+                sx={{ textTransform: "none", width: '100%' }}
+              >
+                Change Password
+              </Button>
+            </Box>
           </Card>
+
+          
         </Grid>
 
         {/* Right: General Info */}
