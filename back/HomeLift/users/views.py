@@ -1,5 +1,6 @@
 import random
 import logging
+import time
 
 from django.conf import settings
 from django.core.cache import cache
@@ -101,7 +102,28 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = SignupSerializer(data=request.data.get('userData', {}))
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
+            
+            # Send Welcome Email
+            try:
+                email_message = (
+                    f"Hello {user.username},\n\n"
+                    f"Welcome to HomeLift! We are excited to have you on board.\n\n"
+                    f"Your account has been successfully created.\n"
+                    f"You can now login and explore our services.\n\n"
+                    f"Best regards,\n"
+                    f"The HomeLift Team"
+                )
+                send_mail(
+                    subject="Welcome to HomeLift!",
+                    message=email_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                logger.error(f"Failed to send welcome email to {user.email}: {str(e)}")
+
             return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -131,19 +153,32 @@ class SendOtpView(APIView):
         otp = str(random.randint(100000, 999999))
         print(otp)
 
+        expiry_timestamp = time.time() + 300
         cache.set(
             f"otp_{purpose}_{email}",
             otp,
             timeout=300
         )
+        email_message = (
+            f"Hello,\n\n"
+            f"Your OTP code for HomeLift is: {otp}\n\n"
+            f"This code will expire in 5 minutes.\n"
+            f"If you did not request this, please ignore this email.\n\n"
+            f"Best regards,\n"
+            f"The HomeLift Team"
+        )
+
         send_mail(
-            subject="Your OTP Code",
-            message=f"Your OTP is {otp}. It expires in 5 minutes.",
+            subject="Your HomeLift OTP Code",
+            message=email_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],
         )
 
-        return Response({"message": "OTP sent successfully"}, status=200)
+        return Response({
+            "message": "OTP sent successfully", 
+            "expiry_timestamp": expiry_timestamp
+        }, status=200)
 
 
 # -----------------------------
@@ -337,8 +372,13 @@ class ProfileUpdateView(APIView):
         """Full update of profile"""
         try:
             user = request.user
+            print(f"DEBUG: Profile Update PUT request for user {user.id}")
+            print(f"DEBUG: Request Data: {request.data}")
+            print(f"DEBUG: Request Files: {request.FILES}")
+            
             serializer = UserSerializer(user, data=request.data, partial=False)
             if serializer.is_valid():
+                print("DEBUG: Serializer is valid. Saving...")
                 serializer.save()
                 return Response(
                     {"message": "Profile updated successfully", "user": serializer.data},
@@ -357,8 +397,13 @@ class ProfileUpdateView(APIView):
         """Partial update (e.g. only phone)"""
         try:
             user = request.user
+            print(f"DEBUG: Profile Update PATCH request for user {user.id}")
+            print(f"DEBUG: Request Data: {request.data}")
+            print(f"DEBUG: Request Files: {request.FILES}")
+            
             serializer = UserSerializer(user, data=request.data, partial=True)
             if serializer.is_valid():
+                print("DEBUG: Serializer is valid. Saving...")
                 serializer.save()
                 return Response(
                     {"message": "Profile updated successfully", "user": serializer.data},

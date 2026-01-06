@@ -12,7 +12,7 @@ export const authService = {
         return response.data;
     },
 
-    adminLogin: async (adminData) => {  
+    adminLogin: async (adminData) => {
         const response = await api.post(apiEndpoints.adminAuth.login, adminData);
         return response.data;
     },
@@ -35,23 +35,25 @@ export const authService = {
 
 export const otpService = {
     sendOtp: async (data) => {
-      const response = await api.post(apiEndpoints.otp.sendOtp, data);
-      return response.data;
-    },
-  
-    verifyOtp: async (data) => {
-      const response = await api.post(apiEndpoints.otp.verifyOtp, data);
-      return response.data;
-    },
-  };
-
-export const userService = {
-    updateProfile: async (data) => {
-        const response = await api.patch(apiEndpoints.user.updateProfile,data,);
+        const response = await api.post(apiEndpoints.otp.sendOtp, data);
         return response.data;
     },
 
-     // Addresses
+    verifyOtp: async (data) => {
+        const response = await api.post(apiEndpoints.otp.verifyOtp, data);
+        return response.data;
+    },
+};
+
+export const userService = {
+    updateProfile: async (data) => {
+        const response = await api.patch(apiEndpoints.user.updateProfile, data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
+    // Addresses
     listAddresses: async () => {
         const response = await api.get(apiEndpoints.user.addresses);
         return response.data;
@@ -83,7 +85,7 @@ export const bookingService = {
     },
 
     getBookingDetails: async (id) => {
-        const response = await api.get(apiEndpoints.user.updateBooking(id));    
+        const response = await api.get(apiEndpoints.user.updateBooking(id));
         return response.data;
     },
 
@@ -91,7 +93,7 @@ export const bookingService = {
         const response = await api.delete(apiEndpoints.user.updateBooking(id), data);
         return response.data;
     },
-    
+
 };
 
 
@@ -126,17 +128,17 @@ export const notificationService = {
 
 export const providerService = {
     apply: async (formData) => {
-      const response = await api.post(apiEndpoints.provider.apply, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return response.data;
+        const response = await api.post(apiEndpoints.provider.apply, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
     },
     fetchDetails: async () => {
-      const response = await api.get(apiEndpoints.provider.me);
-      return response.data;
+        const response = await api.get(apiEndpoints.provider.me);
+        return response.data;
     },
-     fetchApplicationStatus: () => api.get(apiEndpoints.provider.applicationStatus), 
-  };
+    fetchApplicationStatus: () => api.get(apiEndpoints.provider.applicationStatus),
+};
 
 export const adminServiceManagementService = {
     // Categories
@@ -157,7 +159,7 @@ export const adminServiceManagementService = {
         return response.data;
     },
 
-// Services
+    // Services
     getServices: async () => {
         const response = await api.get(apiEndpoints.adminServiceManagement.listServices);
         return response.data;
@@ -189,50 +191,50 @@ export const adminCustomerManagementService = {
 };
 
 export const adminProviderManagementService = {
-  getProviders: async () => {
-    const response = await api.get(apiEndpoints.adminProviderManagement.list);
-    return response.data;
-  },
+    getProviders: async () => {
+        const response = await api.get(apiEndpoints.adminProviderManagement.list);
+        return response.data;
+    },
 
-  manageProvider: async (id, data) => {
-    const response = await api.patch(
-      apiEndpoints.adminProviderManagement.update(id),
-      data
-    );
-    return response.data;
-  },
+    manageProvider: async (id, data) => {
+        const response = await api.patch(
+            apiEndpoints.adminProviderManagement.update(id),
+            data
+        );
+        return response.data;
+    },
 
-  getApplications: async () => {
-    const response = await api.get(
-      apiEndpoints.adminProviderManagement.applicationList
-    );
-    return response.data;
-  },
+    getApplications: async () => {
+        const response = await api.get(
+            apiEndpoints.adminProviderManagement.applicationList
+        );
+        return response.data;
+    },
 
-  updateApplicationStatus: async (id, data) => {
-    // { status: "approved" } or { status: "rejected", rejection_reason: "..." }
-    const response = await api.patch(
-      apiEndpoints.adminProviderManagement.applicationDetail(id),
-      data
-    );
-    return response.data;
-  },
+    updateApplicationStatus: async (id, data) => {
+        // { status: "approved" } or { status: "rejected", rejection_reason: "..." }
+        const response = await api.patch(
+            apiEndpoints.adminProviderManagement.applicationDetail(id),
+            data
+        );
+        return response.data;
+    },
 
-  // ✅ Explicit wrapper for approving an application
-  approveApplication: async (id, extraData = {}) => {
-    return await adminProviderManagementService.updateApplicationStatus(id, {
-      status: "approved",
-      ...extraData,
-    });
-  },
+    // ✅ Explicit wrapper for approving an application
+    approveApplication: async (id, extraData = {}) => {
+        return await adminProviderManagementService.updateApplicationStatus(id, {
+            status: "approved",
+            ...extraData,
+        });
+    },
 
-  // ✅ Explicit wrapper for rejecting an application
-  rejectApplication: async (id, extraData = {}) => {
-    return await adminProviderManagementService.updateApplicationStatus(id, {
-      status: "rejected",
-      rejection_reason: extraData.rejection_reason || "Rejected by admin",
-    });
-  },
+    // ✅ Explicit wrapper for rejecting an application
+    rejectApplication: async (id, extraData = {}) => {
+        return await adminProviderManagementService.updateApplicationStatus(id, {
+            status: "rejected",
+            rejection_reason: extraData.rejection_reason || "Rejected by admin",
+        });
+    },
 };
 
 

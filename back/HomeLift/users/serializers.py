@@ -6,7 +6,7 @@ import re
 
 class UserSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(required=False, allow_blank=True)
-    profile_picture = serializers.ImageField(required=False, allow_null=True, use_url=True)
+    profile_picture = serializers.ImageField(required=False, allow_null=False, use_url=True)
 
     class Meta:
         model = CustomUser
@@ -111,6 +111,22 @@ class LoginSerializer(serializers.Serializer):
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_email(self, value):
+        if not CustomUser.objects.filter(email=value).exists():
+            raise serializers.ValidationError({
+                "error": "not-found",
+                "message": "No account found with this email."
+            })
+        return value
+
+    def validate_new_password(self, value):
+        if not re.search(r'[A-Za-z]', value) or not re.search(r'\d', value):
+            raise serializers.ValidationError({
+                "error": "password-weak",
+                "message": "Password must contain letters and numbers."
+            })
+        return value
 
     def save(self):
         email = self.validated_data["email"]

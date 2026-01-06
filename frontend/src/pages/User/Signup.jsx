@@ -29,6 +29,7 @@ function Signup() {
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [resending, setResending] = useState(false);
+  const [expiryTimestamp, setExpiryTimestamp] = useState(null);
 
   const navigate = useNavigate();
 
@@ -76,6 +77,9 @@ function Signup() {
     try {
       const response = await otpService.sendOtp({ email });
       console.log('OTP response:', response.message);
+      if (response.expiry_timestamp) {
+        setExpiryTimestamp(response.expiry_timestamp);
+      }
       setShowOtpModal(true);
     } catch (err) {
       console.error("Send OTP error:", err.response?.data || err.message);
@@ -90,6 +94,9 @@ function Signup() {
     try {
       const response = await otpService.sendOtp({ email });
       console.log('Resent OTP:', response.message);
+      if (response.expiry_timestamp) {
+        setExpiryTimestamp(response.expiry_timestamp);
+      }
     } catch (err) {
       console.error("Resend OTP error:", err.response?.data || err.message);
       setErrorState(extractErrorMessage(err.response?.data) || "Failed to resend OTP");
@@ -123,8 +130,10 @@ function Signup() {
       setTimeout(() => navigate('/login'), 1500);
     } catch (error) {
       console.error('Error during OTP verification or registration:', error.response?.data || error.message);
-      setErrorState(extractErrorMessage(error.response?.data) || 'Invalid OTP or Registration failed');
-      setShowOtpModal(false);
+      // Don't close modal on error, allow retry
+      // setShowOtpModal(false); 
+      const msg = extractErrorMessage(error.response?.data) || 'Invalid OTP or Registration failed';
+      throw new Error(msg);
     }
   };
 
@@ -261,6 +270,7 @@ function Signup() {
           onResend={handleResendOtp}
           resending={resending}
           purpose="signup"
+          expiryTimestamp={expiryTimestamp}
         />
       </Container>
     </Box>
