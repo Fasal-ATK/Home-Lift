@@ -36,6 +36,24 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
     }
   };
 
+  // Helper: check if file is likely viewable directly (image or PDF)
+  const isDirectView = (url) => {
+    if (!url) return false;
+    const cleanUrl = url.split("?")[0];
+    const extension = cleanUrl.split(".").pop().toLowerCase();
+    return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "pdf"].includes(extension);
+  };
+
+  // Helper: get view URL (Google Docs Viewer for docs, direct for images/PDFs)
+  const getViewUrl = (url) => {
+    if (!url) return "";
+    // Force HTTPS to avoid mixed content / 401 errors
+    const secureUrl = url.replace(/^http:\/\//i, 'https://');
+    return isDirectView(secureUrl)
+      ? secureUrl
+      : `https://docs.google.com/viewer?url=${encodeURIComponent(secureUrl)}&embedded=true`;
+  };
+
   return (
     <Modal open={open} onClose={onClose}>
       <Box
@@ -82,7 +100,7 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
         {/* ID Document */}
         {application.id_doc && (
           <Link
-            href={application.id_doc}
+            href={getViewUrl(application.id_doc)}
             target="_blank"
             underline="hover"
             sx={{ display: "flex", alignItems: "center", mb: 2 }}
@@ -100,7 +118,7 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
                 <Typography><strong>{s.service_name}</strong></Typography>
                 {s.id_doc ? (
                   <Link
-                    href={s.id_doc}
+                    href={getViewUrl(s.id_doc)}
                     target="_blank"
                     underline="hover"
                     sx={{ display: "flex", alignItems: "center" }}

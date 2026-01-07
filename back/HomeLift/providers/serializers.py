@@ -6,6 +6,8 @@ from .models import (
     ProviderService
 )
 from services.models import Service
+import cloudinary
+from cloudinary import utils
 
 # -----------------------------
 # Temporary Provider Application forms
@@ -21,13 +23,15 @@ class ProviderApplicationServiceSerializer(serializers.ModelSerializer):
         fields = ['id', 'service', 'service_name', 'id_doc', 'price', 'experience_years']
     
     def get_id_doc(self, obj):
-        return obj.id_doc.url if obj.id_doc else None
+        if not obj.id_doc:
+            return None
+        return obj.id_doc.build_url(secure=True, sign_url=True)
 
 
 
 class ProviderApplicationSerializer(serializers.ModelSerializer):
     services = ProviderApplicationServiceSerializer(many=True)
-    id_doc = serializers.FileField(required=False, allow_null=True,use_url=True)
+    id_doc = serializers.SerializerMethodField()
 
     user_name = serializers.CharField(source='user.username', read_only=True)
     user_phone = serializers.CharField(source='user.phone', read_only=True)
@@ -48,6 +52,11 @@ class ProviderApplicationSerializer(serializers.ModelSerializer):
             'services',
         ]
         read_only_fields = [ 'replied_at', 'expiration_date', 'created_at']
+
+    def get_id_doc(self, obj):
+        if not obj.id_doc:
+            return None
+        return obj.id_doc.build_url(secure=True, sign_url=True)
 
 
     def validate(self, attrs):

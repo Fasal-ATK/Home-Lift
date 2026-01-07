@@ -67,6 +67,24 @@ export default function ProviderApplications() {
     }
   };
 
+  // Helper: check if file is likely viewable directly (image or PDF)
+  const isDirectView = (url) => {
+    if (!url) return false;
+    const cleanUrl = url.split("?")[0];
+    const extension = cleanUrl.split(".").pop().toLowerCase();
+    return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "pdf"].includes(extension);
+  };
+
+  // Helper: get view URL (Google Docs Viewer for docs, direct for images/PDFs)
+  const getViewUrl = (url) => {
+    if (!url) return "";
+    // Force HTTPS to avoid mixed content / 401 errors
+    const secureUrl = url.replace(/^http:\/\//i, 'https://');
+    return isDirectView(secureUrl)
+      ? secureUrl
+      : `https://docs.google.com/viewer?url=${encodeURIComponent(secureUrl)}&embedded=true`;
+  };
+
   const columns = [
     {
       key: "created_at",
@@ -83,7 +101,7 @@ export default function ProviderApplications() {
       sortable: false,
       render: (row) =>
         row.id_doc ? (
-          <Link href={row.id_doc} target="_blank" rel="noopener">
+          <Link href={getViewUrl(row.id_doc)} target="_blank" rel="noopener">
             View
           </Link>
         ) : (
