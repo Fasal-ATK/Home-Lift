@@ -51,11 +51,20 @@ import ServiceDetails from './components/user/booking/ServiceDetails';
 import ServiceBooking from './components/user/booking/ServiceBooking';
 
 
+// Socket Component
+import NotificationSocket from './components/NotificationSocket';
+import { useSelector } from 'react-redux';
+
 function App() {
+  const { user } = useSelector((state) => state.auth);
+
   return (
     <>
-      <ToastWrapper />  
+      <ToastWrapper />
       <ScrollToTop />
+
+      {/* Initialize Socket for logged-in user */}
+      {user && <NotificationSocket userId={user.id} />}
 
       <Routes>
         {/* Public Pages */}
@@ -101,16 +110,16 @@ function App() {
           <Route path='about' element={<About />} />
           <Route path='profile' element={<Profile />} />
           <Route path='services' element={<Services />} />
-          <Route path='service-details' element={<ServiceDetails/>} />
+          <Route path='service-details' element={<ServiceDetails />} />
           <Route path='booking-page' element={<ServiceBooking />} />
           <Route path="bookings">
             <Route index element={<Bookings />} />
             <Route path="details" element={<BookingDetails />} />
           </Route>
-          <Route path='booking-details' element ={<BookingDetails />} />
+          <Route path='booking-details' element={<BookingDetails />} />
           <Route path='notifications' element={<Notifications />} />
           <Route path='addresses' element={<Addresses />} />
-          
+
           {/* Change Password Route (Protected) */}
           <Route path='change-password' element={<ForgotPassword />} />
         </Route>

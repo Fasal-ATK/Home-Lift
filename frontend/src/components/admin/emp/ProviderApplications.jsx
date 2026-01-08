@@ -50,13 +50,13 @@ export default function ProviderApplications() {
     setViewOpen(true);
   };
 
-  const handleAction = async (id, action) => {
+  const handleAction = async (id, action, reason) => {
     try {
       if (action === "approve") {
         await dispatch(approveApplication({ id, data: {} })).unwrap();
       } else if (action === "reject") {
         await dispatch(
-          rejectApplication({ id, data: { rejection_reason: "Rejected by admin" } })
+          rejectApplication({ id, data: { rejection_reason: reason } })
         ).unwrap();
       }
       dispatch(fetchApplications()); // refresh list
@@ -100,8 +100,8 @@ export default function ProviderApplications() {
       label: "ID Document",
       sortable: false,
       render: (row) =>
-        row.id_doc ? (
-          <Link href={getViewUrl(row.id_doc)} target="_blank" rel="noopener">
+        row.id_doc_url ? (
+          <Link href={getViewUrl(row.id_doc_url)} target="_blank" rel="noopener">
             View
           </Link>
         ) : (
@@ -151,7 +151,7 @@ export default function ProviderApplications() {
           onClose={() => setViewOpen(false)}
           application={selectedApplication}
           onApprove={() => handleAction(selectedApplication.id, "approve")}
-          onReject={() => handleAction(selectedApplication.id, "reject")}
+          onReject={(reason) => handleAction(selectedApplication.id, "reject", reason)}
           actionLoading={actionLoading}
         />
       )}

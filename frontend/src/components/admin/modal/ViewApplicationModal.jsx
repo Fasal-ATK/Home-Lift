@@ -8,13 +8,21 @@ import {
   Link,
   Divider,
   Button,
+  TextField,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import DescriptionIcon from "@mui/icons-material/Description";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject }) => {
   const [actionLoading, setActionLoading] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setRejectionReason("");
+    }
+  }, [open, application?.id]);
 
   if (!application) return null;
 
@@ -28,9 +36,10 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
   };
 
   const handleReject = async () => {
+    if (!rejectionReason.trim()) return;
     setActionLoading(true);
     try {
-      await onReject();
+      await onReject(rejectionReason);
     } finally {
       setActionLoading(false);
     }
@@ -98,9 +107,9 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
         <Divider sx={{ my: 1 }} />
 
         {/* ID Document */}
-        {application.id_doc && (
+        {application.id_doc_url && (
           <Link
-            href={getViewUrl(application.id_doc)}
+            href={getViewUrl(application.id_doc_url)}
             target="_blank"
             underline="hover"
             sx={{ display: "flex", alignItems: "center", mb: 2 }}
@@ -116,9 +125,9 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
             {application.services.map((s) => (
               <Box key={s.id} sx={{ ml: 2, mb: 1 }}>
                 <Typography><strong>{s.service_name}</strong></Typography>
-                {s.id_doc ? (
+                {s.id_doc_url ? (
                   <Link
-                    href={getViewUrl(s.id_doc)}
+                    href={getViewUrl(s.id_doc_url)}
                     target="_blank"
                     underline="hover"
                     sx={{ display: "flex", alignItems: "center" }}
@@ -135,6 +144,24 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
           </>
         )}
 
+        <Divider sx={{ my: 2 }} />
+
+        {/* Rejection Reason Input */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle2" mb={1}><strong>Rejection Reason:</strong> (Required for rejection)</Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            placeholder="Enter reason for rejection..."
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            disabled={actionLoading}
+            size="small"
+          />
+        </Box>
+
         {/* Footer buttons */}
         <Stack direction="row" spacing={2} justifyContent="flex-end" mt={3}>
           <Button
@@ -149,7 +176,7 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
             variant="contained"
             color="error"
             onClick={handleReject}
-            disabled={actionLoading}
+            disabled={actionLoading || !rejectionReason.trim()}
           >
             {actionLoading ? "Rejecting..." : "Reject"}
           </Button>
