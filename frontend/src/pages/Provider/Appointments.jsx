@@ -16,6 +16,10 @@ import {
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import { providerJobService } from "../../services/apiServices";
+import { toast } from "react-toastify";
+import { useEffect } from "react";
+
 
 // ------------------ Helpers ------------------
 function pad(n) {
@@ -64,20 +68,13 @@ function addDays(date, days) {
   return d;
 }
 
-// ------------------ Demo Data ------------------
-// `day` indicates offset from weekStart (0 = Monday, 6 = Sunday)
-const DEMO_EVENTS = [
-  { id: 1, day: 0, start: "08:20", end: "09:30", title: "Devon Lane", subtitle: "Vehicle Maintenance", color: "#E7F64A" },
-  { id: 2, day: 2, start: "09:45", end: "11:30", title: "Devon Lane", subtitle: "Vehicle Maintenance", color: "#E7F64A" },
-  { id: 3, day: 4, start: "08:30", end: "09:15", title: "Vehicle Service", subtitle: "Oil change", color: "#E7F64A" },
-  { id: 4, day: 1, start: "11:00", end: "12:15", title: "Anna Roy", subtitle: "AC Service", color: "#9EE6FF" },
-  { id: 5, day: 3, start: "13:30", end: "15:00", title: "Home Clean", subtitle: "Deep cleaning", color: "#FFD59E" },
-];
-
 // ------------------ Component ------------------
 export default function WeekScheduleDemo() {
   const [mode, setMode] = useState("week");
   const [pastRange, setPastRange] = useState("all");
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+
 
   // weekStart is a Date representing the Monday of the visible week
   const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()));
@@ -101,6 +98,55 @@ export default function WeekScheduleDemo() {
       return { iso, label: dayLabel(iso) };
     });
   }, [weekStart]);
+
+  // Fetch real appointments
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      setLoading(true);
+      try {
+        const data = await providerJobService.getMyAppointments();
+
+        // Map backend bookings to calendar events
+        const mapped = data.map((b) => {
+          // booking_date is "YYYY-MM-DD". parse as UTC
+          const [year, month, day] = b.booking_date.split("-").map(Number);
+          const bDate = new Date(Date.UTC(year, month - 1, day));
+
+          const wsDate = new Date(weekStart);
+          wsDate.setUTCHours(0, 0, 0, 0);
+
+          // Calculate offset in days from Monday
+          const diffTime = bDate.getTime() - wsDate.getTime();
+          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+          // Calculate end time (fixed 1 hour for now)
+          const [h, m] = b.booking_time.split(":").map(Number);
+          const endH = (h + 1).toString().padStart(2, '0');
+          const endT = `${endH}:${m.toString().padStart(2, '0')}`;
+
+          return {
+            id: b.id,
+            day: diffDays,
+            start: b.booking_time.slice(0, 5),
+            end: endT,
+            title: b.service_name,
+            subtitle: b.full_name,
+            color: b.status === 'completed' ? '#edf7ed' : '#E7F64A', // Example coloring
+          };
+        });
+
+        setEvents(mapped);
+      } catch (err) {
+        toast.error("Failed to load appointments");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, [weekStart]);
+
 
   // Navigation handlers
   const goPreviousWeek = () => setWeekStart((s) => addDays(s, -7));
@@ -152,7 +198,21 @@ export default function WeekScheduleDemo() {
       </Stack>
 
       {/* Calendar */}
-      <Box sx={{ display: "flex", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 2, overflow: "hidden" }}>
+      <Box sx={{ display: "flex", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 2, overflow: "hidden", position: "relative" }}>
+        {loading && (
+          <Box sx={{
+            position: "absolute",
+            inset: 0,
+            bgcolor: "rgba(255,255,255,0.7)",
+            zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 'bold'
+          }}>
+            Loading appointments...
+          </Box>
+        )}
         {/* Time Column */}
         <Box sx={{ width: 110, borderRight: "1px solid rgba(0,0,0,0.06)", bgcolor: "#fafafa", p: 1 }}>
           {/* <-- spacer to align with header of day columns --> */}
@@ -231,7 +291,7 @@ export default function WeekScheduleDemo() {
 
             {/* Events */}
             <Box sx={{ position: "absolute", inset: 0 }}>
-              {DEMO_EVENTS.map((ev) => {
+              {events.map((ev) => {
                 // ev.day is 0..6 relative to Monday of a week
                 if (ev.day < 0 || ev.day >= columnCount) return null;
 

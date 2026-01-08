@@ -7,7 +7,7 @@ const apiEndpoints = {
         logout: '/user/logout/',
         refreshAccessToken: '/user/token/refresh/',
         googleLogin: '/user/google-auth/',
-        changePassword:  '/user/change-password/',
+        changePassword: '/user/change-password/',
         resetPassword: '/user/reset-password/',
     },
 
@@ -16,22 +16,22 @@ const apiEndpoints = {
     },
 
     otp: {
-        sendOtp: '/user/send-otp/', 
+        sendOtp: '/user/send-otp/',
         verifyOtp: '/user/verify-otp/',
     },
 
     user: {
-        updateProfile : '/user/profile/update/',
+        updateProfile: '/user/profile/update/',
 
-        booking : '/user/booking/',
-        updateBooking : (id) => `/user/booking/details/${id}/`,
+        booking: '/user/booking/',
+        updateBooking: (id) => `/user/booking/details/${id}/`,
 
         // Addresses
         addresses: '/user/core/addresses/',
         addressDetail: (id) => `/user/core/address/${id}/`,
     },
 
-    notification:{
+    notification: {
         list: 'user/notifications/',
         markRead: (id) => `user/notifications/${id}/read/`,
     },
@@ -52,12 +52,12 @@ const apiEndpoints = {
         applicationDetail: (id) => `/admin/providers/update-applications/${id}/`, // PATCH for approve/reject
     },
 
-    
+
     adminServiceManagement: {
         listCategories: '/admin/services/categories/',
         categoryDetail: (id) => `/admin/services/categories/${id}/`,
         createCategory: '/admin/services/categories/',   // POST
-    
+
         listServices: '/admin/services/services/',
         serviceDetail: (id) => `/admin/services/services/${id}/`,
         createService: '/admin/services/services/',     // POST
@@ -70,6 +70,7 @@ const apiEndpoints = {
         jobs: {
             list: '/provider/jobs/appointments',
             pending: '/provider/jobs/appointments/pending',
+            myAppointments: '/provider/jobs/my-appointments/',
             accept: (id) => `/provider/jobs/appointments/${id}/accept/`,
         },
     },

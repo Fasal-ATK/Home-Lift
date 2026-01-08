@@ -108,6 +108,11 @@ export const providerJobService = {
         return response.data;
     },
 
+    getMyAppointments: async () => {
+        const response = await api.get(apiEndpoints.provider.jobs.myAppointments);
+        return response.data;
+    },
+
     acceptJob: async (id) => {
         const response = await api.post(apiEndpoints.provider.jobs.accept(id));
         return response.data;
@@ -236,5 +241,3 @@ export const adminProviderManagementService = {
         });
     },
 };
-
-

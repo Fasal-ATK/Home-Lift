@@ -92,14 +92,9 @@ export default function ProviderJobDetail() {
       const action = await dispatch(acceptJob(Number(id)));
       if (acceptJob.fulfilled.match(action)) {
         setSnack({ open: true, message: "Job accepted successfully.", severity: "success" });
-        // update booking from store if available, or clear
-        const updated = jobsSelectors.selectById({ providerJobs: undefined }, Number(id)); // no-op placeholder
-        // best-effort: booking removed from list by slice; we keep UI consistent by trying to fetch fresh detail
-        try {
-          // optional: re-fetch detail (if backend returns assigned booking)
-          await dispatch(fetchJobDetail(Number(id))).unwrap();
-        } catch (_) {
-          // ignore refresh error
+        // Update local booking state with the response data (includes new status)
+        if (action.payload?.data) {
+          setBooking(action.payload.data);
         }
       } else {
         setSnack({ open: true, message: action.payload || "Failed to accept job", severity: "error" });
