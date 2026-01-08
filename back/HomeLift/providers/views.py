@@ -17,7 +17,6 @@ class ProviderApplicationCreateAPIView(APIView):
     permission_classes = [IsNormalUser]
 
     def post(self, request, *args, **kwargs):
-        print(request.user)
         # 🔍 View-level guard
         if ProviderApplication.objects.filter(
             user=request.user,
@@ -92,8 +91,7 @@ class ProviderApplicationListAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         applications = ProviderApplication.objects.filter(status__in=['pending'])
-        serializer = ProviderApplicationSerializer(applications, many=True)
-        print(serializer.data)
+        serializer = ProviderApplicationSerializer(applications, many=True)   
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

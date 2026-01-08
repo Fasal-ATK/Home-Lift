@@ -54,6 +54,7 @@ SESSION_COOKIE_SECURE = False
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -70,7 +71,7 @@ INSTALLED_APPS = [
     'payments',
     'core',
     'notifications',
-
+    
     'rest_framework',
     'corsheaders',
     'phonenumber_field',
@@ -79,6 +80,8 @@ INSTALLED_APPS = [
 
     'cloudinary',
     'cloudinary_storage',
+
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -114,6 +117,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'home_lift.wsgi.application'
+ASGI_APPLICATION = "home_lift.asgi.application"
 
 
 # Database
@@ -217,6 +221,15 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
 }
 
 # Cloudinary settings (default file storage)

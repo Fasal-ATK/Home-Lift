@@ -16,22 +16,27 @@ class ProviderApplicationServiceSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source='service.name', read_only=True)
     price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     experience_years = serializers.IntegerField(required=False, min_value=0)
-    id_doc = serializers.FileField(required=False, allow_null=True)  # <-- Add this for write
+    id_doc = serializers.FileField(required=False, allow_null=True, write_only=True)
+    id_doc_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ProviderApplicationService
-        fields = ['id', 'service', 'service_name', 'id_doc', 'price', 'experience_years']
+        fields = ['id', 'service', 'service_name', 'id_doc', 'id_doc_url', 'price', 'experience_years']
     
-    def get_id_doc(self, obj):
+    def get_id_doc_url(self, obj):
         if not obj.id_doc:
             return None
-        return obj.id_doc.build_url(secure=True, sign_url=True)
+        try:
+            return obj.id_doc.url
+        except AttributeError:
+            return None
 
 
 
 class ProviderApplicationSerializer(serializers.ModelSerializer):
     services = ProviderApplicationServiceSerializer(many=True)
-    id_doc = serializers.SerializerMethodField()
+    id_doc = serializers.FileField(required=False, allow_null=True, write_only=True)
+    id_doc_url = serializers.SerializerMethodField(read_only=True)
 
     user_name = serializers.CharField(source='user.username', read_only=True)
     user_phone = serializers.CharField(source='user.phone', read_only=True)
@@ -44,6 +49,7 @@ class ProviderApplicationSerializer(serializers.ModelSerializer):
             'id',
             'user_name', 'user_phone', 'user_email',
             'id_doc',
+            'id_doc_url',
             'status',
             'rejection_reason',
             'created_at',
@@ -53,10 +59,13 @@ class ProviderApplicationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [ 'replied_at', 'expiration_date', 'created_at']
 
-    def get_id_doc(self, obj):
+    def get_id_doc_url(self, obj):
         if not obj.id_doc:
             return None
-        return obj.id_doc.build_url(secure=True, sign_url=True)
+        try:
+            return obj.id_doc.url
+        except AttributeError:
+            return None
 
 
     def validate(self, attrs):
