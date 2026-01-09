@@ -16,7 +16,9 @@ import {
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import { useNavigate } from "react-router-dom";
 import { providerJobService } from "../../services/apiServices";
+
 import { toast } from "react-toastify";
 import { useEffect } from "react";
 
@@ -68,9 +70,16 @@ function addDays(date, days) {
   return d;
 }
 
+function toISODate(date) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 // ------------------ Component ------------------
 export default function WeekScheduleDemo() {
+  const navigate = useNavigate();
   const [mode, setMode] = useState("week");
+
   const [pastRange, setPastRange] = useState("all");
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -80,9 +89,9 @@ export default function WeekScheduleDemo() {
   const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()));
 
   // UI sizing & layout
-  const dayStart = "08:00";
-  const dayEnd = "18:00";
-  const rows = 10;
+  const dayStart = "06:00";
+  const dayEnd = "22:00";
+  const rows = 16;
   const rowHeight = 60;
   const headerHeight = 56;
   const bodyHeight = rows * rowHeight;
@@ -108,16 +117,15 @@ export default function WeekScheduleDemo() {
 
         // Map backend bookings to calendar events
         const mapped = data.map((b) => {
-          // booking_date is "YYYY-MM-DD". parse as UTC
-          const [year, month, day] = b.booking_date.split("-").map(Number);
-          const bDate = new Date(Date.UTC(year, month - 1, day));
+          // Use YYYY-MM-DD strings for robust day calculation across timezones
+          const wsISO = toISODate(weekStart);
+          const bISO = b.booking_date;
 
-          const wsDate = new Date(weekStart);
-          wsDate.setUTCHours(0, 0, 0, 0);
+          const d1 = new Date(wsISO + "T00:00:00Z");
+          const d2 = new Date(bISO + "T00:00:00Z");
 
-          // Calculate offset in days from Monday
-          const diffTime = bDate.getTime() - wsDate.getTime();
-          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+          const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+
 
           // Calculate end time (fixed 1 hour for now)
           const [h, m] = b.booking_time.split(":").map(Number);
@@ -220,9 +228,9 @@ export default function WeekScheduleDemo() {
 
           {/* time rows (start at same vertical offset as day grid) */}
           {Array.from({ length: rows }).map((_, idx) => {
-            const hour = 8 + idx;
+            const hour = 6 + idx;
             const ampm = hour < 12 ? "am" : "pm";
-            const dispHour = hour === 12 ? 12 : hour % 12 || 12;
+            const dispHour = hour === 0 ? 12 : (hour > 12 ? hour - 12 : hour);
 
             return (
               <Box
@@ -305,7 +313,7 @@ export default function WeekScheduleDemo() {
                       position: "absolute",
                       left: `calc(${leftPercent}% + ${horizontalGutterPx / 2}px)`,
                       width: `calc(${columnPercent}% - ${horizontalGutterPx}px)`,
-                      top: headerHeight + topPx, // aligns with the grid body
+                      top: topPx, // removed headerHeight offset
                       height: heightPx,
                       bgcolor: ev.color,
                       borderRadius: 2,
@@ -316,7 +324,9 @@ export default function WeekScheduleDemo() {
                       gap: 1,
                       cursor: "pointer",
                     }}
+                    onClick={() => navigate(`/provider/job-requests/details/${ev.id}`)}
                   >
+
 
 
                     <Box sx={{ overflow: "hidden" }}>
@@ -330,6 +340,22 @@ export default function WeekScheduleDemo() {
                   </Box>
                 );
               })}
+              {!loading && events.length === 0 && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <Typography variant="body1" color="text.secondary">
+                    No appointments scheduled for this week
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Box>
         </Box>

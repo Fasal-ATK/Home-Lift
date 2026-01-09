@@ -159,6 +159,24 @@ class ProviderAcceptBookingView(APIView):
         return Response({"message": "Booking accepted.", "data": BookingSerializer(booking, context={"request": request}).data}, status=status.HTTP_200_OK)
 
 
+class ProviderAssignedBookingsView(APIView):
+    """
+    GET: List all bookings assigned to the authenticated provider.
+    Includes confirmed, in_progress, and completed bookings.
+    """
+    permission_classes = [IsProviderUser]
+
+    def get(self, request):
+        provider = request.user
+        qs = Booking.objects.filter(
+            provider=provider
+        ).select_related("service", "address", "user").order_by("-booking_date", "-booking_time")
+
+        serializer = BookingSerializer(qs, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
 # ---------------------------------------------------------------------------
 #  ADMIN VIEW → admin/staff can list all bookings
 # ---------------------------------------------------------------------------

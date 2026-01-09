@@ -177,9 +177,9 @@ export default function ProviderRequestsWithServices() {
             >
               <ListItemText primary="All Requests" />
             </ListItemButton>
-            <ListItemButton onClick={() => alert("Feature: show analytics")} sx={{ mt: 1, borderRadius: 1 }}>
+            {/* <ListItemButton onClick={() => alert("Feature: show analytics")} sx={{ mt: 1, borderRadius: 1 }}>
               <ListItemText primary="Analytics" />
-            </ListItemButton>
+            </ListItemButton> */}
           </List>
         </Paper>
 
