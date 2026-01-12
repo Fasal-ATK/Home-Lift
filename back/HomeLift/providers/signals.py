@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from .models import ProviderApplication, ProviderApplicationService, ProviderDetails, ProviderService
 from notifications.models import Notification
+from notifications.utils import send_user_notification
 
 logger = logging.getLogger(__name__)
 User = apps.get_model(settings.AUTH_USER_MODEL)
@@ -34,6 +35,8 @@ def safe_create_notification(recipient, **kwargs):
                 raise ValueError(f"recipient id={recipient.pk} does not exist")
             # create notification for valid recipient
             Notification.objects.create(recipient=recipient, **kwargs)
+            # Trigger WebSocket notification
+            send_user_notification(recipient.id, kwargs.get('message', ''))
             return
 
         # If recipient is None, route to system user
