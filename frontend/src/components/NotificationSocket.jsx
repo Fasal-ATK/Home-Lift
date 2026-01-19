@@ -1,7 +1,11 @@
 import { useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
+import { addNotification } from '../redux/slices/notificationSlice';
 
 const NotificationSocket = ({ userId }) => {
+    const dispatch = useDispatch();
+
     useEffect(() => {
         if (!userId) return;
 
@@ -18,9 +22,17 @@ const NotificationSocket = ({ userId }) => {
                 const data = JSON.parse(event.data);
                 console.log('Notification received:', data.message);
 
-                // Show toast notification
+                // Show toast notification and update Redux
                 if (data.message) {
                     toast.info(data.message);
+                    dispatch(addNotification({
+                        id: Date.now(), // Fallback ID for UI if not provided
+                        message: data.message,
+                        created_at: new Date().toISOString(),
+                        is_read: false,
+                        type: 'system', // Default type
+                        ...data
+                    }));
                 }
             } catch (error) {
                 console.error('Error parsing notification:', error);

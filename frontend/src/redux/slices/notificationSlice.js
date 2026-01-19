@@ -41,6 +41,10 @@ const notificationSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
+    // ✅ Handle real-time notification
+    addNotification: (state, action) => {
+      state.list.unshift(action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -65,5 +69,5 @@ const notificationSlice = createSlice({
   },
 });
 
-export const { clearNotifications } = notificationSlice.actions;
+export const { clearNotifications, addNotification } = notificationSlice.actions;
 export default notificationSlice.reducer;
