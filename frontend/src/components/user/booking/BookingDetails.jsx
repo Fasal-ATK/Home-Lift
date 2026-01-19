@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchBookingDetails, updateBooking, fetchBookings } from "../../../redux/slices/bookingSlice";
+import ConfirmModal from "../../common/Confirm";
 
 const statusColor = (status) => {
   switch (status) {
@@ -33,6 +34,7 @@ export default function BookingDetails() {
   // support both shapes: { data: {...} } or plain object
   const booking = currentBooking?.data ?? currentBooking;
   const [busy, setBusy] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
   // get id from location.state.bookingId OR query param ?id=123
   const bookingIdFromState = location.state?.bookingId;
@@ -55,16 +57,13 @@ export default function BookingDetails() {
 
   const handleCancel = async () => {
     if (!bookingId) return;
+    setCancelConfirmOpen(false);
     setBusy(true);
     try {
-      // updateBooking will update slice and backend
       await dispatch(updateBooking({ id: bookingId, data: { status: "cancelled" } })).unwrap();
-      // refresh list + details to reflect change
       await dispatch(fetchBookings());
       await dispatch(fetchBookingDetails(bookingId));
     } catch (e) {
-      // keep silent; slice stores error
-      // you can show toast here if you have a notification system
       console.error("Cancel booking failed:", e);
     } finally {
       setBusy(false);
@@ -142,7 +141,7 @@ export default function BookingDetails() {
                 <Button
                   color="error"
                   variant="contained"
-                  onClick={handleCancel}
+                  onClick={() => setCancelConfirmOpen(true)}
                   disabled={!canCancel(booking.status) || busy}
                 >
                   {busy ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Cancel Booking"}
@@ -156,6 +155,15 @@ export default function BookingDetails() {
           </>
         )}
       </Paper>
+
+      <ConfirmModal
+        open={cancelConfirmOpen}
+        onClose={() => setCancelConfirmOpen(false)}
+        onConfirm={handleCancel}
+        message="Are you sure you want to cancel this booking?"
+        confirmLabel="Cancel Booking"
+        color="danger"
+      />
     </Box>
   );
 }

@@ -1,26 +1,33 @@
 // src/components/common/ConfirmModal.jsx
 import React from "react";
 import {
-  Modal,
-  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Typography,
   Button,
-  Stack,
+  Slide,
 } from "@mui/material";
 
 const colorMap = {
-  danger: { bg: "#fdecea", text: "#d32f2f" },   // red
-  success: { bg: "#edf7ed", text: "#2e7d32" }, // green
-  warning: { bg: "#fff4e5", text: "#ed6c02" }, // orange
-  info: { bg: "#e3f2fd", text: "#0288d1" },    // blue
-  default: { bg: "#f5f5f5", text: "#333" },
+  danger: { main: "#D32F2F", hover: "#b71c1c" },
+  success: { main: "#2e7d32", hover: "#1b5e20" },
+  warning: { main: "#ed6c02", hover: "#e65100" },
+  info: { main: "#0066CC", hover: "#004c99" },
+  default: { main: "#1976D2", hover: "#1565c0" },
 };
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="down" ref={ref} {...props} />;
+});
 
 const ConfirmModal = ({
   open,
   onClose,
   onConfirm,
-  message = "Are you sure?",
+  title = "Confirm Action",
+  message = "Are you sure you want to proceed?",
   color = "default",
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
@@ -28,44 +35,58 @@ const ConfirmModal = ({
   const themeColor = colorMap[color] || colorMap.default;
 
   return (
-    <Modal open={open} onClose={onClose}>
-      <Box
-        sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 380,
-          bgcolor: themeColor.bg,
-          borderRadius: 2,
-          boxShadow: 24,
-          p: 3,
-          textAlign: "center",
-        }}
+    <Dialog
+      open={open}
+      TransitionComponent={Transition}
+      keepMounted
+      onClose={onClose}
+      aria-labelledby="confirm-dialog-title"
+      aria-describedby="confirm-dialog-description"
+      PaperProps={{
+        sx: { borderRadius: 3, px: 2, py: 1, minWidth: 320 },
+      }}
+    >
+      <DialogTitle
+        id="confirm-dialog-title"
+        sx={{ fontWeight: "bold", fontSize: 20 }}
       >
-        {/* Message */}
-        <Typography variant="h6" sx={{  mb: 2 }}>
+        {title}
+      </DialogTitle>
+      <DialogContent>
+        <Typography
+          variant="body1"
+          id="confirm-dialog-description"
+          sx={{ mt: 1 }}
+        >
           {message}
         </Typography>
-
-        {/* Buttons */}
-        <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
-          <Button variant="outlined" onClick={onClose}>
-            {cancelLabel}
-          </Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: themeColor.text,
-              "&:hover": { bgcolor: themeColor.text },
-            }}
-            onClick={onConfirm}
-          >
-            {confirmLabel}
-          </Button>
-        </Stack>
-      </Box>
-    </Modal>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button
+          onClick={onClose}
+          sx={{ color: "#1976D2", fontWeight: "bold", textTransform: "none" }}
+        >
+          {cancelLabel}
+        </Button>
+        <Button
+          onClick={() => {
+            onConfirm();
+          }}
+          variant="contained"
+          sx={{
+            bgcolor: themeColor.main,
+            "&:hover": { bgcolor: themeColor.hover },
+            fontWeight: "bold",
+            color: "white",
+            textTransform: "none",
+            borderRadius: 2,
+            px: 3,
+          }}
+        >
+          {confirmLabel}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
