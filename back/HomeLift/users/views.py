@@ -53,9 +53,40 @@ class GoogleLoginAPIView(APIView):
             if not email:
                 return Response({"error": "No email found in Google token"}, status=status.HTTP_400_BAD_REQUEST)
 
-            user, created = CustomUser.objects.get_or_create(email=email, defaults={
-                "username": email.split("@")[0]
-            })
+            full_name = idinfo.get("name", email.split("@")[0])
+            first_name = idinfo.get("given_name", "")
+            last_name = idinfo.get("family_name", "")
+
+            # Simple username generation from name: lower case, replace spaces with underscores
+            base_username = full_name.replace(" ", "_").lower()
+
+            user = CustomUser.objects.filter(email=email).first()
+
+            if not user:
+                # Handle username collision for new user
+                username = base_username
+                if CustomUser.objects.filter(username=username).exists():
+                    username = f"{base_username}_{int(time.time())}"
+                
+                user = CustomUser.objects.create_user(
+                    email=email,
+                    username=username,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                created = True
+            else:
+                created = False
+                # Update existing user info if blank (optional but good for data freshness)
+                updated = False
+                if not user.first_name and first_name:
+                    user.first_name = first_name
+                    updated = True
+                if not user.last_name and last_name:
+                    user.last_name = last_name
+                    updated = True
+                if updated:
+                    user.save()
 
             if not user.is_active:
                 return Response({"error": "Inactive user"}, status=status.HTTP_403_FORBIDDEN)
