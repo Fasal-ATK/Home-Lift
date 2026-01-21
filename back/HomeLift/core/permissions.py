@@ -12,14 +12,18 @@ class IsAdminUserCustom(BasePermission):
 
 class IsProviderUser(BasePermission):
     """
-    Allows access only to provider accounts.
+    Allows access only to provider accounts that are active.
     """
     def has_permission(self, request, view):
-        return bool(
-            request.user 
-            and request.user.is_authenticated 
-            and getattr(request.user, "is_provider", False)
-        )
+        user = request.user
+        if not (user and user.is_authenticated and getattr(user, "is_provider", False)):
+            return False
+        
+        # Check if provider profile is active
+        try:
+            return user.provider_details.is_active
+        except:
+            return False
 
 
 class IsNormalUser(BasePermission):

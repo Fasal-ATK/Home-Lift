@@ -7,15 +7,24 @@ import re
 class UserSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(required=False, allow_blank=True)
     profile_picture = serializers.ImageField(required=False, allow_null=False, use_url=True)
+    is_provider_active = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
         fields = [
             'id', 'email', 'username', 'profile_picture',
             'first_name', 'last_name', 'phone',
-            'is_staff', 'is_provider', 'is_active'
+            'is_staff', 'is_provider', 'is_active', 'is_provider_active'
         ]
         read_only_fields = ['email']
+
+    def get_is_provider_active(self, obj):
+        if not obj.is_provider:
+            return None
+        try:
+            return obj.provider_details.is_active
+        except:
+            return False
 
 
 # ---------------------------

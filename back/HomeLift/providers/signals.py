@@ -3,7 +3,7 @@ import logging
 from django.apps import apps
 from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -122,6 +122,48 @@ def handle_provider_application_update(sender, instance, created, **kwargs):
             title='Provider Application Rejected',
             message=f"Your provider application has been rejected. Reason: {reason}"
         )
+
+
+@receiver(pre_save, sender=ProviderDetails)
+def track_provider_status_change(sender, instance, **kwargs):
+    """
+    Track changes to is_active status before saving.
+    """
+    if instance.pk:
+        try:
+            old_instance = ProviderDetails.objects.get(pk=instance.pk)
+            instance._old_is_active = old_instance.is_active
+        except ProviderDetails.DoesNotExist:
+            instance._old_is_active = None
+    else:
+        instance._old_is_active = None
+
+
+@receiver(post_save, sender=ProviderDetails)
+def handle_provider_status_notification(sender, instance, created, **kwargs):
+    """
+    Send notification when a provider is blocked or unblocked.
+    """
+    if not created:
+        old_is_active = getattr(instance, '_old_is_active', None)
+        new_is_active = instance.is_active
+
+        if old_is_active is not None and old_is_active != new_is_active:
+            user = instance.user
+            if new_is_active:
+                title = "Account Unblocked"
+                message = "Your provider account has been unblocked. You can now accept jobs again. please re-login to continue"
+            else:
+                title = "Account Blocked"
+                message = "Your provider account has been blocked. Please contact support for more information."
+
+            safe_create_notification(
+                recipient=user,
+                sender=None,
+                type='provider',
+                title=title,
+                message=message
+            )
 
 
 @receiver(post_delete, sender=ProviderDetails)
