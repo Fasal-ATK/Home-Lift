@@ -53,6 +53,11 @@ export const userService = {
         return response.data;
     },
 
+    fetchProfile: async () => {
+        const response = await api.get(apiEndpoints.user.updateProfile);
+        return response.data;
+    },
+
     // Addresses
     listAddresses: async () => {
         const response = await api.get(apiEndpoints.user.addresses);

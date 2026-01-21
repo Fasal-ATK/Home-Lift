@@ -133,6 +133,7 @@ const userSlice = createSlice({
     loading: false,
     error: null,
     providerApplicationStatus: null,
+    isProviderActive: true, // track active status
     rejectionReason: null,
     // addresses
     addresses: [],
@@ -185,6 +186,7 @@ const userSlice = createSlice({
       .addCase(fetchProviderApplicationStatus.fulfilled, (state, action) => {
         state.loading = false;
         state.providerApplicationStatus = action.payload.status;
+        state.isProviderActive = action.payload.is_active; // store is_active
         state.rejectionReason = action.payload.reason || null;
       })
       .addCase(fetchProviderApplicationStatus.rejected, (state, action) => {

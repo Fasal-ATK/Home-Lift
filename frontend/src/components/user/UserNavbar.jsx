@@ -11,15 +11,40 @@ import {
 } from '@mui/material';
 import { Search, Notifications, LocationOn, AccountCircle } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import LogoutButton from '../common/Logout';
+import { ShowToast } from '../common/Toast';
+import { userService } from '../../services/apiServices';
+import { setUser } from '../../redux/slices/authSlice';
 
 const UserNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation(); // get current path
 
   // ✅ Get provider info from authSlice
-  const { isProvider } = useSelector((state) => state.auth);
+  const { isProvider, user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+
+  const handleProviderRedirect = async () => {
+    try {
+      const latestUser = await userService.fetchProfile();
+      dispatch(setUser(latestUser));
+
+      if (latestUser.is_provider_active === false) {
+        ShowToast("Access Denied: Your provider account has been blocked.", "error");
+      } else {
+        navigate("/provider/dashboard");
+      }
+    } catch (error) {
+      console.error("Failed to check provider status:", error);
+      // Fallback to local state if request fails
+      if (user?.is_provider_active === false) {
+        ShowToast("Access Denied: Your provider account is currently blocked.", "error");
+      } else {
+        navigate("/provider/dashboard");
+      }
+    }
+  };
 
   const navLinks = [
     { label: "HOME", path: "/home" },
@@ -47,9 +72,13 @@ const UserNavbar = () => {
         {isProvider && (
           <Button
             variant="contained"
-            backgroundcolor='#0066CC'
-            onClick={() => navigate("/provider/dashboard")}
-            sx={{ textTransform: "none", borderRadius: "10px" }}
+            sx={{
+              backgroundColor: '#0066CC',
+              textTransform: "none",
+              borderRadius: "10px",
+              "&:hover": { backgroundColor: "#0052a3" }
+            }}
+            onClick={handleProviderRedirect}
           >
             Provider Page
           </Button>

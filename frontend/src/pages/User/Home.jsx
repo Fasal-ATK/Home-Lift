@@ -9,7 +9,9 @@ import { fetchServices } from "../../redux/slices/serviceSlice";
 import { fetchProviderApplicationStatus } from "../../redux/slices/user/userSlice";
 import { useNavigate } from "react-router-dom";
 
-import { setProvider } from "../../redux/slices/authSlice"; 
+import { setProvider, setUser } from "../../redux/slices/authSlice";
+import { ShowToast } from "../../components/common/Toast";
+import { userService } from "../../services/apiServices";
 
 // assets
 import moreImg from "../../assets/user/home/more.png";
@@ -79,8 +81,8 @@ const Home = () => {
 
   const { list: categories } = useSelector((state) => state.categories);
   const { list: services, loading: servicesLoading, error: servicesError } = useSelector((state) => state.services);
-  const { providerApplicationStatus, rejectionReason} = useSelector((state) => state.user);
-  const { isProvider } = useSelector((state) => state.auth);
+  const { providerApplicationStatus, rejectionReason, isProviderActive } = useSelector((state) => state.user);
+  const { isProvider, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
     if (!categories.length) dispatch(fetchCategories());
@@ -90,10 +92,30 @@ const Home = () => {
 
 
   useEffect(() => {
-  if (providerApplicationStatus?.toLowerCase() === "approved") {
-    dispatch(setProvider(true));
-  }
-}, [providerApplicationStatus, dispatch]);
+    if (providerApplicationStatus?.toLowerCase() === "approved") {
+      dispatch(setProvider(true));
+    }
+  }, [providerApplicationStatus, dispatch]);
+
+  const handleProviderRedirect = async () => {
+    try {
+      const latestUser = await userService.fetchProfile();
+      dispatch(setUser(latestUser));
+
+      if (latestUser.is_provider_active === false) {
+        ShowToast("Access Denied: Your provider account has been blocked.", "error");
+      } else {
+        navigate("/provider/dashboard");
+      }
+    } catch (error) {
+      console.error("Failed to check provider status:", error);
+      if (user?.is_provider_active === false) {
+        ShowToast("Access Denied: Your provider account is currently blocked.", "error");
+      } else {
+        navigate("/provider/dashboard");
+      }
+    }
+  };
 
   // Normalize status string
   const normalizedStatus = providerApplicationStatus?.toLowerCase();
@@ -103,7 +125,7 @@ const Home = () => {
       return (
         <Button
           variant="contained"
-          onClick={() => navigate("/provider/dashboard")}
+          onClick={handleProviderRedirect}
           sx={{
             backgroundColor: "green",
             ":hover": { backgroundColor: "darkgreen" },
@@ -158,8 +180,7 @@ const Home = () => {
       );
     }
 
-      // else if (!providerApplicationStatus ) {
-      else if (!providerApplicationStatus ) {
+    else if (!providerApplicationStatus && !isProvider) {
       return (
         <Button
           variant="contained"
@@ -192,29 +213,29 @@ const Home = () => {
         <Typography color="error">Failed to load services</Typography>
       ) : (
 
-      <Grid container spacing={2}>
-        {services.slice(0, 9).map((srv) => (
-          <Grid item xs={6} sm={4} md={2} key={srv.id}>
+        <Grid container spacing={2}>
+          {services.slice(0, 9).map((srv) => (
+            <Grid item xs={6} sm={4} md={2} key={srv.id}>
+              <ServiceCard
+                name={srv.name}
+                icon={srv.icon || ""}
+                onClick={() => navigate(`/#`)} // optional
+              />
+            </Grid>
+          ))}
+
+          <Grid item xs={6} sm={4} md={2}>
             <ServiceCard
-              name={srv.name}
-              icon={srv.icon || ""}
-              onClick={() => navigate(`/#`)} // optional
+              name="More Services"
+              icon={moreImg}
+              isMore
+              onClick={() => navigate("/services")}
             />
           </Grid>
-        ))}
-
-        <Grid item xs={6} sm={4} md={2}>
-          <ServiceCard
-            name="More Services"
-            icon={moreImg}
-            isMore
-            onClick={() => navigate("/services")}
-          />
         </Grid>
-      </Grid>
 
       )}
-      
+
 
       {/* Call to Action */}
       <Box
