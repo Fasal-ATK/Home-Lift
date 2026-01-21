@@ -21,8 +21,10 @@ const PrivateRoute = ({ children, providerOnly = false }) => {
   }
 
   // Provider route check
-  if (isProviderRoute && !isProvider) {
-    return <Navigate to="/home" replace />;
+  if (isProviderRoute) {
+    if (!isProvider || user?.is_provider_active === false) {
+      return <Navigate to="/home" replace />;
+    }
   }
 
   // Redirect admin away from non-admin pages
