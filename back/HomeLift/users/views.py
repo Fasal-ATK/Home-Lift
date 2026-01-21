@@ -399,6 +399,11 @@ class ChangePasswordView(APIView):
 class ProfileUpdateView(APIView):
     permission_classes = [IsAuthenticated]
     
+    def get(self, request):
+        """Fetch current user profile data"""
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
     def put(self, request):
         """Full update of profile"""
         try:

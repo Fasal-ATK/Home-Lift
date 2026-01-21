@@ -56,8 +56,10 @@ class ProviderApplicationCreateAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+from rest_framework.permissions import IsAuthenticated
+
 class ProviderApplicationStatusView(APIView):
-    permission_classes = [IsNormalUser | IsProviderUser]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         # Get the latest application for the user
@@ -67,7 +69,8 @@ class ProviderApplicationStatusView(APIView):
             # No application exists
             return Response({
                 "status": None,
-                "rejection_reason": None
+                "rejection_reason": None,
+                "is_active": True
             }, status=status.HTTP_200_OK)
 
         # Use serializer for validation/formatting but only return needed fields
@@ -76,8 +79,16 @@ class ProviderApplicationStatusView(APIView):
 
         response_data = {
             "status": data["status"],
-            "rejection_reason": data["rejection_reason"]
+            "rejection_reason": data["rejection_reason"],
+            "is_active": True  # Default
         }
+
+        # If approved, get the actual active status
+        if data["status"] == "approved":
+            from .models import ProviderDetails
+            details = ProviderDetails.objects.filter(user=request.user).first()
+            if details:
+                response_data["is_active"] = details.is_active
 
         return Response(response_data, status=status.HTTP_200_OK)
 
