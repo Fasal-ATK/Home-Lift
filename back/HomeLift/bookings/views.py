@@ -86,11 +86,12 @@ class ProviderBookingsView(APIView):
         # list of service ids the provider is approved for
         allowed_services = list(provider_details.services.values_list("service_id", flat=True))
 
-        # Query: pending, unassigned, matching allowed services, excluding bookings created by this provider user
+        # Query: pending, unassigned, matching allowed services, PAID, excluding bookings created by this provider user
         qs = Booking.objects.filter(
             status="pending",
             provider__isnull=True,
-            service_id__in=allowed_services
+            service_id__in=allowed_services,
+            is_advance_paid=True
         ).exclude(
             user=provider
         ).select_related("service", "provider", "address", "user").order_by("-created_at")
@@ -118,7 +119,8 @@ class ProviderPendingBookingsView(APIView):
         bookings_qs = Booking.objects.filter(
             service_id__in=allowed_services,
             status="pending",
-            provider__isnull=True
+            provider__isnull=True,
+            is_advance_paid=True
         ).select_related("service", "user").order_by("-created_at")
 
         serializer = BookingSerializer(bookings_qs, many=True, context={"request": request})

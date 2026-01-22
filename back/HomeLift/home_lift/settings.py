@@ -15,6 +15,7 @@ from pathlib import Path
 from decouple import config
 from datetime import timedelta
 import cloudinary
+import stripe
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -241,3 +242,10 @@ cloudinary.config(
 )
 DEFAULT_FILE_STORAGE = 'users.storage.NoDeleteCloudinaryStorage'
 MEDIA_URL = '/media/'
+
+
+# Stripe settings
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+
+#STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET')

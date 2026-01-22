@@ -26,7 +26,7 @@ class BookingSerializer(serializers.ModelSerializer):
             'full_name', 'phone',
             'address', 'address_details',
             'notes', 'booking_date', 'booking_time',
-            'status', 'price', 'advance',
+            'status', 'price', 'advance', 'is_advance_paid',
             'created_at', 'updated_at',
             # UI helpers
             'is_owner', 'is_assigned_to_user',

@@ -11,7 +11,7 @@ urlpatterns = [
     path('booking/', include('bookings.urls')),
     path('core/', include('core.urls')),
     # path('review/', include('reviews.urls')),
-    # path('payment/', include('payments.urls')),
+    path('payment/', include('payments.urls')),
     path('notification/', include('notifications.urls')),
 
 ]

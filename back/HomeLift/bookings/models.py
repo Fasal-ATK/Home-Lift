@@ -68,6 +68,8 @@ class Booking(models.Model):
         default="pending"
     )
 
+    is_advance_paid = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -75,7 +77,9 @@ class Booking(models.Model):
         """Automatically calculate advance before saving."""
         if self.price:
             calculated_advance = self.price * Decimal('0.02')
-            self.advance = min(calculated_advance, Decimal('200.00'))
+            capped_advance = min(calculated_advance, Decimal('200.00'))
+            # Stripe minimum is ₹50
+            self.advance = max(capped_advance, Decimal('50.00'))
         super().save(*args, **kwargs)
 
     def __str__(self):
