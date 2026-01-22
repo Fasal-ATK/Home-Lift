@@ -117,7 +117,6 @@ export default function WeekScheduleDemo() {
 
         // Map backend bookings to calendar events
         const mapped = data.map((b) => {
-          // Use YYYY-MM-DD strings for robust day calculation across timezones
           const wsISO = toISODate(weekStart);
           const bISO = b.booking_date;
 
@@ -126,11 +125,24 @@ export default function WeekScheduleDemo() {
 
           const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
 
-
-          // Calculate end time (fixed 1 hour for now)
           const [h, m] = b.booking_time.split(":").map(Number);
           const endH = (h + 1).toString().padStart(2, '0');
           const endT = `${endH}:${m.toString().padStart(2, '0')}`;
+
+          const getStatusColor = (status) => {
+            switch (status) {
+              case "completed":
+                return "#5ce267ff"; // Light Green
+              case "confirmed":
+                return "#fff172ff"; // Light Yellow
+              case "in_progress":
+                return "#4fb5ffff"; // Light Blue
+              case "cancelled":
+                return "#ff5555ff"; // Light Red
+              default:
+                return "#bebebeff"; // Default Light Grey
+            }
+          };
 
           return {
             id: b.id,
@@ -139,7 +151,7 @@ export default function WeekScheduleDemo() {
             end: endT,
             title: b.service_name,
             subtitle: b.full_name,
-            color: b.status === 'completed' ? '#edf7ed' : '#E7F64A', // Example coloring
+            color: getStatusColor(b.status),
           };
         });
 
@@ -160,6 +172,47 @@ export default function WeekScheduleDemo() {
   const goPreviousWeek = () => setWeekStart((s) => addDays(s, -7));
   const goNextWeek = () => setWeekStart((s) => addDays(s, 7));
   const goToday = () => setWeekStart(startOfWeekMonday(new Date()));
+
+  // Position events for overlaps
+  const positionedEvents = useMemo(() => {
+    // Group by day first
+    const byDay = {};
+    events.forEach((ev) => {
+      if (!byDay[ev.day]) byDay[ev.day] = [];
+      byDay[ev.day].push(ev);
+    });
+
+    const processed = [];
+    Object.keys(byDay).forEach((dayNum) => {
+      const dayEvents = byDay[dayNum].sort((a, b) => a.start.localeCompare(b.start));
+
+      // Simple clustering: if an event overlaps with ANY event in a cluster, it belongs to that cluster
+      let clusters = [];
+      dayEvents.forEach((ev) => {
+        let joined = false;
+        for (let i = 0; i < clusters.length; i++) {
+          if (clusters[i].some((existing) => ev.start < existing.end && ev.end > existing.start)) {
+            clusters[i].push(ev);
+            joined = true;
+            break;
+          }
+        }
+        if (!joined) clusters.push([ev]);
+      });
+
+      // Assign columns within each cluster
+      clusters.forEach((cluster) => {
+        cluster.forEach((ev, idx) => {
+          processed.push({
+            ...ev,
+            col: idx,
+            totalCols: cluster.length,
+          });
+        });
+      });
+    });
+    return processed;
+  }, [events]);
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: "auto", bgcolor: "#fff" }}>
@@ -299,20 +352,23 @@ export default function WeekScheduleDemo() {
 
             {/* Events */}
             <Box sx={{ position: "absolute", inset: 0 }}>
-              {events.map((ev) => {
+              {positionedEvents.map((ev) => {
                 // ev.day is 0..6 relative to Monday of a week
                 if (ev.day < 0 || ev.day >= columnCount) return null;
 
                 const { topPx, heightPx } = computePxForEvent(ev.start, ev.end, dayStart, dayEnd, bodyHeight);
                 const leftPercent = ev.day * columnPercent;
 
+                const widthPercent = columnPercent / ev.totalCols;
+                const offsetPercent = ev.col * widthPercent;
+
                 return (
                   <Box
                     key={ev.id}
                     sx={{
                       position: "absolute",
-                      left: `calc(${leftPercent}% + ${horizontalGutterPx / 2}px)`,
-                      width: `calc(${columnPercent}% - ${horizontalGutterPx}px)`,
+                      left: `calc(${leftPercent + offsetPercent}% + ${horizontalGutterPx / 2}px)`,
+                      width: `calc(${widthPercent}% - ${horizontalGutterPx}px)`,
                       top: topPx, // removed headerHeight offset
                       height: heightPx,
                       bgcolor: ev.color,
@@ -323,12 +379,11 @@ export default function WeekScheduleDemo() {
                       alignItems: "center",
                       gap: 1,
                       cursor: "pointer",
+                      zIndex: 1,
+                      "&:hover": { zIndex: 2, boxShadow: "0 8px 18px rgba(0,0,0,0.15)" },
                     }}
                     onClick={() => navigate(`/provider/job-requests/details/${ev.id}`)}
                   >
-
-
-
                     <Box sx={{ overflow: "hidden" }}>
                       <Typography sx={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {ev.title}

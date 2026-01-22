@@ -215,7 +215,7 @@ const Home = () => {
 
         <Grid container spacing={2}>
           {services.slice(0, 9).map((srv) => (
-            <Grid item xs={6} sm={4} md={2} key={srv.id}>
+            <Grid size={{ xs: 6, sm: 4, md: 2 }} key={srv.id}>
               <ServiceCard
                 name={srv.name}
                 icon={srv.icon || ""}
@@ -224,7 +224,7 @@ const Home = () => {
             </Grid>
           ))}
 
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid size={{ xs: 6, sm: 4, md: 2 }}>
             <ServiceCard
               name="More Services"
               icon={moreImg}

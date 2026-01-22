@@ -25,11 +25,14 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProviderJobs,
   fetchPendingJobs,
+  fetchMyAppointments,
   acceptJob,
   jobsSelectors,
   selectProviderLoading,
   selectAcceptingIds,
+  selectMyAppointments,
 } from '../../redux/slices/provider/providerJobSlice';
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 export default function ProviderRequestsWithServices() {
   const navigate = useNavigate();
@@ -51,11 +54,26 @@ export default function ProviderRequestsWithServices() {
   // Local selected service
   const [selectedService, setSelectedService] = useState("All Services");
 
+  const myAppointments = useSelector(selectMyAppointments) || [];
+
   // Fetch jobs on mount
   useEffect(() => {
     dispatch(fetchProviderJobs());
     dispatch(fetchPendingJobs());
+    dispatch(fetchMyAppointments());
   }, [dispatch]);
+
+  // Helper to check for overlaps
+  const checkOverlap = (booking) => {
+    if (!booking.booking_date || !booking.booking_time) return false;
+
+    // Check against confirmed or in-progress appointments
+    return myAppointments.some(mine =>
+      mine.booking_date === booking.booking_date &&
+      mine.booking_time === booking.booking_time &&
+      ["confirmed", "in_progress"].includes(mine.status)
+    );
+  };
 
   // derive service list from jobs
   const serviceList = useMemo(() => {
@@ -268,6 +286,15 @@ export default function ProviderRequestsWithServices() {
                           <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
                             Summary: {r.notes}
                           </Typography>
+                        )}
+
+                        {checkOverlap(r) && (
+                          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 1, color: "error.main" }}>
+                            <WarningAmberIcon sx={{ fontSize: 16 }} />
+                            <Typography variant="caption" fontWeight={700}>
+                              Conflicts with your schedule
+                            </Typography>
+                          </Stack>
                         )}
                       </Box>
                     </Stack>

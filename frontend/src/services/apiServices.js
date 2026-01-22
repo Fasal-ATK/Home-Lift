@@ -118,8 +118,15 @@ export const providerJobService = {
         return response.data;
     },
 
+
+
     acceptJob: async (id) => {
         const response = await api.post(apiEndpoints.provider.jobs.accept(id));
+        return response.data;
+    },
+
+    updateBookingStatus: async (id, status) => {
+        const response = await api.patch(apiEndpoints.provider.jobs.updateStatus(id), { status });
         return response.data;
     },
 };

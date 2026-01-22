@@ -1,5 +1,5 @@
 // src/pages/provider/ProviderJobDetail.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Paper,
@@ -25,8 +25,13 @@ import {
   jobsSelectors,
   fetchJobDetail,
   acceptJob,
+  fetchPendingJobs,
+  fetchMyAppointments,
   selectAcceptingIds,
+  selectMyAppointments,
+  updateBookingStatus,
 } from "../../../redux/slices/provider/providerJobSlice";
+import { providerJobService } from "../../../services/apiServices";
 
 export default function ProviderJobDetail() {
   const { id } = useParams();
@@ -48,14 +53,16 @@ export default function ProviderJobDetail() {
 
   const acceptingIds = useSelector(selectAcceptingIds);
   const isAccepting = acceptingIds.map(String).includes(String(id));
+  const [starting, setStarting] = useState(false);
+  const [completing, setCompleting] = useState(false);
 
-  // keep booking in sync if store updates (e.g. fetched by other UI)
+  // keep booking in sync if store updates
   useEffect(() => {
-    if (!initialBooking && bookingFromStore) {
+    if (bookingFromStore) {
       setBooking(bookingFromStore);
       setLoading(false);
     }
-  }, [initialBooking, bookingFromStore]);
+  }, [bookingFromStore]);
 
   useEffect(() => {
     let mounted = true;
@@ -64,6 +71,8 @@ export default function ProviderJobDetail() {
     setLoading(true);
     setError(null);
 
+    dispatch(fetchPendingJobs());
+    dispatch(fetchMyAppointments());
     dispatch(fetchJobDetail(Number(id)))
       .unwrap()
       .then((res) => {
@@ -85,6 +94,18 @@ export default function ProviderJobDetail() {
     };
   }, [id, initialBooking, bookingFromStore, dispatch]);
 
+  const myAppointments = useSelector(selectMyAppointments) || [];
+
+  const hasOverlap = useMemo(() => {
+    if (!booking || !booking.booking_date || !booking.booking_time) return false;
+    return myAppointments.some(mine =>
+      mine.booking_date === booking.booking_date &&
+      mine.booking_time === booking.booking_time &&
+      mine.id !== booking.id &&
+      ["confirmed", "in_progress"].includes(mine.status)
+    );
+  }, [booking, myAppointments]);
+
   const goBack = () => navigate(-1);
 
   const onAccept = async () => {
@@ -101,6 +122,41 @@ export default function ProviderJobDetail() {
       }
     } catch (err) {
       setSnack({ open: true, message: err.message || "Failed to accept job", severity: "error" });
+    }
+  };
+
+  const onStart = async () => {
+    setStarting(true);
+    try {
+      const action = await dispatch(updateBookingStatus({ id, status: "in_progress" }));
+      if (updateBookingStatus.fulfilled.match(action)) {
+        setSnack({ open: true, message: "Job started!", severity: "success" });
+        // Redux update is handled by the thunk, local setBooking(bookingFromStore) will trigger
+      } else {
+        setSnack({ open: true, message: action.payload || "Failed to start job", severity: "error" });
+      }
+    } catch (err) {
+      console.error(err);
+      setSnack({ open: true, message: "An error occurred while starting the job", severity: "error" });
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const onComplete = async () => {
+    setCompleting(true);
+    try {
+      const action = await dispatch(updateBookingStatus({ id, status: "completed" }));
+      if (updateBookingStatus.fulfilled.match(action)) {
+        setSnack({ open: true, message: "Job marked as completed!", severity: "success" });
+      } else {
+        setSnack({ open: true, message: action.payload || "Failed to complete job", severity: "error" });
+      }
+    } catch (err) {
+      console.error(err);
+      setSnack({ open: true, message: "An error occurred while completing the job", severity: "error" });
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -149,6 +205,8 @@ export default function ProviderJobDetail() {
     "—";
 
   const canAccept = booking.status === "pending";
+  const canStart = booking.status === "confirmed";
+  const canComplete = booking.status === "in_progress";
 
   return (
     <Box sx={{ p: 3 }}>
@@ -166,6 +224,12 @@ export default function ProviderJobDetail() {
 
       <Paper sx={{ p: 3 }}>
         <Stack spacing={2}>
+          {hasOverlap && booking.status === "pending" && (
+            <Alert severity="warning" sx={{ mb: 1 }}>
+              Conflict detected: You already have an appointment at this date and time.
+            </Alert>
+          )}
+
           <Stack direction="row" spacing={3} alignItems="center">
             <Avatar sx={{ width: 56, height: 56 }}>{String(customer).charAt(0)}</Avatar>
             <Box>
@@ -237,14 +301,38 @@ export default function ProviderJobDetail() {
                 Back
               </Button>
 
-              <Button
-                variant="contained"
-                color="success"
-                onClick={onAccept}
-                disabled={!canAccept || isAccepting}
-              >
-                {isAccepting ? <CircularProgress size={18} /> : canAccept ? "Accept" : "Not available"}
-              </Button>
+              {canAccept && (
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={onAccept}
+                  disabled={isAccepting || hasOverlap}
+                >
+                  {isAccepting ? <CircularProgress size={18} /> : "Accept"}
+                </Button>
+              )}
+
+              {canStart && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={onStart}
+                  disabled={starting}
+                >
+                  {starting ? <CircularProgress size={18} /> : "Start Job"}
+                </Button>
+              )}
+
+              {canComplete && (
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={onComplete}
+                  disabled={completing}
+                >
+                  {completing ? <CircularProgress size={18} /> : "Complete Job"}
+                </Button>
+              )}
             </Stack>
           </Stack>
         </Stack>

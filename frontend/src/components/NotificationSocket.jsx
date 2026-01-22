@@ -9,48 +9,69 @@ const NotificationSocket = ({ userId }) => {
     useEffect(() => {
         if (!userId) return;
 
-        // Ensure this matches your backend URL. 
-        // If you are using a different port or host, update it here.
-        const socket = new WebSocket(`ws://127.0.0.1:8000/ws/notifications/${userId}/`);
+        const connectionId = Math.random().toString(36).substring(7);
+        let socket;
+        let reconnectTimeout;
+        const seenMessages = new Set(); // To prevent duplicate toasts in short window
 
-        socket.onopen = () => {
-            console.log('WebSocket Connected');
-        };
+        const connect = () => {
+            console.log(`[${connectionId}] Attempting WebSocket connection...`);
+            socket = new WebSocket(`ws://127.0.0.1:8000/ws/notifications/${userId}/`);
 
-        socket.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('Notification received:', data.message);
+            socket.onopen = () => {
+                console.log(`[${connectionId}] WebSocket Connected`);
+            };
 
-                // Show toast notification and update Redux
-                if (data.message) {
-                    toast.info(data.message);
-                    dispatch(addNotification({
-                        id: Date.now(), // Fallback ID for UI if not provided
-                        message: data.message,
-                        created_at: new Date().toISOString(),
-                        is_read: false,
-                        type: 'system', // Default type
-                        ...data
-                    }));
+            socket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log(`[${connectionId}] Notification received:`, data.message);
+
+                    if (data.message) {
+                        // Simple de-duplication: skip if message same as one seen in last 2 seconds
+                        if (seenMessages.has(data.message)) {
+                            console.log(`[${connectionId}] Skipping duplicate notification`);
+                            return;
+                        }
+                        seenMessages.add(data.message);
+                        setTimeout(() => seenMessages.delete(data.message), 2000);
+
+                        toast.info(data.message);
+                        dispatch(addNotification({
+                            id: Date.now(),
+                            message: data.message,
+                            created_at: new Date().toISOString(),
+                            is_read: false,
+                            type: 'system',
+                            ...data
+                        }));
+                    }
+                } catch (error) {
+                    console.error('Error parsing notification:', error);
                 }
-            } catch (error) {
-                console.error('Error parsing notification:', error);
-            }
+            };
+
+            socket.onclose = (e) => {
+                console.log(`[${connectionId}] WebSocket Disconnected`, e.code, e.reason);
+                if (e.code !== 1000) {
+                    // Try to reconnect after 3 seconds if not closed normally
+                    reconnectTimeout = setTimeout(connect, 3000);
+                }
+            };
+
+            socket.onerror = (e) => {
+                console.error(`[${connectionId}] WebSocket Error:`, e);
+                socket.close();
+            };
         };
 
-        socket.onclose = (e) => {
-            console.log('WebSocket Disconnected', e.code, e.reason);
-        };
-
-        socket.onerror = (e) => {
-            console.error('WebSocket Error:', e);
-        };
+        connect();
 
         return () => {
-            socket.close();
+            if (socket) socket.close();
+            if (reconnectTimeout) clearTimeout(reconnectTimeout);
         };
-    }, [userId]);
+    }, [userId, dispatch]);
 
     return null;
 };

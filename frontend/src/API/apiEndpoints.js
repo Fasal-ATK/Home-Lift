@@ -72,6 +72,7 @@ const apiEndpoints = {
             pending: '/provider/jobs/appointments/pending',
             myAppointments: '/provider/jobs/my-appointments/',
             accept: (id) => `/provider/jobs/appointments/${id}/accept/`,
+            updateStatus: (id) => `/provider/jobs/${id}/status/`,
         },
     },
 
