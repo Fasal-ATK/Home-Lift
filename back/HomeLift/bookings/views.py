@@ -152,6 +152,22 @@ class ProviderAcceptBookingView(APIView):
         if not provider_details.services.filter(service_id=booking.service_id).exists():
             return Response({"error": "You are not approved to accept this service."}, status=status.HTTP_403_FORBIDDEN)
 
+        # ✅ Overlap Check
+        # Check if this provider already has a confirmed/in_progress booking at the same date & time
+        # Assuming fixed 1-hour duration (3600 seconds)
+        overlapping_bookings = Booking.objects.filter(
+            provider=provider,
+            booking_date=booking.booking_date,
+            booking_time=booking.booking_time,
+            status__in=["confirmed", "in_progress"]
+        ).exists()
+
+        if overlapping_bookings:
+            return Response(
+                {"error": "You already have a confirmed or in-progress booking at this time."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         booking.provider = provider
         booking.status = "confirmed"
         booking.save(update_fields=["provider", "status", "updated_at"])
