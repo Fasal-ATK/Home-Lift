@@ -39,18 +39,22 @@ api.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-        
+
         const newToken = refreshResponse.data.access;
         localStorage.setItem('accessToken', newToken);
         originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
         return api(originalRequest);
-        
-        } catch (refreshError) {
-          // Don’t call backend logout here because refresh is already invalid
-          await performLogout(false);  // 🚀 skip backend API call
-          redirectAfterLogout();
-          return Promise.reject(refreshError);
-        }
+
+      } catch (refreshError) {
+        // Check if the user was an admin before logout
+        const userData = localStorage.getItem('user');
+        const isAdmin = userData ? JSON.parse(userData).is_staff : false;
+
+        // Don't call backend logout here because refresh is already invalid
+        await performLogout(false);  // 🚀 skip backend API call
+        redirectAfterLogout(isAdmin);
+        return Promise.reject(refreshError);
+      }
     }
 
     return Promise.reject(error);

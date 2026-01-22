@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { performLogout } from '../../utils/logoutHelper';
+import { performLogout, redirectAfterLogout } from '../../utils/logoutHelper';
 import { ShowToast } from '../common/Toast';
 import ConfirmModal from './Confirm';
+import { useSelector } from 'react-redux';
 
 const colorPresets = {
   red: {
@@ -22,11 +23,13 @@ const colorPresets = {
 
 const LogoutButton = ({ collapsed, color = 'red' }) => {
   const [open, setOpen] = useState(false);
+  const { isAdmin } = useSelector((state) => state.auth);
 
   const handleLogout = async () => {
     try {
       await performLogout(true);
       ShowToast('Logged out successfully', 'success');
+      redirectAfterLogout(isAdmin);
     } catch (error) {
       console.error(error);
       ShowToast('Logout failed. Try again.', 'error');
