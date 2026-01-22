@@ -76,6 +76,10 @@ const apiEndpoints = {
         },
     },
 
+    payment: {
+        createPaymentIntent: '/payment/create-payment-intent/',
+    },
+
 
 };
 

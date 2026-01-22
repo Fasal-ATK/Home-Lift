@@ -19,7 +19,7 @@ const ServiceDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const service = location.state?.service;
-  const allServices = useSelector((state) => state.services.list); 
+  const allServices = useSelector((state) => state.services.list);
 
   if (!service) {
     navigate("/services");
@@ -109,7 +109,7 @@ const ServiceDetails = () => {
         {relatedServices?.length ? (
           <Grid container spacing={2}>
             {relatedServices.map((srv) => (
-              <Grid item xs={6} sm={4} key={srv.id}>
+              <Grid size={{ xs: 6, sm: 4 }} key={srv.id}>
                 <Paper
                   sx={{
                     textAlign: "center",

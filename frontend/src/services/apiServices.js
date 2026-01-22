@@ -253,3 +253,10 @@ export const adminProviderManagementService = {
         });
     },
 };
+
+export const createPaymentIntent = async (booking_id) => {
+    const res = await api.post(apiEndpoints.payment.createPaymentIntent, {
+        booking_id,
+    });
+    return res.data.client_secret;
+};

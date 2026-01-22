@@ -201,13 +201,13 @@ export default function Addresses() {
 
       <Grid container spacing={2}>
         {(loading && addresses.length === 0) && (
-          <Grid item xs={12}><Typography>Loading...</Typography></Grid>
+          <Grid size={{ xs: 12 }}><Typography>Loading...</Typography></Grid>
         )}
         {!loading && addresses.length === 0 && (
-          <Grid item xs={12}><Typography color="text.secondary">No addresses found.</Typography></Grid>
+          <Grid size={{ xs: 12 }}><Typography color="text.secondary">No addresses found.</Typography></Grid>
         )}
         {addresses.map((addr) => (
-          <Grid item xs={12} md={6} lg={4} key={addr.id}>
+          <Grid size={{ xs: 12, md: 6, lg: 4 }} key={addr.id}>
             <Card variant="outlined" sx={{ height: "100%" }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={1} mb={1}>

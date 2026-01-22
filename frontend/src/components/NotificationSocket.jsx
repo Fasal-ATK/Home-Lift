@@ -12,27 +12,25 @@ const NotificationSocket = ({ userId }) => {
         const connectionId = Math.random().toString(36).substring(7);
         let socket;
         let reconnectTimeout;
-        const seenMessages = new Set(); // To prevent duplicate toasts in short window
+        let reconnectAttempts = 0;
+        const seenMessages = new Set();
 
         const connect = () => {
+            // Using window.location.hostname helps with 127.0.0.1 vs localhost mismatches
+            const host = window.location.hostname === 'localhost' ? 'localhost:8000' : '127.0.0.1:8000';
             console.log(`[${connectionId}] Attempting WebSocket connection...`);
-            socket = new WebSocket(`ws://127.0.0.1:8000/ws/notifications/${userId}/`);
+            socket = new WebSocket(`ws://${host}/ws/notifications/${userId}/`);
 
             socket.onopen = () => {
                 console.log(`[${connectionId}] WebSocket Connected`);
+                reconnectAttempts = 0; // Reset on successful connection
             };
 
             socket.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    console.log(`[${connectionId}] Notification received:`, data.message);
-
                     if (data.message) {
-                        // Simple de-duplication: skip if message same as one seen in last 2 seconds
-                        if (seenMessages.has(data.message)) {
-                            console.log(`[${connectionId}] Skipping duplicate notification`);
-                            return;
-                        }
+                        if (seenMessages.has(data.message)) return;
                         seenMessages.add(data.message);
                         setTimeout(() => seenMessages.delete(data.message), 2000);
 
@@ -52,15 +50,27 @@ const NotificationSocket = ({ userId }) => {
             };
 
             socket.onclose = (e) => {
-                console.log(`[${connectionId}] WebSocket Disconnected`, e.code, e.reason);
-                if (e.code !== 1000) {
-                    // Try to reconnect after 3 seconds if not closed normally
-                    reconnectTimeout = setTimeout(connect, 3000);
+                // Don't log or reconnect if it was a normal closure (1000) 
+                // or if the component is unmounting (handled by cleanup)
+                if (e.code === 1000) {
+                    console.log(`[${connectionId}] WebSocket Closed Normally`);
+                    return;
                 }
+
+                console.log(`[${connectionId}] WebSocket Disconnected ${e.code}`);
+
+                // Exponential backoff for reconnection
+                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
+                reconnectAttempts++;
+                reconnectTimeout = setTimeout(connect, delay);
             };
 
             socket.onerror = (e) => {
-                console.error(`[${connectionId}] WebSocket Error:`, e);
+                // Check if connection was ever established to distinguish between
+                // general errors and initial connection failures
+                if (socket.readyState === WebSocket.OPEN) {
+                    console.error(`[${connectionId}] WebSocket Runtime Error:`, e);
+                }
                 socket.close();
             };
         };
@@ -68,7 +78,13 @@ const NotificationSocket = ({ userId }) => {
         connect();
 
         return () => {
-            if (socket) socket.close();
+            if (socket) {
+                // Only close if it's not already closed
+                if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+                    socket.onclose = null; // Prevent the close handler from triggering a reconnect
+                    socket.close(1000);
+                }
+            }
             if (reconnectTimeout) clearTimeout(reconnectTimeout);
         };
     }, [userId, dispatch]);

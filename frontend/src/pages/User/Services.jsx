@@ -84,7 +84,7 @@ function Services() {
 
       {/* Categories */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={4} md={2}>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
           <Card
             name="All Services"
             icon={allCategory}
@@ -94,7 +94,7 @@ function Services() {
         </Grid>
 
         {categories.map((cat) => (
-          <Grid item xs={6} sm={4} md={2} key={cat.id}>
+          <Grid size={{ xs: 6, sm: 4, md: 2 }} key={cat.id}>
             <Card
               name={cat.name}
               icon={cat.icon}
@@ -117,7 +117,7 @@ function Services() {
           <Typography>Loading...</Typography>
         ) : (
           filteredServices.map((srv) => (
-            <Grid item xs={6} sm={4} md={2} key={srv.id}>
+            <Grid size={{ xs: 6, sm: 4, md: 2 }} key={srv.id}>
               <Card
                 name={srv.name}
                 icon={srv.icon}
