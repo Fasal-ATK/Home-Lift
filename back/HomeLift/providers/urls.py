@@ -8,11 +8,13 @@ from .views import (
 
     ProviderDetailAPIView,
     ProvidersListAPIView,
+    ProviderMeView,
 )
 
 urlpatterns = [
     path('apply/', ProviderApplicationCreateAPIView.as_view()),
     path('status/', ProviderApplicationStatusView.as_view()),
+    path('me/', ProviderMeView.as_view()),
 
     path('jobs/',include('bookings.urls')),
 
@@ -22,4 +24,5 @@ urlpatterns = [
     path('list/', ProvidersListAPIView.as_view()),
     path('update/<int:id>/', ProviderDetailAPIView.as_view())
 ]
+
 

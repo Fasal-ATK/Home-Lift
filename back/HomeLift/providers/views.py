@@ -172,3 +172,20 @@ class ProviderDetailAPIView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+# ------------------------------
+# Get Current Provider Details (Me)
+# ------------------------------
+class ProviderMeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            provider = ProviderDetails.objects.get(user=request.user)
+        except ProviderDetails.DoesNotExist:
+            return Response({"detail": "Provider profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ProviderDetailsSerializer(provider)
+        return Response(serializer.data, status=status.HTTP_200_OK)

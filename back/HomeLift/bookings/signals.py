@@ -178,5 +178,28 @@ def booking_post_save(sender, instance, created, **kwargs):
             except Exception:
                 logger.exception("Error while preparing confirmed notifications for booking pk=%s", instance.pk)
 
+        # ---------- completed ----------
+        if instance.status == "completed" and prev_status != "completed":
+            try:
+                service_name = getattr(instance.service, "name", "service")
+                title = "Service Completed"
+                message = (
+                    f"Your service for {service_name} has been marked as completed. "
+                    f"Please rate your experience and leave a review!"
+                )
+
+                safe_create_notification(
+                    recipient=instance.user,
+                    sender=None,  # System notification
+                    type='booking',
+                    title=title,
+                    message=message,
+                    content_type=booking_ct,
+                    object_id=instance.pk
+                )
+            except Exception:
+                logger.exception("Failed to schedule completion notification for booking pk=%s", instance.pk)
+
+
     except Exception:
         logger.exception("Error while handling booking post_save for booking pk=%s", getattr(instance, "pk", None))
