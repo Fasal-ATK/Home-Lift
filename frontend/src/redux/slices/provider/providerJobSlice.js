@@ -43,17 +43,7 @@ export const fetchMyAppointments = createAsyncThunk(
   }
 );
 
-export const fetchPendingJobs = createAsyncThunk(
-  "providerJobs/fetchPendingJobs",
-  async (_, { rejectWithValue }) => {
-    try {
-      const data = await providerJobService.getPendingJobs();
-      return data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data || err.message || "Failed to fetch pending jobs");
-    }
-  }
-);
+
 
 // Uses bookingService.getBookingDetails (apiServices unchanged)
 export const fetchJobDetail = createAsyncThunk(
@@ -125,18 +115,7 @@ const slice = createSlice({
         state.error = action.payload || "Failed to fetch provider jobs";
       })
 
-      // fetchPendingJobs
-      .addCase(fetchPendingJobs.pending, (state) => {
-        state.pendingLoading = true;
-      })
-      .addCase(fetchPendingJobs.fulfilled, (state, action) => {
-        state.pendingLoading = false;
-        jobsAdapter.upsertMany(state, action.payload || []);
-      })
-      .addCase(fetchPendingJobs.rejected, (state, action) => {
-        state.pendingLoading = false;
-        state.error = action.payload || "Failed to fetch pending jobs";
-      })
+
 
       // fetchJobDetail
       .addCase(fetchJobDetail.pending, (state) => {

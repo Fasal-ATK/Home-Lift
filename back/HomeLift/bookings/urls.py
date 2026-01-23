@@ -2,7 +2,6 @@ from django.urls import path
 from .views import (
     BookingListCreateView,
     ProviderBookingsView,
-    ProviderPendingBookingsView,
     ProviderAssignedBookingsView,
     ProviderAcceptBookingView,
     AdminBookingsView,
@@ -21,8 +20,8 @@ urlpatterns = [
     # -------------------------
     # PROVIDER ROUTES
     # -------------------------
+    
     path("appointments/", ProviderBookingsView.as_view(), name="provider-bookings"),
-    path("appointments/pending/", ProviderPendingBookingsView.as_view(), name="provider-pending-bookings"),
     path("my-appointments/", ProviderAssignedBookingsView.as_view(), name="provider-my-appointments"),
     path("appointments/<int:pk>/accept/", ProviderAcceptBookingView.as_view(), name="provider-accept-booking"),
 

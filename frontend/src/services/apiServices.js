@@ -108,10 +108,7 @@ export const providerJobService = {
         return response.data;
     },
 
-    getPendingJobs: async () => {
-        const response = await api.get(apiEndpoints.provider.jobs.pending);
-        return response.data;
-    },
+
 
     getMyAppointments: async () => {
         const response = await api.get(apiEndpoints.provider.jobs.myAppointments);

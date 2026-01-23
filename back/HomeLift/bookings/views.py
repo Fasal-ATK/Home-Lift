@@ -91,39 +91,12 @@ class ProviderBookingsView(APIView):
             status="pending",
             provider__isnull=True,
             service_id__in=allowed_services,
-            is_advance_paid=True
+            # is_advance_paid=True  # Uncomment to enforce payment before showing to providers
         ).exclude(
             user=provider
         ).select_related("service", "provider", "address", "user").order_by("-created_at")
 
         serializer = BookingSerializer(qs, many=True, context={"request": request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class ProviderPendingBookingsView(APIView):
-    """
-    GET: Pending bookings which this provider is eligible to accept.
-    Permission: provider only.
-    """
-    permission_classes = [IsProviderUser]
-
-    def get(self, request):
-        user = request.user
-        try:
-            provider_details = user.provider_details
-        except Exception:
-            return Response({"error": "Provider profile not found."}, status=status.HTTP_400_BAD_REQUEST)
-
-        allowed_services = provider_details.services.values_list("service_id", flat=True)
-
-        bookings_qs = Booking.objects.filter(
-            service_id__in=allowed_services,
-            status="pending",
-            provider__isnull=True,
-            is_advance_paid=True
-        ).select_related("service", "user").order_by("-created_at")
-
-        serializer = BookingSerializer(bookings_qs, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

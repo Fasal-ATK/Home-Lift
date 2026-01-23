@@ -24,7 +24,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProviderJobs,
-  fetchPendingJobs,
+
   fetchMyAppointments,
   acceptJob,
   jobsSelectors,
@@ -59,7 +59,6 @@ export default function ProviderRequestsWithServices() {
   // Fetch jobs on mount
   useEffect(() => {
     dispatch(fetchProviderJobs());
-    dispatch(fetchPendingJobs());
     dispatch(fetchMyAppointments());
   }, [dispatch]);
 

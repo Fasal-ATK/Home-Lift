@@ -128,69 +128,69 @@ const Notifications = () => {
         </FormControl>
       </Box>
 
-{/* 🔔 Notification List */}
-{loading ? (
-  <Box display="flex" justifyContent="center" mt={6}>
-    <CircularProgress />
-  </Box>
-) : error ? (
-  <Typography color="error">
-    Failed to load notifications: {error}
-  </Typography>
-) : sortedNotifications.length === 0 ? (
-  <Typography>No notifications found.</Typography>
-) : (
-  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-    {sortedNotifications.map((note) => (
-      <Paper
-        key={note.id}
-        elevation={note.is_read ? 1 : 4}
-        onClick={() => handleOpenModal(note)}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          p: 2,
-          borderRadius: 2,
-          cursor: "pointer",
-          backgroundColor: note.is_read ? "#f8f9fa" : "#e8f1ff",
-          borderLeft: note.is_read
-            ? "5px solid #cfd8dc"
-            : "5px solid #007bff",
-          "&:hover": { boxShadow: 6 },
-          transition: "0.2s ease-in-out",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "flex-start" }}>
-          <Avatar sx={{ bgcolor: note.is_read ? "#90caf9" : "#007bff", mr: 3 }}>
-            <NotificationsIcon />
-          </Avatar>
-          <Box>
-            <Typography
-              variant="subtitle1"
-              fontWeight={note.is_read ? "500" : "bold"}
-              color={note.is_read ? "text.secondary" : "text.primary"}
-            >
-              {note.title || note.type.toUpperCase()}
-            </Typography>
-
-            <Typography variant="caption" color="text.secondary">
-              From: {note.sender_name || "System"} |{" "}
-              {new Date(note.created_at).toLocaleString()}
-            </Typography>
-          </Box>
+      {/* 🔔 Notification List */}
+      {loading ? (
+        <Box display="flex" justifyContent="center" mt={6}>
+          <CircularProgress />
         </Box>
+      ) : error ? (
+        <Typography color="error">
+          Failed to load notifications: {error}
+        </Typography>
+      ) : sortedNotifications.length === 0 ? (
+        <Typography>No notifications found.</Typography>
+      ) : (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {sortedNotifications.map((note) => (
+            <Paper
+              key={note.id}
+              elevation={note.is_read ? 1 : 4}
+              onClick={() => handleOpenModal(note)}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                p: 2,
+                borderRadius: 2,
+                cursor: "pointer",
+                backgroundColor: note.is_read ? "#f8f9fa" : "#e8f1ff",
+                borderLeft: note.is_read
+                  ? "5px solid #cfd8dc"
+                  : "5px solid #007bff",
+                "&:hover": { boxShadow: 6 },
+                transition: "0.2s ease-in-out",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                <Avatar sx={{ bgcolor: note.is_read ? "#90caf9" : "#007bff", mr: 3 }}>
+                  <NotificationsIcon />
+                </Avatar>
+                <Box>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={note.is_read ? "500" : "bold"}
+                    color={note.is_read ? "text.secondary" : "text.primary"}
+                  >
+                    {note.title || note.type.toUpperCase()}
+                  </Typography>
 
-        {/* ✅ Read/Unread Icon */}
-        {note.is_read ? (
-          <MarkEmailReadIcon sx={{ color: "#4caf50" }} />
-        ) : (
-          <MarkEmailUnreadIcon sx={{ color: "#ff9800" }} />
-        )}
-      </Paper>
-    ))}
-  </Box>
-)}
+                  <Typography variant="caption" color="text.secondary">
+                    From: {note.sender_name || "System"} |{" "}
+                    {new Date(note.created_at).toLocaleString()}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* ✅ Read/Unread Icon */}
+              {note.is_read ? (
+                <MarkEmailReadIcon sx={{ color: "#4caf50" }} />
+              ) : (
+                <MarkEmailUnreadIcon sx={{ color: "#ff9800" }} />
+              )}
+            </Paper>
+          ))}
+        </Box>
+      )}
       {/* 🧾 View Notification Modal */}
       <Dialog
         open={openModal}
@@ -209,9 +209,7 @@ const Notifications = () => {
             <DialogTitle
               sx={{ display: "flex", alignItems: "center", gap: 1 }}
             >
-              <Typography variant="h6" fontWeight="bold">
-                {selectedNote.title || "Notification"}
-              </Typography>
+              {selectedNote.title || "Notification"}
               <Box flexGrow={1} />
               <Tooltip
                 title={selectedNote.is_read ? "Read" : "Unread"}

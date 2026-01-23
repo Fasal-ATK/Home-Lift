@@ -9,6 +9,8 @@ from bookings.models import Booking
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
+    print("payload")
+    print(payload)
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
     endpoint_secret = getattr(settings, "STRIPE_WEBHOOK_SECRET", None)
 

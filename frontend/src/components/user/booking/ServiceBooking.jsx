@@ -27,7 +27,8 @@ const calcAdvance = (p) => {
   if (!p) return 0;
   const calculated = p * 0.02;
   const capped = Math.min(calculated, 200);
-  return Math.max(capped, 20).toFixed(2);
+  // Stripe minimum is ₹50
+  return Math.max(capped, 50).toFixed(2);
 };
 
 const BookingPage = () => {

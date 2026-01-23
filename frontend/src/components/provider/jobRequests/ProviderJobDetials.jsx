@@ -25,7 +25,7 @@ import {
   jobsSelectors,
   fetchJobDetail,
   acceptJob,
-  fetchPendingJobs,
+
   fetchMyAppointments,
   selectAcceptingIds,
   selectMyAppointments,
@@ -71,7 +71,6 @@ export default function ProviderJobDetail() {
     setLoading(true);
     setError(null);
 
-    dispatch(fetchPendingJobs());
     dispatch(fetchMyAppointments());
     dispatch(fetchJobDetail(Number(id)))
       .unwrap()
