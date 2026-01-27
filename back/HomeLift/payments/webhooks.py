@@ -22,7 +22,8 @@ def stripe_webhook(request):
         else:
             data = json.loads(payload)
             event = data
-    except (ValueError, stripe.error.SignatureVerificationError):
+    except (ValueError, stripe.error.SignatureVerificationError) as e:
+        print(f"⚠️ Webhook error: {e}")
         return HttpResponse(status=400)
 
     if event["type"] == "payment_intent.succeeded":
