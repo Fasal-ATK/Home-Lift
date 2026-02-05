@@ -462,8 +462,12 @@ class UserManageView(APIView):
     permission_classes = [IsAdminUserCustom]
 
     def get(self, request):
-        users = CustomUser.objects.filter(is_staff=False)
-        return Response(UserSerializer(users, many=True).data, status=status.HTTP_200_OK)
+        from core.pagination import StandardResultsSetPagination
+        users = CustomUser.objects.filter(is_staff=False).order_by('-id')
+        paginator = StandardResultsSetPagination()
+        result_page = paginator.paginate_queryset(users, request)
+        serializer = UserSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def patch(self, request, pk=None):
         user = get_object_or_404(CustomUser, id=pk, is_staff=False, is_provider=False)

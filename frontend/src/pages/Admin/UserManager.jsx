@@ -8,11 +8,13 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchCustomers,
   toggleCustomerActive,
+  selectTotalCustomersCount,
 } from "../../redux/slices/adminCustomerSlice";
 
 export default function UserManager() {
   const dispatch = useDispatch();
   const { customers, loading } = useSelector((state) => state.adminCustomers);
+  const totalCount = useSelector(selectTotalCustomersCount);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
@@ -21,12 +23,21 @@ export default function UserManager() {
     direction: "asc",
   });
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchCustomers());
-  }, [dispatch]);
+    const params = {
+      page,
+      search: searchTerm,
+      status: filter === 'all' ? undefined : filter
+    };
+    dispatch(fetchCustomers(params));
+  }, [dispatch, page, searchTerm, filter]);
 
   const handleSort = (key) => {
     setSortConfig((prev) => ({
@@ -46,24 +57,11 @@ export default function UserManager() {
       );
     }
     setConfirmOpen(false);
+    setSelectedRow(null);
   };
 
-  // Filtering
-  const filteredCustomers = customers.filter((c) => {
-    const matchesSearch = `${c.username} ${c.email} ${c.phone}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesFilter =
-      filter === "all"
-        ? true
-        : filter === "active"
-        ? c.is_active
-        : !c.is_active;
-    return matchesSearch && matchesFilter;
-  });
-
-  // Sorting
-  const sortedCustomers = [...filteredCustomers].sort((a, b) => {
+  // Client-side sorting for current page
+  const sortedCustomers = [...(customers || [])].sort((a, b) => {
     let valA = a[sortConfig.key];
     let valB = b[sortConfig.key];
     if (typeof valA === "string") {
@@ -114,19 +112,19 @@ export default function UserManager() {
 
   return (
     <Box p={3}>
-        <Typography
-          variant="h4"
-          fontFamily="monospace"
-          fontWeight="bold"
-          color="black"
-        >
-          Customer Management
-        </Typography>
+      <Typography
+        variant="h4"
+        fontFamily="monospace"
+        fontWeight="bold"
+        color="black"
+      >
+        Customer Management
+      </Typography>
 
       <SearchBarWithFilter
         placeholder="Search customers..."
-        onSearch={setSearchTerm}
-        onFilterChange={setFilter}
+        onSearch={(val) => { setSearchTerm(val); setPage(1); }}
+        onFilterChange={(val) => { setFilter(val); setPage(1); }}
       />
 
       <DataTable
@@ -135,15 +133,20 @@ export default function UserManager() {
         sortConfig={sortConfig}
         onSort={handleSort}
         loading={loading}
+        // Pagination
+        count={Math.ceil(totalCount / rowsPerPage)}
+        page={page}
+        onPageChange={(_, p) => setPage(p)}
+        totalItems={totalCount}
+        rowsPerPage={rowsPerPage}
       />
 
       <ConfirmModal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleConfirmToggle}
-        message={`Are you sure you want to ${
-          selectedRow?.is_active ? "Block" : "Unblock"
-        } "${selectedRow?.username}"?`}
+        message={`Are you sure you want to ${selectedRow?.is_active ? "Block" : "Unblock"
+          } "${selectedRow?.username}"?`}
         confirmLabel="Yes"
         cancelLabel="No"
       />

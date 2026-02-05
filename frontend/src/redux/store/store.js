@@ -4,13 +4,14 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import authReducer from '../slices/authSlice';
 import categoryReducer from '../slices/categorySlice';
 import serviceReducer from '../slices/serviceSlice';
-import adminCustomerReducer from '../slices/adminCustomerSlice';  
-import userReducer from '../slices/user/userSlice'; 
+import adminCustomerReducer from '../slices/adminCustomerSlice';
+import userReducer from '../slices/user/userSlice';
 import providerReducer from '../slices/admin/providerMngSlice';
 import applicationReducer from '../slices/admin/applicationsSlice';
 import notificationReducer from '../slices/notificationSlice';
 import bookingReducer from '../slices/bookingSlice';
 import providerJobsReducer from '../slices/provider/providerJobSlice';
+import adminBookingReducer from '../slices/admin/bookingMngSlice';
 
 
 // store.js
@@ -24,7 +25,8 @@ const appReducer = combineReducers({
   applications: applicationReducer,
   notifications: notificationReducer,
   bookings: bookingReducer,
-  
+  adminBookings: adminBookingReducer,
+
   providerJobs: providerJobsReducer,
 
 });

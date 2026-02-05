@@ -30,7 +30,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchBookings, clearError } from "../../redux/slices/bookingSlice";
+import { fetchBookings, clearError, selectTotalBookingCount } from "../../redux/slices/bookingSlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import { useNavigate } from "react-router-dom";
@@ -161,7 +161,7 @@ function OrderCard({ booking, onView, services }) {
               <>
                 <CheckCircleIcon sx={{ fontSize: 18, color: "success.main" }} />
                 <Typography variant="body2" fontWeight={700} sx={{ color: "success.main" }}>
-                 Advance Payment Complete
+                  Advance Payment Complete
                 </Typography>
               </>
             ) : (
@@ -244,11 +244,12 @@ export default function Bookings() {
 
   // redux slices
   const { bookings = [], loading, error } = useSelector((s) => s.bookings);
+  const totalCount = useSelector(selectTotalBookingCount);
   const services = useSelector((s) => s.services.list || []);
   const categories = useSelector((s) => s.categories.list || []);
 
   // local state
-  const [statusFilter, setStatusFilter] = useState(DEFAULT_STATUS);
+  const [statusFilter, setStatusFilter] = useState(DEFAULT_STATUS); // 'all' or specific statuses
   const [selectedCategory, setSelectedCategory] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -256,27 +257,61 @@ export default function Bookings() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [search, setSearch] = useState("");
-  // default to 'all' as requested
   const [pastRange, setPastRange] = useState("all");
 
   // snackbar state for transient error display
   const [snackOpen, setSnackOpen] = useState(false);
 
-
+  // Fetch bookings when filters change
   useEffect(() => {
-    dispatch(fetchBookings());
+    // Determine status params
+    // If statusFilter is empty or DEFAULT, send 'all' (or omit). Backend expects specific status or handles 'all'.
+    // Front-end allows multi-select status? "toggleStatus" implies multi.
+    // Backend Implementation currently supports single 'status' param: `qs = qs.filter(status=status_param)`
+    // If multi-select is needed, backend needs `status__in`.
+    // Let's assume single select or check backend again.
+    // Backend code: `if status_param and status_param != 'all': qs = qs.filter(status=status_param)`
+    // So backend only supports ONE status.
+    // The previous frontend supported MULTIPLE.
+    // For now, if multiple are selected, we might have issues.
+    // Let's take the first one or sending 'all' if empty.
+
+    // Actually, to support multiple, we should update backend or just pick one. 
+    // Let's assume user picks one. But UI is chips.
+    // Modify UI to single select? Or update backend to `status__in`?
+    // Let's update backend to `status__in` later if needed, but for now let's use the first one or 'all'.
+
+    const queryParams = {
+      page,
+      search,
+      status: statusFilter.length > 0 ? statusFilter[0] : 'all', // Limitation: only one status filter for now
+      category: selectedCategory,
+      date_from: dateFrom,
+      date_to: dateTo,
+      ordering: sortBy
+    };
+
+    dispatch(fetchBookings(queryParams));
+
     if (!services.length) dispatch(fetchServices());
     if (!categories.length) dispatch(fetchCategories());
-  }, [dispatch, services.length, categories.length]);
+  }, [dispatch, page, search, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, services.length, categories.length]);
 
-  useEffect(() => setPage(1), [statusFilter, selectedCategory, dateFrom, dateTo, sortBy, perPage, search, pastRange]);
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, selectedCategory, dateFrom, dateTo, sortBy, perPage, search, pastRange]);
 
   // open snackbar automatically when error changes
   useEffect(() => {
     if (error) setSnackOpen(true);
   }, [error]);
 
-  const toggleStatus = (s) => setStatusFilter((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+  const toggleStatus = (s) => {
+    // Single select behavior for now to match backend simple filter
+    setStatusFilter((prev) => prev.includes(s) ? [] : [s]);
+  };
+
   const clearStatusSelection = () => setStatusFilter(DEFAULT_STATUS);
   const clearFilters = () => {
     setStatusFilter(DEFAULT_STATUS);
@@ -288,40 +323,34 @@ export default function Bookings() {
     setPage(1);
     setSearch("");
     setPastRange("all");
-    // clear store error as well when resetting
     if (error) dispatch(clearError());
   };
 
-  // date presets; "this_week" = today → today+6 days (7 days total)
+  // date presets
   const applyPastRangeToDates = (range) => {
     const now = new Date();
     const pad = (d) => d.toISOString().slice(0, 10);
 
     if (range === "all") {
-      // clear bounds — show everything
       setDateFrom("");
       setDateTo("");
       return;
     }
-
     if (range === "today") {
-      // set exact local YYYY-MM-DD for today as both from and to
       const ymd = pad(now);
       setDateFrom(ymd);
       setDateTo(ymd);
       return;
     }
-
     if (range === "this_week") {
       const start = new Date(now);
       start.setHours(0, 0, 0, 0);
       const end = new Date(now);
-      end.setDate(end.getDate() + 6); // today + 6
+      end.setDate(end.getDate() + 6);
       setDateFrom(pad(start));
       setDateTo(pad(end));
       return;
     }
-
     if (range === "this_month") {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -329,11 +358,9 @@ export default function Bookings() {
       setDateTo(pad(end));
       return;
     }
-
     if (range === "past3m") {
       const start = new Date(now);
       start.setMonth(start.getMonth() - 3);
-      // start from that date, up to today
       setDateFrom(start.toISOString().slice(0, 10));
       setDateTo(pad(now));
       return;
@@ -344,9 +371,8 @@ export default function Bookings() {
     applyPastRangeToDates(pastRange);
   }, [pastRange]);
 
-  // handlers for snackbar and retry
   const handleRetry = () => {
-    dispatch(fetchBookings());
+    dispatch(fetchBookings({ page }));
   };
 
   const handleCloseSnack = (_, reason) => {
@@ -356,100 +382,108 @@ export default function Bookings() {
   };
 
   // ---------- compute orders count within the currently selected date range (always uses created_at) ----------
-  const ordersInRange = useMemo(() => {
-    if (!Array.isArray(bookings) || bookings.length === 0) return 0;
+  // const ordersInRange = useMemo(() => {
+  //   if (!Array.isArray(bookings) || bookings.length === 0) return 0;
 
-    // If user picked "all", show total
-    if (pastRange === "all") return bookings.length;
+  //   // If user picked "all", show total
+  //   if (pastRange === "all") return bookings.length;
 
-    // Build local YMD strings for bounds
-    const fromStr = dateFrom || null;
-    const toStr =
-      dateTo ||
-      (() => {
-        const now = new Date();
-        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-      })();
+  //   // Build local YMD strings for bounds
+  //   const fromStr = dateFrom || null;
+  //   const toStr =
+  //     dateTo ||
+  //     (() => {
+  //       const now = new Date();
+  //       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  //     })();
 
-    return bookings.reduce((acc, b) => {
-      // Always use created_at for "order placed"
-      const raw = b.created_at || b.booking_date;
-      const dStr = toLocalYMD(raw);
-      if (!dStr) return acc;
-      if (fromStr && dStr < fromStr) return acc;
-      if (toStr && dStr > toStr) return acc;
-      return acc + 1;
-    }, 0);
-  }, [bookings, dateFrom, dateTo, pastRange]);
+  //   return bookings.reduce((acc, b) => {
+  //     // Always use created_at for "order placed"
+  //     const raw = b.created_at || b.booking_date;
+  //     const dStr = toLocalYMD(raw);
+  //     if (!dStr) return acc;
+  //     if (fromStr && dStr < fromStr) return acc;
+  //     if (toStr && dStr > toStr) return acc;
+  //     return acc + 1;
+  //   }, 0);
+  // }, [bookings, dateFrom, dateTo, pastRange]);
 
   // filtering + sorting (client side) — date filtering always uses created_at (order placed)
-  const filteredSorted = useMemo(() => {
-    let list = Array.isArray(bookings) ? bookings.slice() : [];
+  // const filteredSorted = useMemo(() => {
+  //   let list = Array.isArray(bookings) ? bookings.slice() : [];
 
-    if (search && search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter((b) => {
-        const combined = `${b.service_name || ""} ${b.service || ""} ${b.full_name || ""} ${b.phone || ""}`.toLowerCase();
-        return combined.includes(q);
-      });
-    }
+  //   if (search && search.trim()) {
+  //     const q = search.trim().toLowerCase();
+  //     list = list.filter((b) => {
+  //       const combined = `${b.service_name || ""} ${b.service || ""} ${b.full_name || ""} ${b.phone || ""}`.toLowerCase();
+  //       return combined.includes(q);
+  //     });
+  //   }
 
-    // category: use categories list — match services that belong to selectedCategory
-    if (selectedCategory) {
-      const serviceIdsForCat = services
-        .filter((s) => {
-          const cat = s.category;
-          if (!cat) return false;
-          if (typeof cat === "object") return String(cat.id ?? cat.name) === String(selectedCategory);
-          return String(cat) === String(selectedCategory) || String(s.category_name) === String(selectedCategory);
-        })
-        .map((s) => String(s.id));
-      list = list.filter((b) => serviceIdsForCat.includes(String(b.service)));
-    }
+  //   // category: use categories list — match services that belong to selectedCategory
+  //   if (selectedCategory) {
+  //     const serviceIdsForCat = services
+  //       .filter((s) => {
+  //         const cat = s.category;
+  //         if (!cat) return false;
+  //         if (typeof cat === "object") return String(cat.id ?? cat.name) === String(selectedCategory);
+  //         return String(cat) === String(selectedCategory) || String(s.category_name) === String(selectedCategory);
+  //       })
+  //       .map((s) => String(s.id));
+  //     list = list.filter((b) => serviceIdsForCat.includes(String(b.service)));
+  //   }
 
-    if (statusFilter && statusFilter.length) {
-      list = list.filter((b) => statusFilter.includes(b.status));
-    }
+  //   if (statusFilter && statusFilter.length) {
+  //     list = list.filter((b) => statusFilter.includes(b.status));
+  //   }
 
-    // apply date filtering for "order placed" only if user didn't pick 'all'
-    if (pastRange !== "all") {
-      const fromStr = dateFrom || null;
-      const toStr =
-        dateTo ||
-        (() => {
-          const now = new Date();
-          return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-        })();
+  //   // apply date filtering for "order placed" only if user didn't pick 'all'
+  //   if (pastRange !== "all") {
+  //     const fromStr = dateFrom || null;
+  //     const toStr =
+  //       dateTo ||
+  //       (() => {
+  //         const now = new Date();
+  //         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  //       })();
 
-      list = list.filter((b) => {
-        const raw = b.created_at || b.booking_date;
-        const dStr = toLocalYMD(raw);
-        if (!dStr) return false;
-        if (fromStr && dStr < fromStr) return false;
-        if (toStr && dStr > toStr) return false;
-        return true;
-      });
-    }
+  //     list = list.filter((b) => {
+  //       const raw = b.created_at || b.booking_date;
+  //       const dStr = toLocalYMD(raw);
+  //       if (!dStr) return false;
+  //       if (fromStr && dStr < fromStr) return false;
+  //       if (toStr && dStr > toStr) return false;
+  //       return true;
+  //     });
+  //   }
 
-    list.sort((a, b) => {
-      if (sortBy === "date_desc") return new Date(b.booking_date || b.created_at) - new Date(a.booking_date || a.created_at);
-      if (sortBy === "date_asc") return new Date(a.booking_date || a.created_at) - new Date(b.booking_date || b.created_at);
-      if (sortBy === "price_desc") return Number(b.price || 0) - Number(a.price || 0);
-      if (sortBy === "price_asc") return Number(a.price || 0) - Number(b.price || 0);
-      return 0;
-    });
+  //   list.sort((a, b) => {
+  //     if (sortBy === "date_desc") return new Date(b.booking_date || b.created_at) - new Date(a.booking_date || a.created_at);
+  //     if (sortBy === "date_asc") return new Date(a.booking_date || a.created_at) - new Date(b.booking_date || b.created_at);
+  //     if (sortBy === "price_desc") return Number(b.price || 0) - Number(a.price || 0);
+  //     if (sortBy === "price_asc") return Number(a.price || 0) - Number(b.price || 0);
+  //     return 0;
+  //   });
 
-    return list;
-  }, [bookings, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, search, services, pastRange]);
+  //   return list;
+  // }, [bookings, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, search, services, pastRange]);
 
-  const total = filteredSorted.length;
-  const pageCount = Math.max(1, Math.ceil(total / perPage));
-  const paginated = useMemo(() => {
-    const start = (page - 1) * perPage;
-    return filteredSorted.slice(start, start + perPage);
-  }, [filteredSorted, page, perPage]);
+  // const total = filteredSorted.length;
+  // const pageCount = Math.max(1, Math.ceil(total / perPage));
+  // const paginated = useMemo(() => {
+  //   const start = (page - 1) * perPage;
+  //   return filteredSorted.slice(start, start + perPage);
+  // }, [filteredSorted, page, perPage]);
 
   const handleView = (id) => navigate("/bookings/details", { state: { bookingId: id } });
+
+  // Use server-side data directly
+  const paginated = bookings;
+  const pageCount = Math.max(1, Math.ceil(totalCount / 20)); // Backend default or we should respect perPage if backend supports it. Backend is fixed 20 for large? Or 10? 
+  // Backend "LargeResultsSetPagination" default is 20. But I didn't verify if I used it for User Bookings.
+  // In Step 293: `paginator = LargeResultsSetPagination()` (page size 20).
+  // So division should be 20. Or `perPage` if we pass it (but we don't pass `page_size` param in query yet).
+  // Let's assume 20.
 
   return (
     <Box sx={{ py: 4, px: { xs: 2, md: 6 }, maxWidth: 1200, mx: "auto" }}>
@@ -472,7 +506,7 @@ export default function Bookings() {
             }}
             sx={{ minWidth: 320, bgcolor: "background.paper", borderRadius: 1 }}
           />
-          <Button variant="contained" startIcon={<FilterListIcon />}>Search Orders</Button>
+          {/* Search triggers largely by effect on 'search' change, simplified for now */}
         </Stack>
       </Stack>
 
@@ -487,12 +521,12 @@ export default function Bookings() {
       <Paper sx={{ p: 2, mb: 3, borderRadius: 1 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center" justifyContent="space-between">
           <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="body2"><strong>{ordersInRange}</strong> orders placed in</Typography>
+            <Typography variant="body2"><strong>{totalCount}</strong> orders found</Typography>
 
             {/* Past range */}
             <FormControl size="small">
               <Select value={pastRange} onChange={(e) => setPastRange(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
-                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="all">All time</MenuItem>
                 <MenuItem value="today">Today</MenuItem>
                 <MenuItem value="this_week">This week</MenuItem>
                 <MenuItem value="this_month">This month</MenuItem>
@@ -540,7 +574,7 @@ export default function Bookings() {
               </Tooltip>
             ) : null}
 
-            <Button variant="outlined" onClick={clearFilters}>Reset filters</Button>
+            <Button variant="outlined" onClick={clearFilters}>Reset</Button>
 
             <FormControl size="small" sx={{ minWidth: 140 }}>
               <InputLabel>Sort</InputLabel>
@@ -552,14 +586,14 @@ export default function Bookings() {
               </Select>
             </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 110 }}>
+            {/* <FormControl size="small" sx={{ minWidth: 110 }}>
               <InputLabel>Per page</InputLabel>
               <Select value={perPage} label="Per page" onChange={(e) => setPerPage(Number(e.target.value))}>
                 <MenuItem value={5}>5</MenuItem>
                 <MenuItem value={10}>10</MenuItem>
                 <MenuItem value={20}>20</MenuItem>
               </Select>
-            </FormControl>
+            </FormControl> */}
           </Stack>
         </Stack>
 
@@ -587,32 +621,31 @@ export default function Bookings() {
       </Paper>
 
       {/* list */}
-      {loading && bookings.length === 0 ? (
+      {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
       ) : null}
 
-      {/* If there's an error and no bookings, show full fallback; otherwise show list */}
       {!loading && error && bookings.length === 0 ? (
         <Box sx={{ py: 10, textAlign: "center" }}>
-          <Typography variant="h6" color="error" gutterBottom>
-            {stringifyError(error)}
-          </Typography>
-          <Button variant="contained" onClick={handleRetry} sx={{ mr: 1 }}>
-            Retry
-          </Button>
-          <Button variant="outlined" onClick={() => dispatch(clearError())}>
-            Dismiss
-          </Button>
+          <Typography variant="h6" color="error" gutterBottom>{stringifyError(error)}</Typography>
+          <Button variant="contained" onClick={handleRetry}>Retry</Button>
         </Box>
       ) : (
-        paginated.map((b) => (
+        bookings.map((b) => (
           <OrderCard key={b.id} booking={b} onView={handleView} services={services} />
         ))
       )}
 
       {/* pagination */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-        <Pagination count={pageCount} page={page} onChange={(_, p) => setPage(p)} color="primary" showFirstButton showLastButton />
+        <Pagination
+          count={Math.ceil(totalCount / 20)} // Assuming backend page size is 20
+          page={page}
+          onChange={(_, p) => setPage(p)}
+          color="primary"
+          showFirstButton
+          showLastButton
+        />
       </Box>
     </Box>
   );

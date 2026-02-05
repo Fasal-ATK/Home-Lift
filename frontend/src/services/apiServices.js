@@ -84,8 +84,8 @@ export const bookingService = {
         return response.data;
     },
 
-    getBookings: async () => {
-        const response = await api.get(apiEndpoints.user.booking);
+    getBookings: async (params = {}) => {
+        const response = await api.get(apiEndpoints.user.booking, { params });
         return response.data;
     },
 
@@ -103,8 +103,8 @@ export const bookingService = {
 
 
 export const providerJobService = {
-    getProviderJobs: async () => {
-        const response = await api.get(apiEndpoints.provider.jobs.list);
+    getProviderJobs: async (params = {}) => {
+        const response = await api.get(apiEndpoints.provider.jobs.list, { params });
         return response.data;
     },
 
@@ -130,8 +130,8 @@ export const providerJobService = {
 
 
 export const notificationService = {
-    list: async () => {
-        const response = await api.get(apiEndpoints.notification.list);
+    list: async (params = {}) => {
+        const response = await api.get(apiEndpoints.notification.list, { params });
         return response.data;
     },
     markRead: async (id) => {
@@ -156,8 +156,8 @@ export const providerService = {
 
 export const adminServiceManagementService = {
     // Categories
-    getCategories: async () => {
-        const response = await api.get(apiEndpoints.adminServiceManagement.listCategories);
+    getCategories: async (params = {}) => {
+        const response = await api.get(apiEndpoints.adminServiceManagement.listCategories, { params });
         return response.data;
     },
     createCategory: async (data) => {
@@ -174,8 +174,8 @@ export const adminServiceManagementService = {
     },
 
     // Services
-    getServices: async () => {
-        const response = await api.get(apiEndpoints.adminServiceManagement.listServices);
+    getServices: async (params = {}) => {
+        const response = await api.get(apiEndpoints.adminServiceManagement.listServices, { params });
         return response.data;
     },
     createService: async (data) => {
@@ -194,8 +194,8 @@ export const adminServiceManagementService = {
 
 
 export const adminCustomerManagementService = {
-    getCustomers: async () => {
-        const response = await api.get(apiEndpoints.adminCustomerManagement.list);
+    getCustomers: async (params = {}) => {
+        const response = await api.get(apiEndpoints.adminCustomerManagement.list, { params });
         return response.data;
     },
     manageCustomer: async (id, data) => {
@@ -205,8 +205,8 @@ export const adminCustomerManagementService = {
 };
 
 export const adminProviderManagementService = {
-    getProviders: async () => {
-        const response = await api.get(apiEndpoints.adminProviderManagement.list);
+    getProviders: async (params = {}) => {
+        const response = await api.get(apiEndpoints.adminProviderManagement.list, { params });
         return response.data;
     },
 
@@ -218,9 +218,10 @@ export const adminProviderManagementService = {
         return response.data;
     },
 
-    getApplications: async () => {
+    getApplications: async (params = {}) => {
         const response = await api.get(
-            apiEndpoints.adminProviderManagement.applicationList
+            apiEndpoints.adminProviderManagement.applicationList,
+            { params }
         );
         return response.data;
     },
@@ -248,6 +249,13 @@ export const adminProviderManagementService = {
             status: "rejected",
             rejection_reason: extraData.rejection_reason || "Rejected by admin",
         });
+    },
+};
+
+export const adminBookingManagementService = {
+    getBookings: async (params = {}) => {
+        const response = await api.get(apiEndpoints.adminBookingManagement.list, { params });
+        return response.data;
     },
 };
 

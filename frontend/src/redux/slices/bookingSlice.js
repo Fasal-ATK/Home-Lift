@@ -104,6 +104,7 @@ const bookingSlice = createSlice({
   name: 'bookings',
   initialState: {
     bookings: [],
+    totalCount: 0, // NEW: for pagination
     currentBooking: null,
     loading: false,
     error: null,
@@ -128,14 +129,19 @@ const bookingSlice = createSlice({
         const payload = action.payload;
         if (Array.isArray(payload)) {
           state.bookings = payload;
+          state.totalCount = payload.length;
         } else if (payload && Array.isArray(payload.data)) {
           state.bookings = payload.data;
+          state.totalCount = payload.total || payload.count || payload.data.length;
         } else if (payload && Array.isArray(payload.results)) {
           state.bookings = payload.results;
+          state.totalCount = payload.count || payload.results.length;
         } else if (payload && typeof payload === 'object' && payload.id) {
           state.bookings = [payload, ...state.bookings];
+          state.totalCount = state.bookings.length;
         } else {
           state.bookings = payload ?? [];
+          state.totalCount = 0;
         }
       })
       .addCase(fetchBookings.rejected, (state, action) => {
@@ -251,4 +257,7 @@ const bookingSlice = createSlice({
 });
 
 export const { clearCurrentBooking, clearError } = bookingSlice.actions;
+
+export const selectTotalBookingCount = (state) => state.bookings.totalCount;
+
 export default bookingSlice.reducer;

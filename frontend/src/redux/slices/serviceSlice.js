@@ -5,8 +5,8 @@ import { adminServiceManagementService } from "../../services/apiServices";
 // ✅ Thunks
 export const fetchServices = createAsyncThunk(
   "services/fetchAll",
-  async () => {
-    return await adminServiceManagementService.getServices();
+  async (params = {}) => {
+    return await adminServiceManagementService.getServices(params);
   }
 );
 
@@ -37,6 +37,7 @@ const serviceSlice = createSlice({
   name: "services",
   initialState: {
     list: [],
+    totalCount: 0,
     loading: false,
     error: null,
   },
@@ -49,7 +50,9 @@ const serviceSlice = createSlice({
       })
       .addCase(fetchServices.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        // Reverted to simple array
+        state.list = action.payload || [];
+        state.totalCount = state.list.length;
       })
       .addCase(fetchServices.rejected, (state, action) => {
         state.loading = false;
@@ -59,6 +62,7 @@ const serviceSlice = createSlice({
       // Create
       .addCase(createService.fulfilled, (state, action) => {
         state.list.push(action.payload);
+        state.totalCount += 1;
       })
 
       // Update
@@ -71,8 +75,11 @@ const serviceSlice = createSlice({
       // Delete
       .addCase(deleteService.fulfilled, (state, action) => {
         state.list = state.list.filter((item) => item.id !== action.payload);
+        state.totalCount = Math.max(0, state.totalCount - 1);
       });
   },
 });
+
+export const selectTotalServicesCount = (state) => state.services.totalCount;
 
 export default serviceSlice.reducer;

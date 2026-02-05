@@ -10,7 +10,25 @@ class CategoryListCreateView(APIView):
     permission_classes = [AllowAnyCustom]
 
     def get(self, request):
-        categories = Category.objects.all()
+        from core.pagination import StandardResultsSetPagination
+        from django.db.models import Q
+        categories = Category.objects.all().order_by('name')
+
+        # Search
+        search_query = request.query_params.get('search')
+        if search_query:
+            categories = categories.filter(
+                Q(name__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+
+        # Status
+        status_filter = request.query_params.get('status')
+        if status_filter == 'active':
+            categories = categories.filter(is_active=True)
+        elif status_filter == 'inactive':
+            categories = categories.filter(is_active=False)
+
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -62,7 +80,31 @@ class ServiceListCreateView(APIView):
     permission_classes = [AllowAnyCustom]
 
     def get(self, request):
-        services = Service.objects.all()
+        from core.pagination import StandardResultsSetPagination
+        from django.db.models import Q
+        services = Service.objects.all().select_related('category').order_by('name')
+
+        # Search
+        search_query = request.query_params.get('search')
+        if search_query:
+            services = services.filter(
+                Q(name__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(category__name__icontains=search_query)
+            )
+
+        # Status
+        status_filter = request.query_params.get('status')
+        if status_filter == 'active':
+            services = services.filter(is_active=True)
+        elif status_filter == 'inactive':
+            services = services.filter(is_active=False)
+
+        # Category
+        category_filter = request.query_params.get('category')
+        if category_filter and category_filter != 'all':
+            services = services.filter(category__id=category_filter)
+
         serializer = ServiceSerializer(services, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

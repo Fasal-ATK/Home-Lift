@@ -18,6 +18,7 @@ const initialState = jobsAdapter.getInitialState({
   error: null,
   acceptError: null,
   acceptingIds: [], // per-job accept in-progress
+  totalCount: 0, // NEW: for pagination
 });
 
 /* Thunks */
@@ -31,11 +32,12 @@ export const fetchMyAppointments = createAsyncThunk(
       return rejectWithValue(err.response?.data || err.message || "Failed to fetch my appointments");
     }
   }
-); export const fetchProviderJobs = createAsyncThunk(
+);
+export const fetchProviderJobs = createAsyncThunk(
   "providerJobs/fetchProviderJobs",
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const data = await providerJobService.getProviderJobs();
+      const data = await providerJobService.getProviderJobs(params);
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message || "Failed to fetch provider jobs");
@@ -185,6 +187,7 @@ export const jobsSelectors = jobsAdapter.getSelectors((state) => state.providerJ
 export const selectProviderLoading = (state) => state.providerJobs.loading || state.providerJobs.pendingLoading || state.providerJobs.myAppointmentsLoading;
 export const selectAcceptingIds = (state) => state.providerJobs.acceptingIds;
 export const selectProviderError = (state) => state.providerJobs.error;
+export const selectProviderTotalCount = (state) => state.providerJobs.totalCount;
 export const selectMyAppointments = (state) => state.providerJobs.myAppointments;
 
 export default slice.reducer;

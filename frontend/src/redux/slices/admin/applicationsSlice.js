@@ -49,6 +49,7 @@ const applicationSlice = createSlice({
   name: "applications",
   initialState: {
     list: [],
+    totalCount: 0, // NEW: for pagination
     loading: false,
     actionLoading: false, // 👈 separate loader for approve/reject
     error: null,
@@ -65,7 +66,17 @@ const applicationSlice = createSlice({
       })
       .addCase(fetchApplications.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        const payload = action.payload;
+        if (Array.isArray(payload)) {
+          state.list = payload;
+          state.totalCount = payload.length;
+        } else if (payload.results) {
+          state.list = payload.results;
+          state.totalCount = payload.count;
+        } else {
+          state.list = payload || [];
+          state.totalCount = 0;
+        }
       })
       .addCase(fetchApplications.rejected, (state, action) => {
         state.loading = false;
@@ -111,5 +122,7 @@ const applicationSlice = createSlice({
       });
   },
 });
+
+export const selectApplicationTotalCount = (state) => state.applications.totalCount;
 
 export default applicationSlice.reducer;

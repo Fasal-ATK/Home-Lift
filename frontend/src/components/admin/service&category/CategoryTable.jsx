@@ -5,6 +5,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  selectTotalCategoriesCount,
 } from "../../../redux/slices/categorySlice";
 
 import {
@@ -27,10 +28,14 @@ function CategoryTable() {
 
   // ✅ Use Redux state
   const { list: rows, loading } = useSelector((state) => state.categories);
+  const totalCount = useSelector(selectTotalCategoriesCount);
 
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // const [page, setPage] = useState(1); // REMOVED
+  const rowsPerPage = 10;
 
   const [openModal, setOpenModal] = useState(false);
   const [isEditOpen, setEditOpen] = useState(false);
@@ -40,8 +45,12 @@ function CategoryTable() {
 
   // ---------------- Redux Fetch ----------------
   useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
+    const params = {
+      search: searchQuery,
+      status: statusFilter === 'all' ? undefined : statusFilter
+    };
+    dispatch(fetchCategories(params));
+  }, [dispatch, searchQuery, statusFilter]);
 
   const handleCreateCategory = async (values) => {
     const formData = new FormData();
@@ -51,6 +60,7 @@ function CategoryTable() {
 
     await dispatch(createCategory(formData));
     setOpenModal(false);
+    dispatch(fetchCategories()); // REMOVED page param
   };
 
   const handleUpdateCategory = async (values) => {
@@ -87,6 +97,7 @@ function CategoryTable() {
     await dispatch(deleteCategory(selectedRow.id));
     setDeleteConfirmOpen(false);
     setSelectedRow(null);
+    dispatch(fetchCategories());
   };
 
   // ---------------- Table & Sorting ----------------
@@ -178,25 +189,14 @@ function CategoryTable() {
     },
   ];
 
-  const filteredRows = rows
-    .filter((row) => {
-      if (!searchQuery) return true;
-      return (
-        row.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        row.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    })
-    .filter((row) => {
-      if (statusFilter === "all") return true;
-      return statusFilter === "active" ? row.is_active : !row.is_active;
-    })
-    .sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key])
-        return sortConfig.direction === "asc" ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key])
-        return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
+  // Client side sorting for current page
+  const sortedRows = [...(rows || [])].sort((a, b) => {
+    if (a[sortConfig.key] < b[sortConfig.key])
+      return sortConfig.direction === "asc" ? -1 : 1;
+    if (a[sortConfig.key] > b[sortConfig.key])
+      return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
 
   return (
     <Box>
@@ -223,14 +223,14 @@ function CategoryTable() {
 
       <SearchBarWithFilter
         placeholder="Search categories..."
-        onSearch={setSearchQuery}
-        onFilterChange={setStatusFilter}
+        onSearch={(val) => { setSearchQuery(val); }} // REMOVED setPage
+        onFilterChange={(val) => { setStatusFilter(val); }} // REMOVED setPage
       />
 
       <DataTable
         title="Service Categories"
         columns={columns}
-        rows={filteredRows}
+        rows={sortedRows}
         sortConfig={sortConfig}
         onSort={handleSort}
         loading={loading}
@@ -270,9 +270,8 @@ function CategoryTable() {
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleToggleActive}
-        message={`Are you sure you want to ${
-          selectedRow?.is_active ? "deactivate" : "activate"
-        } "${selectedRow?.name}"?`}
+        message={`Are you sure you want to ${selectedRow?.is_active ? "deactivate" : "activate"
+          } "${selectedRow?.name}"?`}
         confirmLabel="Yes"
         cancelLabel="No"
       />
@@ -287,7 +286,7 @@ function CategoryTable() {
         cancelLabel="Cancel"
         color="danger"
       />
-    </Box>
+    </Box >
   );
 }
 

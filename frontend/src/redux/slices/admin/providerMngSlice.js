@@ -5,11 +5,11 @@ import { adminProviderManagementService } from '../../../services/apiServices';
 // Fetch providers
 export const fetchProviders = createAsyncThunk(
   'providers/fetchProviders',
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      return await adminProviderManagementService.getProviders();
+      return await adminProviderManagementService.getProviders(params);
     } catch (err) {
-      return rejectWithValue(err.response?.data || 'Failed to fetch providers'); 
+      return rejectWithValue(err.response?.data || 'Failed to fetch providers');
     }
   }
 );
@@ -28,7 +28,7 @@ export const toggleProviderStatus = createAsyncThunk(
 
 const providerSlice = createSlice({
   name: 'providers',
-  initialState: { list: [], loading: false, error: null },
+  initialState: { list: [], totalCount: 0, loading: false, error: null },
   reducers: {},
   extraReducers: (builder) => {
     builder
@@ -38,7 +38,17 @@ const providerSlice = createSlice({
       })
       .addCase(fetchProviders.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        const payload = action.payload;
+        if (payload.results) {
+          state.list = payload.results;
+          state.totalCount = payload.count;
+        } else if (Array.isArray(payload)) {
+          state.list = payload;
+          state.totalCount = payload.length;
+        } else {
+          state.list = payload || [];
+          state.totalCount = 0;
+        }
       })
       .addCase(fetchProviders.rejected, (state, action) => {
         state.loading = false;
@@ -53,5 +63,7 @@ const providerSlice = createSlice({
       });
   },
 });
+
+export const selectTotalProvidersCount = (state) => state.providers.totalCount;
 
 export default providerSlice.reducer;

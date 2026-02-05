@@ -5,6 +5,7 @@ import {
   createService,
   updateService,
   deleteService,
+  selectTotalServicesCount,
 } from "../../../redux/slices/serviceSlice";
 import { fetchCategories } from "../../../redux/slices/categorySlice";
 
@@ -33,12 +34,16 @@ function ServiceTable() {
 
   // ✅ Redux state
   const { list: rows, loading } = useSelector((state) => state.services);
+  const totalCount = useSelector(selectTotalServicesCount);
   const { list: categories } = useSelector((state) => state.categories);
 
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+
+  // const [page, setPage] = useState(1); // REMOVED
+  const rowsPerPage = 10;
 
   const [openModal, setOpenModal] = useState(false);
   const [isEditOpen, setEditOpen] = useState(false);
@@ -48,9 +53,18 @@ function ServiceTable() {
 
   // ---------------- Fetch ----------------
   useEffect(() => {
-    dispatch(fetchServices());
-    dispatch(fetchCategories()); // categories needed for dropdown
-  }, [dispatch]);
+    const params = {
+      search: searchQuery,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      category: categoryFilter === 'all' ? undefined : categoryFilter
+    };
+    dispatch(fetchServices(params));
+
+    // Dispatch categories for dropdown (if empty)
+    if (!categories.length) {
+      dispatch(fetchCategories());
+    }
+  }, [dispatch, searchQuery, statusFilter, categoryFilter, categories.length]);
 
   // ---------------- CRUD ----------------
   const handleCreateService = async (values) => {
@@ -64,6 +78,7 @@ function ServiceTable() {
 
     await dispatch(createService(formData));
     setOpenModal(false);
+    dispatch(fetchServices()); // REMOVED page param
   };
 
   const handleUpdateService = async (values) => {
@@ -104,6 +119,7 @@ function ServiceTable() {
     await dispatch(deleteService(selectedRow.id));
     setDeleteConfirmOpen(false);
     setSelectedRow(null);
+    dispatch(fetchServices());
   };
 
   // ---------------- Table Config ----------------
@@ -205,30 +221,14 @@ function ServiceTable() {
     },
   ];
 
-  // ---------------- Filters ----------------
-  const filteredRows = rows
-    .filter((row) => {
-      if (!searchQuery) return true;
-      return (
-        row.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        row.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    })
-    .filter((row) => {
-      if (statusFilter === "all") return true;
-      return statusFilter === "active" ? row.is_active : !row.is_active;
-    })
-    .filter((row) => {
-      if (categoryFilter === "all") return true;
-      return row.category === categoryFilter;
-    })
-    .sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key])
-        return sortConfig.direction === "asc" ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key])
-        return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
+  // Client side sorting for page
+  const sortedRows = [...(rows || [])].sort((a, b) => {
+    if (a[sortConfig.key] < b[sortConfig.key])
+      return sortConfig.direction === "asc" ? -1 : 1;
+    if (a[sortConfig.key] > b[sortConfig.key])
+      return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
 
   return (
     <Box>
@@ -255,15 +255,15 @@ function ServiceTable() {
       <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
         <SearchBarWithFilter
           placeholder="Search services..."
-          onSearch={setSearchQuery}
-          onFilterChange={setStatusFilter}
+          onSearch={(val) => { setSearchQuery(val); }} // REMOVED setPage
+          onFilterChange={(val) => { setStatusFilter(val); }} // REMOVED setPage
         />
 
         <FormControl size="small" sx={{ minWidth: 180 }}>
           <InputLabel>Category</InputLabel>
           <Select
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            onChange={(e) => { setCategoryFilter(e.target.value); }} // REMOVED setPage
             label="Category"
           >
             <MenuItem value="all">All Categories</MenuItem>
@@ -274,12 +274,12 @@ function ServiceTable() {
             ))}
           </Select>
         </FormControl>
-      </Box>
+      </Box >
 
       <DataTable
         title="Services"
         columns={columns}
-        rows={filteredRows}
+        rows={sortedRows}
         sortConfig={sortConfig}
         onSort={handleSort}
         loading={loading}
@@ -348,9 +348,8 @@ function ServiceTable() {
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleToggleActive}
-        message={`Are you sure you want to ${
-          selectedRow?.is_active ? "deactivate" : "activate"
-        } "${selectedRow?.name}"?`}
+        message={`Are you sure you want to ${selectedRow?.is_active ? "deactivate" : "activate"
+          } "${selectedRow?.name}"?`}
         confirmLabel="Yes"
         cancelLabel="No"
       />
@@ -365,7 +364,7 @@ function ServiceTable() {
         cancelLabel="Cancel"
         color="danger"
       />
-    </Box>
+    </Box >
   );
 }
 

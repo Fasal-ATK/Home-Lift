@@ -39,10 +39,56 @@ class BookingListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        from core.pagination import LargeResultsSetPagination
         user = request.user
-        qs = Booking.objects.filter(user=user).select_related("service", "provider", "address", "user").order_by("-created_at")
-        serializer = BookingSerializer(qs, many=True, context={"request": request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        qs = Booking.objects.filter(user=user).select_related("service", "provider", "address", "user")
+
+        # Basic filtering
+        status_param = request.query_params.get('status')
+        if status_param and status_param != 'all':
+            qs = qs.filter(status=status_param)
+
+        search_query = request.query_params.get('search')
+        if search_query:
+            qs = qs.filter(
+                Q(service__name__icontains=search_query) | 
+                Q(provider__user__first_name__icontains=search_query) |
+                Q(provider__user__username__icontains=search_query) |
+                Q(id__icontains=search_query)
+            )
+
+        # Category filtering
+        category = request.query_params.get('category')
+        if category:
+            qs = qs.filter(service__category__id=category)
+
+        # Date filtering
+        date_from = request.query_params.get('date_from')
+        date_to = request.query_params.get('date_to')
+        if date_from:
+            qs = qs.filter(created_at__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(created_at__date__lte=date_to)
+
+        # Ordering
+        ordering = request.query_params.get('ordering', '-created_at')
+        # Map frontend sort keys if necessary, or just expect model fields
+        # Frontend sends: "date_desc", "date_asc", "price_desc", "price_asc"
+        if ordering == 'date_desc':
+            qs = qs.order_by('-created_at')
+        elif ordering == 'date_asc':
+            qs = qs.order_by('created_at')
+        elif ordering == 'price_desc':
+            qs = qs.order_by('-price')
+        elif ordering == 'price_asc':
+            qs = qs.order_by('price')
+        else:
+            qs = qs.order_by('-created_at')
+
+        paginator = LargeResultsSetPagination()
+        result_page = paginator.paginate_queryset(qs, request)
+        serializer = BookingSerializer(result_page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)
 
     @transaction.atomic
     def post(self, request):
@@ -96,8 +142,29 @@ class ProviderBookingsView(APIView):
             user=provider
         ).select_related("service", "provider", "address", "user").order_by("-created_at")
 
-        serializer = BookingSerializer(qs, many=True, context={"request": request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Filtering
+        service_filter = request.query_params.get('service')
+        if service_filter and service_filter != 'All Services':
+             # assuming service_filter is name, but ideally should be ID. 
+             # Frontend (JobRequests.jsx) sends name e.g. "Plumbing" or "All Services".
+             # Backend model Service has 'name'.
+             qs = qs.filter(service__name__iexact=service_filter)
+
+        search_query = request.query_params.get('search')
+        if search_query:
+            qs = qs.filter(
+                Q(user__first_name__icontains=search_query) |
+                Q(user__username__icontains=search_query) |
+                Q(service__name__icontains=search_query) |
+                Q(address__city__icontains=search_query) |
+                Q(id__icontains=search_query)
+            )
+
+        from core.pagination import LargeResultsSetPagination
+        paginator = LargeResultsSetPagination()
+        result_page = paginator.paginate_queryset(qs, request)
+        serializer = BookingSerializer(result_page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)
 
 
 class ProviderAcceptBookingView(APIView):
@@ -175,9 +242,38 @@ class AdminBookingsView(APIView):
     permission_classes = [IsAdminUserCustom]
 
     def get(self, request):
+        from core.pagination import LargeResultsSetPagination
+        from django.db.models import Q
+        
         qs = Booking.objects.all().select_related("service", "provider", "address", "user").order_by("-created_at")
-        serializer = BookingSerializer(qs, many=True, context={"request": request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Search
+        search_query = request.query_params.get('search')
+        if search_query:
+            qs = qs.filter(
+                Q(service__name__icontains=search_query) |
+                Q(provider__user__username__icontains=search_query) |
+                Q(user__username__icontains=search_query) |
+                Q(id__icontains=search_query)
+            )
+
+        # Status
+        status_param = request.query_params.get('status')
+        if status_param and status_param != 'all':
+            qs = qs.filter(status=status_param)
+
+        # Date filtering
+        date_from = request.query_params.get('date_from')
+        date_to = request.query_params.get('date_to')
+        if date_from:
+            qs = qs.filter(created_at__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(created_at__date__lte=date_to)
+
+        paginator = LargeResultsSetPagination()
+        result_page = paginator.paginate_queryset(qs, request)
+        serializer = BookingSerializer(result_page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)
 
 
 # ---------------------------------------------------------------------------

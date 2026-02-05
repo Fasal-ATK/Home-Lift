@@ -29,6 +29,7 @@ import {
   acceptJob,
   jobsSelectors,
   selectProviderLoading,
+  selectProviderTotalCount,
   selectAcceptingIds,
   selectMyAppointments,
 } from '../../redux/slices/provider/providerJobSlice';
@@ -42,6 +43,7 @@ export default function ProviderRequestsWithServices() {
   const jobs = useSelector((s) => jobsSelectors.selectAll(s)) || [];
   const loading = useSelector(selectProviderLoading);
   const acceptingIds = useSelector(selectAcceptingIds);
+  const totalItems = useSelector(selectProviderTotalCount);
 
   // Local UI state
   const [search, setSearch] = useState("");
@@ -49,18 +51,23 @@ export default function ProviderRequestsWithServices() {
 
   // Pagination
   const [page, setPage] = useState(1);
-  const perPage = 5;
+  const perPage = 20; // Matches backend LargeResultsSetPagination default
 
   // Local selected service
   const [selectedService, setSelectedService] = useState("All Services");
 
   const myAppointments = useSelector(selectMyAppointments) || [];
 
-  // Fetch jobs on mount
+  // Fetch jobs on mount/update
   useEffect(() => {
-    dispatch(fetchProviderJobs());
+    // Pass page and filters to fetchProviderJobs action
+    dispatch(fetchProviderJobs({
+      page,
+      search,
+      service: selectedService
+    }));
     dispatch(fetchMyAppointments());
-  }, [dispatch]);
+  }, [dispatch, page, selectedService, search]);
 
   // Helper to check for overlaps
   const checkOverlap = (booking) => {
@@ -74,35 +81,20 @@ export default function ProviderRequestsWithServices() {
     );
   };
 
-  // derive service list from jobs
+  // derive service list from jobs - NOTE: This only works for loaded jobs now. 
+  // Ideally should fetch distinct services from backend. 
+  // For now keeping client side derivation but it will only show services present in current page.
   const serviceList = useMemo(() => {
+    // We can hardcode specific services if needed or accept this limitation for now
+    // Or better, fetching services implies we should have a provider details call
     const arr = (jobs || []).map((d) => d.service_name || d.service?.name || "Service");
     const uniq = Array.from(new Set(arr));
     return ["All Services", ...uniq];
   }, [jobs]);
 
-  // Filter by search + selected service
-  const filtered = useMemo(() => {
-    const q = (search || "").trim().toLowerCase();
-    const list = jobs || [];
-    return list.filter((r) => {
-      const customerName = (r.customer_name || r.user_name || r.user?.name || "").toString().toLowerCase();
-      const serviceName = (r.service_name || r.service?.name || "").toString().toLowerCase();
-      const city = (r.city || r.address?.city || "").toString().toLowerCase();
-      const matchesSearch =
-        !q ||
-        customerName.includes(q) ||
-        serviceName.includes(q) ||
-        city.includes(q) ||
-        String(r.id).includes(q);
-
-      const matchesService = selectedService === "All Services" || (r.service_name || r.service?.name) === selectedService;
-      return matchesSearch && matchesService;
-    });
-  }, [jobs, search, selectedService]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
+  // Server-side filtered data is in 'jobs'
+  const paginated = jobs;
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
 
   // helpers
   const isAccepting = (id) => acceptingIds.map(String).includes(String(id));

@@ -4,8 +4,8 @@ import { adminServiceManagementService } from "../../services/apiServices";
 // ✅ Thunks (they only call the service layer)
 export const fetchCategories = createAsyncThunk(
   "categories/fetchAll",
-  async () => {
-    return await adminServiceManagementService.getCategories();
+  async (params = {}) => {
+    return await adminServiceManagementService.getCategories(params);
   }
 );
 
@@ -36,6 +36,7 @@ const categorySlice = createSlice({
   name: "categories",
   initialState: {
     list: [],
+    totalCount: 0,
     loading: false,
     error: null,
   },
@@ -48,7 +49,9 @@ const categorySlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        // Reverted to simple array
+        state.list = action.payload || [];
+        state.totalCount = state.list.length;
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.loading = false;
@@ -58,6 +61,7 @@ const categorySlice = createSlice({
       // Create
       .addCase(createCategory.fulfilled, (state, action) => {
         state.list.push(action.payload);
+        state.totalCount += 1;
       })
 
       // Update
@@ -70,8 +74,11 @@ const categorySlice = createSlice({
       // Delete
       .addCase(deleteCategory.fulfilled, (state, action) => {
         state.list = state.list.filter((item) => item.id !== action.payload);
+        state.totalCount = Math.max(0, state.totalCount - 1);
       });
   },
 });
+
+export const selectTotalCategoriesCount = (state) => state.categories.totalCount;
 
 export default categorySlice.reducer;

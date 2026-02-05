@@ -53,6 +53,10 @@ const apiEndpoints = {
     },
 
 
+    adminBookingManagement: {
+        list: '/admin/all/', // GET
+    },
+
     adminServiceManagement: {
         listCategories: '/admin/services/categories/',
         categoryDetail: (id) => `/admin/services/categories/${id}/`,

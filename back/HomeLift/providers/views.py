@@ -101,9 +101,12 @@ class ProviderApplicationListAPIView(APIView):
     permission_classes = [IsAdminUserCustom]
 
     def get(self, request, *args, **kwargs):
-        applications = ProviderApplication.objects.filter(status__in=['pending'])
-        serializer = ProviderApplicationSerializer(applications, many=True)   
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        from core.pagination import StandardResultsSetPagination
+        applications = ProviderApplication.objects.filter(status__in=['pending']).order_by('-created_at')
+        paginator = StandardResultsSetPagination()
+        result_page = paginator.paginate_queryset(applications, request)
+        serializer = ProviderApplicationSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class ProviderApplicationUpdateStatusAPIView(APIView):
@@ -139,9 +142,38 @@ class ProvidersListAPIView(APIView):
     permission_classes = [IsAdminUserCustom]
 
     def get(self, request, *args, **kwargs):
-        providers = ProviderDetails.objects.all()
-        serializer = ProviderDetailsSerializer(providers, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        from core.pagination import StandardResultsSetPagination
+        from django.db.models import Q
+        
+        providers = ProviderDetails.objects.all().select_related('user').order_by('-created_at')
+
+        # Filter: Search
+        search_query = request.query_params.get('search')
+        if search_query:
+            providers = providers.filter(
+                Q(user__username__icontains=search_query) |
+                Q(user__email__icontains=search_query) |
+                Q(user__first_name__icontains=search_query) |
+                Q(user__last_name__icontains=search_query) |
+                Q(user__phone_number__icontains=search_query)
+            )
+
+        # Filter: Status
+        status_filter = request.query_params.get('status') # 'active' or 'inactive' or 'all'
+        # Frontend ProviderManager sends 'active' or 'inactive'. If 'all', it ignores.
+        # Wait, Frontend ProviderManager sends:
+        # const matchesFilter = filter === 'all' ? true : filter === 'active' ? p.is_active : !p.is_active;
+        # So I should accept 'status' param as 'active' / 'inactive'.
+        
+        if status_filter == 'active':
+            providers = providers.filter(is_active=True)
+        elif status_filter == 'inactive':
+            providers = providers.filter(is_active=False)
+
+        paginator = StandardResultsSetPagination()
+        result_page = paginator.paginate_queryset(providers, request)
+        serializer = ProviderDetailsSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 class ProviderDetailAPIView(APIView):
     permission_classes = [IsAdminUserCustom]
