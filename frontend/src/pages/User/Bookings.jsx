@@ -27,6 +27,8 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchBookings, clearError } from "../../redux/slices/bookingSlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
@@ -149,6 +151,27 @@ function OrderCard({ booking, onView, services }) {
             <Button size="small" variant="text" sx={{ textTransform: "none" }}>
               Invoice ▾
             </Button>
+          </Stack>
+        </Box>
+
+        {/* Payment Status */}
+        <Box sx={{ minWidth: 160, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            {booking.is_advance_paid ? (
+              <>
+                <CheckCircleIcon sx={{ fontSize: 18, color: "success.main" }} />
+                <Typography variant="body2" fontWeight={700} sx={{ color: "success.main" }}>
+                 Advance Payment Complete
+                </Typography>
+              </>
+            ) : (
+              <>
+                <CancelIcon sx={{ fontSize: 18, color: "warning.main" }} />
+                <Typography variant="body2" fontWeight={700} sx={{ color: "warning.main" }}>
+                  Advance Payment Pending
+                </Typography>
+              </>
+            )}
           </Stack>
         </Box>
       </Box>
