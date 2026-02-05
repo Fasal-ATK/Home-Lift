@@ -233,6 +233,14 @@ CHANNEL_LAYERS = {
     },
 }
 
+# File Upload Size Limits
+MAX_IMAGE_SIZE_MB = 5  # 5 MB for images (profile pictures, icons, etc.)
+MAX_DOCUMENT_SIZE_MB = 10  # 10 MB for documents (PDFs, verification docs)
+
+# Django file upload settings
+DATA_UPLOAD_MAX_MEMORY_SIZE = 15 * 1024 * 1024  # 15 MB max request size
+FILE_UPLOAD_MAX_MEMORY_SIZE = 15 * 1024 * 1024  # 15 MB max file size
+
 # Cloudinary settings (default file storage)
 cloudinary.config( 
   cloud_name = config('CLOUDINARY_CLOUD_NAME'),

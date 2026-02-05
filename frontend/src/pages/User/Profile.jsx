@@ -114,6 +114,15 @@ export default function Profile() {
                 onChange={onImageChange}
                 maxNumber={maxNumber}
                 dataURLKey="data_url"
+                maxFileSize={5242880} // 5 MB in bytes
+                onError={(errors) => {
+                  if (errors?.maxFileSize) {
+                    ShowToast("Image size must be less than 5 MB", "error");
+                  }
+                  if (errors?.acceptType) {
+                    ShowToast("Please upload a valid image file", "error");
+                  }
+                }}
               >
                 {({ imageList, onImageUpload, onImageRemoveAll }) => (
                   <div style={{ textAlign: "center" }}>
@@ -190,7 +199,7 @@ export default function Profile() {
             </Box>
           </Card>
 
-          
+
         </Grid>
 
         {/* Right: General Info */}

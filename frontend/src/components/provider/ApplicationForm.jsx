@@ -35,27 +35,69 @@ const FileButton = styled(Button)(({ theme }) => ({
 }));
 
 // ================= FileUpload Component =================
-const FileUpload = ({ file, onChange, label, uniqueId }) => (
-  <>
-    <input
-      type="file"
-      accept=".pdf,.doc,.docx,.png,.jpg"
-      style={{ display: 'none' }}
-      id={uniqueId}
-      onChange={(e) => onChange(e.target.files[0])}
-    />
-    <label htmlFor={uniqueId}>
-      <FileButton variant="outlined" component="span" startIcon={<UploadFile />}>
-        {file ? file.name : label}
-      </FileButton>
-    </label>
-    {file && (
-      <IconButton size="small" color="error" onClick={() => onChange(null)}>
-        <Remove />
-      </IconButton>
-    )}
-  </>
-);
+const FileUpload = ({ file, onChange, label, uniqueId, maxSizeMB = 10 }) => {
+  const [error, setError] = React.useState(null);
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const handleFileChange = (selectedFile) => {
+    if (!selectedFile) {
+      onChange(null);
+      setError(null);
+      return;
+    }
+
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    if (selectedFile.size > maxSizeBytes) {
+      setError(`File size exceeds ${maxSizeMB} MB limit. Your file is ${formatFileSize(selectedFile.size)}.`);
+      onChange(null);
+      return;
+    }
+
+    setError(null);
+    onChange(selectedFile);
+  };
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx,.png,.jpg"
+          style={{ display: 'none' }}
+          id={uniqueId}
+          onChange={(e) => handleFileChange(e.target.files[0])}
+        />
+        <label htmlFor={uniqueId}>
+          <FileButton variant="outlined" component="span" startIcon={<UploadFile />}>
+            {file ? file.name : label}
+          </FileButton>
+        </label>
+        {file && (
+          <IconButton size="small" color="error" onClick={() => handleFileChange(null)}>
+            <Remove />
+          </IconButton>
+        )}
+      </Box>
+      {file && !error && (
+        <Typography variant="caption" color="text.secondary">
+          Size: {formatFileSize(file.size)} (Max: {maxSizeMB} MB)
+        </Typography>
+      )}
+      {error && (
+        <Typography variant="caption" color="error">
+          {error}
+        </Typography>
+      )}
+    </Box>
+  );
+};
 
 // ================= ServiceField Component =================
 const ServiceField = ({

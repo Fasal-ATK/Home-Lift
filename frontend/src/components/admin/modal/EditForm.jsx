@@ -7,7 +7,8 @@ import {
   TextField,
   Button,
   Stack,
-  IconButton
+  IconButton,
+  Alert
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -29,6 +30,15 @@ const EditFormModal = ({
     }, {});
 
   const [formValues, setFormValues] = useState(getInitialValues());
+  const [fileError, setFileError] = useState(null);
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
 
   // Reset when opening modal or initialData changes
   useEffect(() => {
@@ -39,7 +49,20 @@ const EditFormModal = ({
 
   const handleChange = (e, name, type) => {
     if (type === "file") {
-      setFormValues({ ...formValues, [name]: e.target.files[0] });
+      const file = e.target.files[0];
+      if (file) {
+        // Check file size (5 MB for images, 10 MB for documents)
+        const isImage = file.type.startsWith('image/');
+        const maxSizeMB = isImage ? 5 : 10;
+        const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+        if (file.size > maxSizeBytes) {
+          setFileError(`File size exceeds ${maxSizeMB} MB limit. Your file is ${formatFileSize(file.size)}.`);
+          return;
+        }
+        setFileError(null);
+      }
+      setFormValues({ ...formValues, [name]: file });
     } else {
       setFormValues({ ...formValues, [name]: e.target.value });
     }
@@ -133,25 +156,28 @@ const EditFormModal = ({
                       <Typography variant="body2">
                         Selected: {formValues[field.name].name}
                       </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Size: {formatFileSize(formValues[field.name].size)}
+                      </Typography>
                       {formValues[field.name].type?.startsWith(
                         "image/"
                       ) && (
-                        <Box
-                          component="img"
-                          src={URL.createObjectURL(
-                            formValues[field.name]
-                          )}
-                          alt="Preview"
-                          sx={{
-                            mt: 1,
-                            width: "100%",
-                            maxHeight: 200,
-                            objectFit: "contain",
-                            borderRadius: 1,
-                            border: "1px solid #ccc"
-                          }}
-                        />
-                      )}
+                          <Box
+                            component="img"
+                            src={URL.createObjectURL(
+                              formValues[field.name]
+                            )}
+                            alt="Preview"
+                            sx={{
+                              mt: 1,
+                              width: "100%",
+                              maxHeight: 200,
+                              objectFit: "contain",
+                              borderRadius: 1,
+                              border: "1px solid #ccc"
+                            }}
+                          />
+                        )}
                     </Box>
                   )}
                 </>
@@ -169,6 +195,13 @@ const EditFormModal = ({
               )}
             </Box>
           ))}
+
+          {/* File size error */}
+          {fileError && (
+            <Alert severity="error" onClose={() => setFileError(null)} sx={{ mb: 2 }}>
+              {fileError}
+            </Alert>
+          )}
 
           {/* Buttons */}
           <Stack

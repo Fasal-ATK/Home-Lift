@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from cloudinary.models import CloudinaryField
 from django.utils import timezone
 from datetime import timedelta
+from core.validators import validate_document_size
 
 # -----------------------------
 # Helper function for expiration
@@ -34,7 +35,8 @@ class ProviderApplication(models.Model):
         resource_type='auto',  # allows PDFs, images, docs
         blank=True,
         null=True,
-        help_text="Upload your verification document"
+        help_text="Upload your verification document (max 10 MB)",
+        validators=[validate_document_size]
     )
     status = models.CharField(
         max_length=10,
@@ -84,7 +86,8 @@ class ProviderApplicationService(models.Model):
         resource_type='auto',
         blank=True,
         null=True,
-        help_text="Optional service verification document"
+        help_text="Optional service verification document (max 10 MB)",
+        validators=[validate_document_size]
     )
     price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     experience_years = models.PositiveIntegerField(default=0)
@@ -153,7 +156,8 @@ class ProviderService(models.Model):
         folder='documents/provider_services',
         blank=True,
         null=True,
-        help_text="Optional service verification document"
+        help_text="Optional service verification document (max 10 MB)",
+        validators=[validate_document_size]
     )
     price = models.DecimalField(
         max_digits=10,
