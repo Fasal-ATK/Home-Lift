@@ -91,7 +91,7 @@ class ProviderBookingsView(APIView):
             status="pending",
             provider__isnull=True,
             service_id__in=allowed_services,
-            # is_advance_paid=True  # Uncomment to enforce payment before showing to providers
+            is_advance_paid=True  # Only show paid bookings to providers
         ).exclude(
             user=provider
         ).select_related("service", "provider", "address", "user").order_by("-created_at")
