@@ -69,6 +69,7 @@ class Booking(models.Model):
     )
 
     is_advance_paid = models.BooleanField(default=False)
+    is_refunded = models.BooleanField(default=False, help_text="Track if the advance has been refunded to wallet upon cancellation")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -14,6 +14,7 @@ urlpatterns = [
     
     path('notifications/', include('notifications.urls')),
     path('booking/', include('bookings.urls')),
+    path('wallet/', include('wallet.urls')),
 
     path('google-auth/', GoogleLoginAPIView.as_view(), name='google-login'),
 

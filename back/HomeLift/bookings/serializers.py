@@ -16,6 +16,7 @@ class BookingSerializer(serializers.ModelSerializer):
     # helpful flags for front-end
     is_owner = serializers.SerializerMethodField(read_only=True)
     is_assigned_to_user = serializers.SerializerMethodField(read_only=True)
+    remaining_payment = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Booking
@@ -26,12 +27,18 @@ class BookingSerializer(serializers.ModelSerializer):
             'full_name', 'phone',
             'address', 'address_details',
             'notes', 'booking_date', 'booking_time',
-            'status', 'price', 'advance', 'is_advance_paid',
+            'status', 'price', 'advance', 'remaining_payment',
+            'is_advance_paid', 'is_refunded',
             'created_at', 'updated_at',
             # UI helpers
             'is_owner', 'is_assigned_to_user',
         ]
-        read_only_fields = ('advance', 'created_at', 'updated_at', 'is_owner', 'is_assigned_to_user')
+        read_only_fields = ('advance', 'created_at', 'updated_at', 'is_owner', 'is_assigned_to_user', 'is_refunded', 'remaining_payment')
+
+    def get_remaining_payment(self, obj):
+        if obj.price and obj.advance:
+            return obj.price - obj.advance
+        return obj.price or 0
 
     def get_is_owner(self, obj):
         request = self.context.get('request', None)

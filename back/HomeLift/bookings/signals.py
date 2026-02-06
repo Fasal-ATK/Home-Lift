@@ -104,6 +104,7 @@ def booking_post_save(sender, instance, created, **kwargs):
 
         # ---------- cancelled ----------
         if instance.status == "cancelled" and prev_status != "cancelled":
+            # 1. Notify User
             try:
                 service_name = getattr(instance.service, "name", "service")
                 title = "Booking Cancelled"
@@ -123,6 +124,37 @@ def booking_post_save(sender, instance, created, **kwargs):
                 )
             except Exception:
                 logger.exception("Failed to schedule cancellation notification for booking pk=%s", instance.pk)
+
+            # 2. Process Refund to Wallet
+            if instance.is_advance_paid and not instance.is_refunded:
+                try:
+                    # Lazy import to avoid circular dependencies
+                    Wallet = apps.get_model('wallet', 'Wallet')
+                    WalletTransaction = apps.get_model('wallet', 'WalletTransaction')
+
+                    with transaction.atomic():
+                        wallet, _ = Wallet.objects.get_or_create(user=instance.user)
+                        wallet.balance += instance.advance
+                        wallet.save(update_fields=['balance'])
+
+                        WalletTransaction.objects.create(
+                            wallet=wallet,
+                            amount=instance.advance,
+                            transaction_type='credit',
+                            status='completed',
+                            description=f"Refund for cancelled booking #{instance.pk}"
+                        )
+                        
+                        # Mark as refunded to prevent duplicate refunds
+                        Booking.objects.filter(pk=instance.pk).update(is_refunded=True)
+                        instance.is_refunded = True
+                        
+                    # Force set it again just in case update() didn't reflect in memory immediately
+                    instance.is_refunded = True
+                        
+                    logger.info("Refunded advance of %s for booking %s to user %s wallet", instance.advance, instance.pk, instance.user.email)
+                except Exception:
+                    logger.exception("Failed to refund advance for booking %s", instance.pk)
 
         # ---------- confirmed ----------
         if instance.status == "confirmed" and prev_status != "confirmed":

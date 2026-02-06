@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     'payments',
     'core',
     'notifications',
+    'wallet',
     
     'rest_framework',
     'corsheaders',

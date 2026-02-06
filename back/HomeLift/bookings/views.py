@@ -315,6 +315,7 @@ class BookingDetailUpdateView(APIView):
 
         booking.status = "cancelled"
         booking.save(update_fields=["status", "updated_at"])
+        booking.refresh_from_db()
 
         return Response({"message": "Booking cancelled successfully.", "data": BookingSerializer(booking, context={"request": request}).data}, status=status.HTTP_200_OK)
 
@@ -349,6 +350,7 @@ class BookingStatusUpdateView(APIView):
 
         booking.status = new_status
         booking.save(update_fields=["status", "updated_at"])
+        booking.refresh_from_db()
 
         return Response({"message": "Status updated.", "data": BookingSerializer(booking, context={"request": request}).data}, status=status.HTTP_200_OK)
 
