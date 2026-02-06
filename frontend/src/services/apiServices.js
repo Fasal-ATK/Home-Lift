@@ -274,6 +274,29 @@ export const adminBookingManagementService = {
     },
 };
 
+export const offersService = {
+    getOffers: async (params = {}) => {
+        const response = await api.get(apiEndpoints.offers.list, { params });
+        return response.data;
+    },
+    createOffer: async (data) => {
+        const response = await api.post(apiEndpoints.offers.list, data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+    updateOffer: async (id, data) => {
+        const response = await api.patch(apiEndpoints.offers.detail(id), data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+    deleteOffer: async (id) => {
+        const response = await api.delete(apiEndpoints.offers.detail(id));
+        return response.data;
+    },
+};
+
 export const createPaymentIntent = async (booking_id) => {
     const res = await api.post(apiEndpoints.payment.createPaymentIntent, {
         booking_id,

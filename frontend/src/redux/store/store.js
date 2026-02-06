@@ -13,6 +13,7 @@ import bookingReducer from '../slices/bookingSlice';
 import providerJobsReducer from '../slices/provider/providerJobSlice';
 import adminBookingReducer from '../slices/admin/bookingMngSlice';
 import walletReducer from '../slices/walletSlice';
+import offersReducer from '../slices/admin/offersSlice';
 
 // store.js
 const appReducer = combineReducers({
@@ -28,6 +29,7 @@ const appReducer = combineReducers({
   adminBookings: adminBookingReducer,
   providerJobs: providerJobsReducer,
   wallet: walletReducer,
+  offers: offersReducer,
 });
 
 const rootReducer = (state, action) => {

@@ -60,6 +60,11 @@ const apiEndpoints = {
         updateStatus: (id) => `/admin/bookings/${id}/status/`,
     },
 
+    offers: {
+        list: '/admin/offers/admin/all/', // GET, POST
+        detail: (id) => `/admin/offers/admin/${id}/`, // GET, PATCH, DELETE
+    },
+
     adminServiceManagement: {
         listCategories: '/admin/services/categories/',
         categoryDetail: (id) => `/admin/services/categories/${id}/`,
