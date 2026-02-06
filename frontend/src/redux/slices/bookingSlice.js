@@ -18,9 +18,9 @@ const normalizeBooking = (payload) => {
 // Async thunks — bookingService returns response.data already
 export const fetchBookings = createAsyncThunk(
   'bookings/fetchBookings',
-  async (_, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const data = await bookingService.getBookings(); // data (already unwrapped)
+      const data = await bookingService.getBookings(params); // data (already unwrapped)
       return data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);

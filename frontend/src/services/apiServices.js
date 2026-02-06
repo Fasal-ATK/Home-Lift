@@ -99,6 +99,12 @@ export const bookingService = {
         return response.data;
     },
 
+    downloadInvoice: async (id) => {
+        const response = await api.get(apiEndpoints.user.downloadInvoice(id), {
+            responseType: 'blob', // Important for PDF download
+        });
+        return response.data;
+    },
 };
 
 

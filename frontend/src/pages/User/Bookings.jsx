@@ -34,6 +34,7 @@ import { fetchBookings, clearError, selectTotalBookingCount } from "../../redux/
 import { fetchServices } from "../../redux/slices/serviceSlice";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import { useNavigate } from "react-router-dom";
+import { bookingService } from "../../services/apiServices";
 
 const STATUSES = ["pending", "confirmed", "in_progress", "completed", "cancelled"];
 
@@ -111,7 +112,7 @@ const stringifyError = (err) => {
 };
 
 /* ---- OrderCard (uses services list & shows city/state only in header) ---- */
-function OrderCard({ booking, onView, services }) {
+function OrderCard({ booking, onView, onInvoice, services }) {
   const addr = booking.address_details;
   const thumb = resolveThumb(booking, services);
   const svcName =
@@ -148,7 +149,13 @@ function OrderCard({ booking, onView, services }) {
             <Button size="small" variant="text" onClick={() => onView(booking.id)} sx={{ textTransform: "none" }}>
               View order details
             </Button>
-            <Button size="small" variant="text" sx={{ textTransform: "none" }}>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => onInvoice(booking.id)}
+              sx={{ textTransform: "none" }}
+              disabled={booking.status === 'pending' || booking.status === 'cancelled'}
+            >
               Invoice ▾
             </Button>
           </Stack>
@@ -381,109 +388,24 @@ export default function Bookings() {
     dispatch(clearError());
   };
 
-  // ---------- compute orders count within the currently selected date range (always uses created_at) ----------
-  // const ordersInRange = useMemo(() => {
-  //   if (!Array.isArray(bookings) || bookings.length === 0) return 0;
-
-  //   // If user picked "all", show total
-  //   if (pastRange === "all") return bookings.length;
-
-  //   // Build local YMD strings for bounds
-  //   const fromStr = dateFrom || null;
-  //   const toStr =
-  //     dateTo ||
-  //     (() => {
-  //       const now = new Date();
-  //       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  //     })();
-
-  //   return bookings.reduce((acc, b) => {
-  //     // Always use created_at for "order placed"
-  //     const raw = b.created_at || b.booking_date;
-  //     const dStr = toLocalYMD(raw);
-  //     if (!dStr) return acc;
-  //     if (fromStr && dStr < fromStr) return acc;
-  //     if (toStr && dStr > toStr) return acc;
-  //     return acc + 1;
-  //   }, 0);
-  // }, [bookings, dateFrom, dateTo, pastRange]);
-
-  // filtering + sorting (client side) — date filtering always uses created_at (order placed)
-  // const filteredSorted = useMemo(() => {
-  //   let list = Array.isArray(bookings) ? bookings.slice() : [];
-
-  //   if (search && search.trim()) {
-  //     const q = search.trim().toLowerCase();
-  //     list = list.filter((b) => {
-  //       const combined = `${b.service_name || ""} ${b.service || ""} ${b.full_name || ""} ${b.phone || ""}`.toLowerCase();
-  //       return combined.includes(q);
-  //     });
-  //   }
-
-  //   // category: use categories list — match services that belong to selectedCategory
-  //   if (selectedCategory) {
-  //     const serviceIdsForCat = services
-  //       .filter((s) => {
-  //         const cat = s.category;
-  //         if (!cat) return false;
-  //         if (typeof cat === "object") return String(cat.id ?? cat.name) === String(selectedCategory);
-  //         return String(cat) === String(selectedCategory) || String(s.category_name) === String(selectedCategory);
-  //       })
-  //       .map((s) => String(s.id));
-  //     list = list.filter((b) => serviceIdsForCat.includes(String(b.service)));
-  //   }
-
-  //   if (statusFilter && statusFilter.length) {
-  //     list = list.filter((b) => statusFilter.includes(b.status));
-  //   }
-
-  //   // apply date filtering for "order placed" only if user didn't pick 'all'
-  //   if (pastRange !== "all") {
-  //     const fromStr = dateFrom || null;
-  //     const toStr =
-  //       dateTo ||
-  //       (() => {
-  //         const now = new Date();
-  //         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  //       })();
-
-  //     list = list.filter((b) => {
-  //       const raw = b.created_at || b.booking_date;
-  //       const dStr = toLocalYMD(raw);
-  //       if (!dStr) return false;
-  //       if (fromStr && dStr < fromStr) return false;
-  //       if (toStr && dStr > toStr) return false;
-  //       return true;
-  //     });
-  //   }
-
-  //   list.sort((a, b) => {
-  //     if (sortBy === "date_desc") return new Date(b.booking_date || b.created_at) - new Date(a.booking_date || a.created_at);
-  //     if (sortBy === "date_asc") return new Date(a.booking_date || a.created_at) - new Date(b.booking_date || b.created_at);
-  //     if (sortBy === "price_desc") return Number(b.price || 0) - Number(a.price || 0);
-  //     if (sortBy === "price_asc") return Number(a.price || 0) - Number(b.price || 0);
-  //     return 0;
-  //   });
-
-  //   return list;
-  // }, [bookings, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, search, services, pastRange]);
-
-  // const total = filteredSorted.length;
-  // const pageCount = Math.max(1, Math.ceil(total / perPage));
-  // const paginated = useMemo(() => {
-  //   const start = (page - 1) * perPage;
-  //   return filteredSorted.slice(start, start + perPage);
-  // }, [filteredSorted, page, perPage]);
-
   const handleView = (id) => navigate("/bookings/details", { state: { bookingId: id } });
 
-  // Use server-side data directly
+  const handleDownloadInvoice = async (id) => {
+    try {
+      const blob = await bookingService.downloadInvoice(id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Invoice_${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (err) {
+      console.error("Invoice download failed", err);
+    }
+  };
+
   const paginated = bookings;
-  const pageCount = Math.max(1, Math.ceil(totalCount / 20)); // Backend default or we should respect perPage if backend supports it. Backend is fixed 20 for large? Or 10? 
-  // Backend "LargeResultsSetPagination" default is 20. But I didn't verify if I used it for User Bookings.
-  // In Step 293: `paginator = LargeResultsSetPagination()` (page size 20).
-  // So division should be 20. Or `perPage` if we pass it (but we don't pass `page_size` param in query yet).
-  // Let's assume 20.
 
   return (
     <Box sx={{ py: 4, px: { xs: 2, md: 6 }, maxWidth: 1200, mx: "auto" }}>
@@ -585,15 +507,6 @@ export default function Bookings() {
                 <MenuItem value="price_asc">Price (low → high)</MenuItem>
               </Select>
             </FormControl>
-
-            {/* <FormControl size="small" sx={{ minWidth: 110 }}>
-              <InputLabel>Per page</InputLabel>
-              <Select value={perPage} label="Per page" onChange={(e) => setPerPage(Number(e.target.value))}>
-                <MenuItem value={5}>5</MenuItem>
-                <MenuItem value={10}>10</MenuItem>
-                <MenuItem value={20}>20</MenuItem>
-              </Select>
-            </FormControl> */}
           </Stack>
         </Stack>
 
@@ -632,7 +545,7 @@ export default function Bookings() {
         </Box>
       ) : (
         bookings.map((b) => (
-          <OrderCard key={b.id} booking={b} onView={handleView} services={services} />
+          <OrderCard key={b.id} booking={b} onView={handleView} onInvoice={handleDownloadInvoice} services={services} />
         ))
       )}
 

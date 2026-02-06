@@ -110,7 +110,17 @@ const slice = createSlice({
       })
       .addCase(fetchProviderJobs.fulfilled, (state, action) => {
         state.loading = false;
-        jobsAdapter.setAll(state, action.payload || []);
+        // Backend returns paginated { count, next, previous, results: [...] }
+        const data = action.payload;
+        let list = [];
+        if (data && Array.isArray(data.results)) {
+          list = data.results;
+          state.totalCount = data.count; // Update totalCount
+        } else if (Array.isArray(data)) {
+          list = data;
+          state.totalCount = data.length;
+        }
+        jobsAdapter.setAll(state, list);
       })
       .addCase(fetchProviderJobs.rejected, (state, action) => {
         state.loading = false;
