@@ -9,6 +9,7 @@ urlpatterns = [
     path('services/',include('services.urls')),
     path('customers/',include('users.urls')),
     path('providers/',include('providers.urls')),
+    path('offers/', include('offers.urls')),
     path('bookings/all/', AdminBookingsView.as_view()),
     path('bookings/<int:pk>/status/', BookingStatusUpdateView.as_view()),
 ]

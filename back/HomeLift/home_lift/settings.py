@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'core',
     'notifications',
     'wallet',
+    'offers',
     
     'rest_framework',
     'corsheaders',
