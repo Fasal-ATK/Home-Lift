@@ -23,7 +23,7 @@ import UserManager from './pages/Admin/UserManager';
 import EmpManager from './pages/Admin/EmpManager';
 import ServiceCategroies from './pages/Admin/ServiceCategroies';
 import Reports from './pages/Admin/Reports';
-import Coupons from './pages/Admin/Coupons';
+import OffersManager from './pages/Admin/OffersManager';
 import BookingMng from './pages/Admin/BookingMng';
 
 import Landing from './pages/Landing';
@@ -138,7 +138,7 @@ function App() {
           <Route path='employees' element={<EmpManager />} />
           <Route path='services' element={<ServiceCategroies />} />
           <Route path='reports' element={<Reports />} />
-          <Route path='coupons' element={<Coupons />} />
+          <Route path='offers' element={<OffersManager />} />
           <Route path='bookings' element={<BookingMng />} />
         </Route>
 

@@ -13,7 +13,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
     { text: 'Employees', icon: <PeopleAltOutlined />, path: '/admin/employees' },
     { text: 'Users', icon: <Group />, path: '/admin/users' },
     { text: 'Report', icon: <Report />, path: '/admin/reports' },
-    { text: 'Coupons', icon: <LocalOffer />, path: '/admin/coupons' },
+    { text: 'offers', icon: <LocalOffer />, path: '/admin/offers' },
     { text: 'Bookings', icon: <BookOnline />, path: '/admin/bookings' },
   ];
 

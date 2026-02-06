@@ -9,9 +9,9 @@ import { adminProviderManagementService } from "../../../services/apiServices";
 // Fetch all applications
 export const fetchApplications = createAsyncThunk(
   "applications/fetchApplications",
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      return await adminProviderManagementService.getApplications();
+      return await adminProviderManagementService.getApplications(params);
     } catch (err) {
       return rejectWithValue(err.response?.data || "Failed to fetch applications");
     }
@@ -63,6 +63,7 @@ const applicationSlice = createSlice({
       .addCase(fetchApplications.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.list = []; // Clear current list to avoid stale data on page change
       })
       .addCase(fetchApplications.fulfilled, (state, action) => {
         state.loading = false;
