@@ -45,6 +45,7 @@ const ConfirmModal = ({
       PaperProps={{
         sx: { borderRadius: 3, px: 2, py: 1, minWidth: 320 },
       }}
+      sx={{ zIndex: 1500 }} // Ensure it appears above other modals
     >
       <DialogTitle
         id="confirm-dialog-title"

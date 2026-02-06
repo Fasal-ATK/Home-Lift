@@ -11,6 +11,7 @@ import Signup from './pages/User/Signup';
 import Notifications from './pages/User/Notifications';
 import Services from './pages/User/Services';
 import Bookings from './pages/User/Bookings';
+import UserWallet from './pages/User/Wallet';
 import Addresses from './components/user/profile/Addresses';
 import BookingDetails from './components/user/booking/BookingDetails';
 import ForgotPassword from './components/user/auth/NewPassword';
@@ -33,7 +34,7 @@ import JobRequests from './pages/Provider/JobRequests';
 import Appointments from './pages/Provider/Appointments';
 import Bio from './pages/Provider/Bio';
 import History from './pages/Provider/History';
-import Wallet from './pages/Provider/Wallet';
+import ProviderWallet from './pages/Provider/Wallet';
 
 import ProviderJobDetail from './components/provider/jobRequests/ProviderJobDetials';
 
@@ -118,6 +119,7 @@ function App() {
           </Route>
           <Route path='booking-details' element={<BookingDetails />} />
           <Route path='notifications' element={<Notifications />} />
+          <Route path='wallet' element={<UserWallet />} />
           <Route path='addresses' element={<Addresses />} />
 
           {/* Change Password Route (Protected) */}
@@ -155,7 +157,7 @@ function App() {
           <Route path='appointments' element={<Appointments />} />
           <Route path='bio' element={<Bio />} />
           <Route path='history' element={<History />} />
-          <Route path='wallet' element={<Wallet />} />
+          <Route path='wallet' element={<ProviderWallet />} />
         </Route>
 
         {/* 404 Fallback */}

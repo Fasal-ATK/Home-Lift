@@ -132,8 +132,18 @@ export default function BookingDetails() {
 
             <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2">Price: ₹{booking.price}</Typography>
-                <Typography variant="body2">Advance: ₹{booking.advance}</Typography>
+                <Typography variant="body2">Total Price: <strong>₹{booking.price}</strong></Typography>
+                <Typography variant="body2">Advance Paid: <strong>₹{booking.advance}</strong></Typography>
+                {booking.remaining_payment > 0 && (
+                  <Typography variant="body2" color="primary" fontWeight="bold">
+                    Remaining Balance: ₹{booking.remaining_payment}
+                  </Typography>
+                )}
+                {booking.is_refunded && (
+                  <Typography variant="body2" color="info.main" fontWeight="bold">
+                    * Advance Refunded to Wallet
+                  </Typography>
+                )}
               </Box>
 
               <Stack direction="row" spacing={1}>

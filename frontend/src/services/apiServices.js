@@ -105,6 +105,11 @@ export const bookingService = {
         });
         return response.data;
     },
+
+    getWallet: async () => {
+        const response = await api.get(apiEndpoints.user.wallet);
+        return response.data;
+    },
 };
 
 

@@ -12,7 +12,7 @@ import notificationReducer from '../slices/notificationSlice';
 import bookingReducer from '../slices/bookingSlice';
 import providerJobsReducer from '../slices/provider/providerJobSlice';
 import adminBookingReducer from '../slices/admin/bookingMngSlice';
-
+import walletReducer from '../slices/walletSlice';
 
 // store.js
 const appReducer = combineReducers({
@@ -26,9 +26,8 @@ const appReducer = combineReducers({
   notifications: notificationReducer,
   bookings: bookingReducer,
   adminBookings: adminBookingReducer,
-
   providerJobs: providerJobsReducer,
-
+  wallet: walletReducer,
 });
 
 const rootReducer = (state, action) => {

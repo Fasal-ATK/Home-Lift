@@ -160,27 +160,6 @@ function OrderCard({ booking, onView, onInvoice, services }) {
             </Button>
           </Stack>
         </Box>
-
-        {/* Payment Status */}
-        <Box sx={{ minWidth: 160, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            {booking.is_advance_paid ? (
-              <>
-                <CheckCircleIcon sx={{ fontSize: 18, color: "success.main" }} />
-                <Typography variant="body2" fontWeight={700} sx={{ color: "success.main" }}>
-                  Advance Payment Complete
-                </Typography>
-              </>
-            ) : (
-              <>
-                <CancelIcon sx={{ fontSize: 18, color: "warning.main" }} />
-                <Typography variant="body2" fontWeight={700} sx={{ color: "warning.main" }}>
-                  Advance Payment Pending
-                </Typography>
-              </>
-            )}
-          </Stack>
-        </Box>
       </Box>
 
       <Divider />
@@ -235,12 +214,51 @@ function OrderCard({ booking, onView, onInvoice, services }) {
             )}
           </Box>
 
-          <Box sx={{ minWidth: 100, textAlign: "right" }}>
-            <Chip label={booking.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())} color={statusColor(booking.status)} sx={{ fontWeight: 700, textTransform: "capitalize" }} />
+          <Box sx={{ minWidth: 150, textAlign: "right", display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+            <Chip
+              label={booking.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+              color={statusColor(booking.status)}
+              sx={{ fontWeight: 700, textTransform: "capitalize" }}
+            />
+
+            {/* Advance Status */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              {booking.is_refunded ? (
+                <>
+                  <CheckCircleIcon sx={{ fontSize: 16, color: "info.main" }} />
+                  <Typography variant="caption" fontWeight={700} sx={{ color: "info.main" }}>
+                    Advance Refunded
+                  </Typography>
+                </>
+              ) : booking.is_advance_paid ? (
+                <>
+                  <CheckCircleIcon sx={{ fontSize: 16, color: "success.main" }} />
+                  <Typography variant="caption" fontWeight={700} sx={{ color: "success.main" }}>
+                    Advance Payment Completed
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <CancelIcon sx={{ fontSize: 16, color: "warning.main" }} />
+                  <Typography variant="caption" fontWeight={700} sx={{ color: "warning.main" }}>
+                    Advance Payment Pending
+                  </Typography>
+                </>
+              )}
+            </Box>
+
+            {/* Remaining Payment */}
+            {booking.status !== 'cancelled' && booking.remaining_payment > 0 && (
+              <Box sx={{ mt: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Remaining: <strong>₹{booking.remaining_payment}</strong>
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>
-    </Paper>
+    </Paper >
   );
 }
 

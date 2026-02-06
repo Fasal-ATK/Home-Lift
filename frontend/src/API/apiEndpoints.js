@@ -26,6 +26,7 @@ const apiEndpoints = {
         booking: '/user/booking/',
         updateBooking: (id) => `/user/booking/details/${id}/`,
         downloadInvoice: (id) => `/user/booking/${id}/invoice/`,
+        wallet: '/user/wallet/',
 
         // Addresses
         addresses: '/user/core/addresses/',

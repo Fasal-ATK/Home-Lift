@@ -5,11 +5,9 @@ import {
   Typography,
   IconButton,
   Box,
-  InputBase,
-  Paper,
   Button,
 } from '@mui/material';
-import { Search, Notifications, LocationOn, AccountCircle } from '@mui/icons-material';
+import { Notifications, LocationOn, AccountCircle } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import LogoutButton from '../common/Logout';
@@ -19,9 +17,8 @@ import { setUser } from '../../redux/slices/authSlice';
 
 const UserNavbar = () => {
   const navigate = useNavigate();
-  const location = useLocation(); // get current path
+  const location = useLocation();
 
-  // ✅ Get provider info from authSlice
   const { isProvider, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
@@ -37,7 +34,6 @@ const UserNavbar = () => {
       }
     } catch (error) {
       console.error("Failed to check provider status:", error);
-      // Fallback to local state if request fails
       if (user?.is_provider_active === false) {
         ShowToast("Access Denied: Your provider account is currently blocked.", "error");
       } else {
@@ -50,12 +46,12 @@ const UserNavbar = () => {
     { label: "HOME", path: "/home" },
     { label: "SERVICES", path: "/services" },
     { label: "BOOKINGS", path: "/bookings" },
+    { label: "WALLET", path: "/wallet" },
   ];
 
   return (
     <AppBar position="sticky" color="inherit" elevation={3} sx={{ borderRadius: '14px' }}>
       <Toolbar sx={{ justifyContent: 'space-between', px: 4 }}>
-
         {/* Left: Logo and Title */}
         <Box display="flex" alignItems="center" gap={1}>
           <LocationOn sx={{ color: location.pathname === "/home" ? '#0066CC' : '#555' }} />
@@ -84,34 +80,10 @@ const UserNavbar = () => {
           </Button>
         )}
 
-        {/* Center: Search Bar */}
-        <Paper
-          component="form"
-          elevation={0}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            width: 220,
-            px: 1.5,
-            py: 0.5,
-            borderRadius: 5,
-            border: '1px solid #ccc',
-          }}
-        >
-          <InputBase
-            placeholder="Search"
-            inputProps={{ 'aria-label': 'search' }}
-            sx={{ ml: 1, flex: 1 }}
-          />
-          <IconButton type="submit" sx={{ p: 0.5 }} aria-label="search">
-            <Search sx={{ color: '#0066CC' }} />
-          </IconButton>
-        </Paper>
-
-        {/* Right: Nav links, notification, profile, logout */}
+        {/* Right: Nav links, icons, logout */}
         <Box display="flex" alignItems="center" gap={2}>
           {navLinks.map((item) => {
-            const isActive = location.pathname === item.path; // highlight current page
+            const isActive = location.pathname === item.path;
             return (
               <Typography
                 key={item.label}
@@ -131,31 +103,26 @@ const UserNavbar = () => {
             );
           })}
 
-          {/* Notification Icon */}
           <IconButton
             component={Link}
             to="/notifications"
             sx={{
-              cursor: "pointer",
               color: location.pathname === "/notifications" ? '#0066CC' : '#555'
             }}
           >
             <Notifications />
           </IconButton>
 
-          {/* Profile Icon */}
           <IconButton
             component={Link}
             to="/profile"
             sx={{
-              cursor: "pointer",
               color: location.pathname === "/profile" ? '#0066CC' : '#555'
             }}
           >
             <AccountCircle />
           </IconButton>
 
-          {/* Logout Button with hover red */}
           <LogoutButton
             collapsed={false}
             sx={{
