@@ -56,7 +56,8 @@ const apiEndpoints = {
 
 
     adminBookingManagement: {
-        list: '/admin/all/', // GET
+        list: '/admin/bookings/all/',
+        updateStatus: (id) => `/admin/bookings/${id}/status/`,
     },
 
     adminServiceManagement: {

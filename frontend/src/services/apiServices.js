@@ -268,6 +268,10 @@ export const adminBookingManagementService = {
         const response = await api.get(apiEndpoints.adminBookingManagement.list, { params });
         return response.data;
     },
+    updateStatus: async (id, status) => {
+        const response = await api.patch(apiEndpoints.adminBookingManagement.updateStatus(id), { status });
+        return response.data;
+    },
 };
 
 export const createPaymentIntent = async (booking_id) => {
