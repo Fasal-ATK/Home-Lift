@@ -9,6 +9,7 @@ from .serializers import NotificationSerializer
 class NotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None # Return all notifications as a list
 
     def get_queryset(self):
         user = self.request.user

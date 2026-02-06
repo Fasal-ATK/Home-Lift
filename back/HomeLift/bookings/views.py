@@ -351,3 +351,43 @@ class BookingStatusUpdateView(APIView):
         booking.save(update_fields=["status", "updated_at"])
 
         return Response({"message": "Status updated.", "data": BookingSerializer(booking, context={"request": request}).data}, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+#  INVOICE DOWNLOAD
+# ---------------------------------------------------------------------------
+class DownloadInvoiceView(APIView):
+    """
+    GET /bookings/<pk>/invoice/
+    Download booking invoice as PDF.
+    Allowed for: Owner, Assigned Provider, Admin.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        from django.http import HttpResponse
+        from core.utils import generate_invoice_pdf
+        
+        # Fetch object with permission check
+        user = request.user
+        booking = get_object_or_404(Booking, pk=pk)
+
+        # Check permissions: Admin, Owner, or Assigned Provider
+        is_owner = booking.user == user
+        is_provider = booking.provider == user
+        is_admin = user.is_staff or user.is_superuser
+
+        if not (is_owner or is_provider or is_admin):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Generate PDF
+        try:
+            pdf_buffer = generate_invoice_pdf(booking)
+        except Exception as e:
+            return Response({"error": f"Error generating PDF: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Return response
+        filename = f"Invoice_Booking_{booking.id}.pdf"
+        response = HttpResponse(pdf_buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
