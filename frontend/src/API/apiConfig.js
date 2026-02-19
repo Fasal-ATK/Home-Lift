@@ -1,6 +1,8 @@
 import axios from 'axios';
 import apiEndpoints from './apiEndpoints';
 import { performLogout, redirectAfterLogout } from '../utils/logoutHelper';
+import store from '../redux/store/store';
+import { startLoading, stopLoading } from '../redux/slices/loadingSlice';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -21,39 +23,50 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle 401
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      try {
-        const refreshResponse = await axios.post(
-          `${import.meta.env.VITE_API_URL}${apiEndpoints.auth.refreshAccessToken}`,
-          {},
-          { withCredentials: true }
-        );
 
-        const newToken = refreshResponse.data.access;
-        localStorage.setItem('accessToken', newToken);
-        originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-        return api(originalRequest);
+    // Handle 401 (Unauthorized / Session Timeout)
+    if (error.response?.status === 401) {
+      if (!originalRequest._retry) {
+        originalRequest._retry = true;
+        try {
+          const refreshResponse = await axios.post(
+            `${import.meta.env.VITE_API_URL}${apiEndpoints.auth.refreshAccessToken}`,
+            {},
+            { withCredentials: true }
+          );
 
-      } catch (refreshError) {
-        // Check if the user was an admin before logout
+          const newToken = refreshResponse.data.access;
+          localStorage.setItem('accessToken', newToken);
+          originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+          return api(originalRequest);
+
+        } catch (refreshError) {
+          // Refresh failed - terminal session timeout
+          const userData = localStorage.getItem('user');
+          const isAdmin = userData ? JSON.parse(userData).is_staff : false;
+          await performLogout(false);
+          redirectAfterLogout(isAdmin);
+          return Promise.reject(refreshError);
+        }
+      } else {
+        // Already retried and still 401 - terminal session timeout
         const userData = localStorage.getItem('user');
         const isAdmin = userData ? JSON.parse(userData).is_staff : false;
-
-        // Don't call backend logout here because refresh is already invalid
-        await performLogout(false);  // 🚀 skip backend API call
+        await performLogout(false);
         redirectAfterLogout(isAdmin);
-        return Promise.reject(refreshError);
       }
     }
 

@@ -8,6 +8,7 @@ import {
 import Autocomplete from "@mui/material/Autocomplete";
 import { Add, Delete, Edit, LocationOn } from "@mui/icons-material";
 import ConfirmModal from "../../common/Confirm";
+import { ShowToast } from "../../common/Toast";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createAddress,
@@ -171,7 +172,7 @@ export default function Addresses() {
   // helper: use browser geolocation to populate lat/lon
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      ShowToast("Geolocation is not supported by your browser.", "error");
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -182,7 +183,7 @@ export default function Addresses() {
       },
       (err) => {
         console.error("Geolocation error:", err);
-        alert("Unable to fetch location. Please allow location access or enter manually.");
+        ShowToast("Unable to fetch location. Please allow location access or enter manually.", "error");
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );

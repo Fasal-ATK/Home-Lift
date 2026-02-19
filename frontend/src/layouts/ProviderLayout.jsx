@@ -3,6 +3,7 @@ import { Box } from "@mui/material";
 import { Outlet } from "react-router-dom";
 import { useState } from "react";
 import ProviderSidebar from "../components/provider/ProviderSidebar";
+import LoadingOverlay from "../components/common/LoadingOverlay";
 
 const ProviderLayout = () => {
   const [open, setOpen] = useState(true);
@@ -23,6 +24,7 @@ const ProviderLayout = () => {
           transition: "margin-left 0.3s ease",
         }}
       >
+        <LoadingOverlay />
         <Outlet />
       </Box>
     </Box>

@@ -18,5 +18,10 @@ export const performLogout = async (callBackend = true) => {
 };
 
 export const redirectAfterLogout = (isAdmin = false) => {
-  window.location.href = isAdmin ? '/admin/login' : '/login';
+  const isCurrentlyAdminPath = window.location.pathname.startsWith('/admin');
+  if (isAdmin || isCurrentlyAdminPath) {
+    window.location.href = '/admin/login';
+  } else {
+    window.location.href = '/login';
+  }
 };

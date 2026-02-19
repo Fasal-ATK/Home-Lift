@@ -20,6 +20,7 @@ import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import HomeIcon from "@mui/icons-material/Home";
 import NotesIcon from "@mui/icons-material/Notes";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import Loader from "../../common/Loader";
 import { useDispatch, useSelector } from "react-redux";
 import {
   jobsSelectors,
@@ -163,8 +164,8 @@ export default function ProviderJobDetail() {
 
   if (loading) {
     return (
-      <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
-        <CircularProgress />
+      <Box sx={{ p: 4, mt: 4 }}>
+        <Loader message="Loading job details..." />
       </Box>
     );
   }

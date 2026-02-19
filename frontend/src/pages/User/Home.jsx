@@ -8,6 +8,7 @@ import { fetchCategories } from "../../redux/slices/categorySlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
 import { fetchProviderApplicationStatus } from "../../redux/slices/user/userSlice";
 import { useNavigate } from "react-router-dom";
+import Loader from "../../components/common/Loader";
 
 import { setProvider, setUser } from "../../redux/slices/authSlice";
 import { ShowToast } from "../../components/common/Toast";
@@ -208,7 +209,7 @@ const Home = () => {
       {/* Popular Services */}
       <Typography variant="h5" fontWeight="bold" mb={3}>Popular Services</Typography>
       {servicesLoading ? (
-        <Typography>Loading services...</Typography>
+        <Loader message="Fetching Popular Services..." sx={{ py: 6 }} />
       ) : servicesError ? (
         <Typography color="error">Failed to load services</Typography>
       ) : (

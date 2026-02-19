@@ -18,6 +18,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { createBooking, fetchBookings } from "../../../redux/slices/bookingSlice";
 import Autocomplete from "@mui/material/Autocomplete";
 import { fetchAddresses } from "../../../redux/slices/user/userSlice";
+import { startLoading, stopLoading } from "../../../redux/slices/loadingSlice";
 import { Elements } from "@stripe/react-stripe-js";
 import { stripePromise } from "../../../../stripe/stripe";
 import CheckoutForm from "../../common/payment";
@@ -105,6 +106,7 @@ const BookingPage = () => {
       data.service = selectedService.id;
     }
 
+    dispatch(startLoading());
     dispatch(createBooking(data))
       .unwrap()
       .then(async (res) => {
@@ -118,9 +120,11 @@ const BookingPage = () => {
             console.error("Payment Intent Error:", err);
           }
         }
+        dispatch(stopLoading());
       })
       .catch((error) => {
         console.error("Booking error:", error);
+        dispatch(stopLoading());
       });
   };
 

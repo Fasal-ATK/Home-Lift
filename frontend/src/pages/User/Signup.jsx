@@ -11,6 +11,8 @@ import { authService, otpService } from '../../services/apiServices';
 import OtpModal from '../../components/user/otp_modal';
 import { validateSignupForm } from '../../utils/signupVal';
 import { ShowToast } from '../../components/common/Toast';
+import { useDispatch } from 'react-redux';
+import { startLoading, stopLoading } from '../../redux/slices/loadingSlice';
 import GoogleLoginButton from '../../components/user/GoogleLoginButton';
 
 function Signup() {
@@ -32,6 +34,7 @@ function Signup() {
   const [expiryTimestamp, setExpiryTimestamp] = useState(null);
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const extractErrorMessage = (data) => {
     if (!data) return "Something went wrong";
@@ -74,6 +77,7 @@ function Signup() {
     }
 
     setLoading(true);
+    dispatch(startLoading());
     try {
       const response = await otpService.sendOtp({ email });
       console.log('OTP response:', response.message);
@@ -86,6 +90,7 @@ function Signup() {
       setErrorState(extractErrorMessage(err.response?.data) || "Failed to send OTP");
     }
     setLoading(false);
+    dispatch(stopLoading());
   };
 
   // Resend OTP
@@ -107,6 +112,7 @@ function Signup() {
   // Verify OTP and register user
   const handleOtpVerify = async (otp) => {
     setErrorState('');
+    dispatch(startLoading());
     try {
       console.log('Verifying OTP:', { email, otp });
       const otpResponse = await otpService.verifyOtp({ email, otp });
@@ -134,6 +140,8 @@ function Signup() {
       // setShowOtpModal(false); 
       const msg = extractErrorMessage(error.response?.data) || 'Invalid OTP or Registration failed';
       throw new Error(msg);
+    } finally {
+      dispatch(stopLoading());
     }
   };
 

@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useNavigate } from "react-router-dom";
+import Loader from "../../components/common/Loader";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProviderJobs,
@@ -234,9 +235,7 @@ export default function ProviderRequestsWithServices() {
 
           <Paper sx={{ p: 2, minHeight: 420 }}>
             {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-                <CircularProgress />
-              </Box>
+              <Loader message="Fetching available join requests..." sx={{ py: 6 }} />
             ) : paginated.length === 0 ? (
               <Box sx={{ textAlign: "center", py: 6 }}>
                 <Typography>No job requests found.</Typography>

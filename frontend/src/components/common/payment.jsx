@@ -5,18 +5,22 @@ import {
 } from "@stripe/react-stripe-js";
 import { Button, CircularProgress, Box } from "@mui/material";
 import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { startLoading, stopLoading } from "../../redux/slices/loadingSlice";
 
 const CheckoutForm = () => {
     const stripe = useStripe();
     const elements = useElements();
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
+    const dispatch = useDispatch();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!stripe || !elements) return;
 
         setLoading(true);
+        dispatch(startLoading());
         const { error } = await stripe.confirmPayment({
             elements,
             confirmParams: {
@@ -28,6 +32,7 @@ const CheckoutForm = () => {
             setErrorMessage(error.message);
             setLoading(false);
         }
+        dispatch(stopLoading());
     };
 
     return (

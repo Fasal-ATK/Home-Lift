@@ -10,7 +10,9 @@ import { useDispatch } from 'react-redux';
 
 import { authService, otpService } from '../../services/apiServices';
 import { loginSuccess } from '../../redux/slices/authSlice';
+import { startLoading, stopLoading } from '../../redux/slices/loadingSlice';
 import validateLoginForm from '../../utils/loginVal';
+import store from '../../redux/store/store';
 import { ShowToast } from '../../components/common/Toast';
 import GoogleLoginButton from '../../components/user/GoogleLoginButton';
 import OtpModal from '../../components/user/otp_modal';
@@ -21,7 +23,7 @@ function Login() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   // Forgot Password OTP states
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [resending, setResending] = useState(false);
@@ -59,6 +61,7 @@ function Login() {
     }
 
     setLoading(true);
+    dispatch(startLoading());
 
     try {
       const data = { email, password: pass };
@@ -87,6 +90,7 @@ function Login() {
       }
     } finally {
       setLoading(false);
+      dispatch(stopLoading());
     }
   };
 
@@ -109,6 +113,7 @@ function Login() {
     }
 
     setOtpLoading(true);
+    dispatch(startLoading());
     try {
       await otpService.sendOtp({ email, purpose: 'forgot-password' });
       ShowToast('OTP sent to your email', 'success');
@@ -118,6 +123,7 @@ function Login() {
       setError(extractErrorMessage(err.response?.data) || "Failed to send OTP");
     }
     setOtpLoading(false);
+    dispatch(stopLoading());
   };
 
   // Resend OTP
@@ -136,6 +142,7 @@ function Login() {
   // Verify OTP and navigate to password reset page
   const handleOtpVerify = async (otp) => {
     setError('');
+    dispatch(startLoading());
     try {
       await otpService.verifyOtp({
         email,
@@ -149,6 +156,8 @@ function Login() {
     } catch (error) {
       setError(extractErrorMessage(error.response?.data));
       setShowOtpModal(false);
+    } finally {
+      dispatch(stopLoading());
     }
   };
 
@@ -206,12 +215,12 @@ function Login() {
 
             {/* Forgot Password Link */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-              <Link 
+              <Link
                 component="button"
                 type="button"
                 onClick={handleForgotPassword}
-                underline="hover" 
-                sx={{ 
+                underline="hover"
+                sx={{
                   fontSize: '0.875rem',
                   color: '#1976d2',
                   fontWeight: 500,

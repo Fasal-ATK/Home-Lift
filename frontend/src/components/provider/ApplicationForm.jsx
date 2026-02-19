@@ -7,6 +7,8 @@ import { Add, Remove, UploadFile, Close } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useDispatch, useSelector } from 'react-redux';
 import { applyProvider } from '../../redux/slices/user/userSlice';
+import { startLoading, stopLoading } from '../../redux/slices/loadingSlice';
+import { ShowToast } from '../../components/common/Toast';
 
 const StyledBox = styled(Paper)(({ theme }) => ({
   position: 'absolute',
@@ -184,11 +186,11 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!personalDoc) return alert('Please upload your personal verification document.');
-    for (let s of serviceFields) if (!s.category || !s.service) return alert('Please select category and service for all fields.');
+    if (!personalDoc) return ShowToast('Please upload your personal verification document.', 'error');
+    for (let s of serviceFields) if (!s.category || !s.service) return ShowToast('Please select category and service for all fields.', 'error');
 
     const selectedServices = serviceFields.map((s) => s.service);
-    if (new Set(selectedServices).size !== selectedServices.length) return alert('Each service can only be selected once.');
+    if (new Set(selectedServices).size !== selectedServices.length) return ShowToast('Each service can only be selected once.', 'error');
 
     const applicationData = {
       id_doc: personalDoc,
@@ -196,19 +198,23 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
     };
     console.log('🚀 Submitting application with data:', applicationData);
 
+    dispatch(startLoading());
     dispatch(applyProvider(applicationData))
       .unwrap()
       .then(() => {
-        alert('Application submitted successfully!');
+        ShowToast('Application submitted successfully!', 'success');
         handleClose();
       })
       .catch((err) => {
         console.error('❌ Application submission error:', err);
         if (typeof err === 'object') {
-          alert('Failed to submit application:\n' + JSON.stringify(err, null, 2));
+          ShowToast('Failed to submit application:\n' + JSON.stringify(err, null, 2), 'error');
         } else {
-          alert('Failed to submit application: ' + err);
+          ShowToast('Failed to submit application: ' + err, 'error');
         }
+      })
+      .finally(() => {
+        dispatch(stopLoading());
       });
   };
 
