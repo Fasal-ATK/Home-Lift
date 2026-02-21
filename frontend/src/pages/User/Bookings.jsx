@@ -23,6 +23,10 @@ import {
   ListItemText,
   Alert,
   Snackbar,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormLabel,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -33,8 +37,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchBookings, clearError, selectTotalBookingCount } from "../../redux/slices/bookingSlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
 import { fetchCategories } from "../../redux/slices/categorySlice";
+import { fetchWallet, payWithWalletThunk } from "../../redux/slices/walletSlice";
 import { bookingService, createPaymentIntent } from "../../services/apiServices";
 import { ShowToast } from "../../components/common/Toast";
+import { startLoading, stopLoading } from "../../redux/slices/loadingSlice";
 import { stripePromise } from "../../../stripe/stripe";
 import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "../../components/common/payment";
@@ -117,7 +123,7 @@ const stringifyError = (err) => {
 };
 
 /* ---- OrderCard (uses services list & shows city/state only in header) ---- */
-function OrderCard({ booking, onView, onInvoice, onPayRemaining, services }) {
+function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, services }) {
   const addr = booking.address_details;
   const thumb = resolveThumb(booking, services);
   const svcName =
@@ -248,6 +254,17 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, services }) {
                   <Typography variant="caption" fontWeight={700} sx={{ color: "warning.main" }}>
                     Advance Payment Pending
                   </Typography>
+                  {booking.status === 'pending' && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                      onClick={() => onPayAdvance(booking)}
+                      sx={{ textTransform: 'none', py: 0, px: 1, fontSize: '0.65rem', height: 20 }}
+                    >
+                      Pay Now
+                    </Button>
+                  )}
                 </>
               )}
             </Box>
@@ -309,6 +326,8 @@ export default function Bookings() {
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState("card"); // "card" or "wallet"
+  const { balance: walletBalance } = useSelector((state) => state.wallet);
 
   // snackbar state for transient error display
   const [snackOpen, setSnackOpen] = useState(false);
@@ -451,13 +470,49 @@ export default function Bookings() {
 
   const handlePayRemaining = async (booking) => {
     try {
-      setSelectedBooking(booking);
+      setPaymentMethod("card");
+      dispatch(fetchWallet());
+      setSelectedBooking({ ...booking, paymentType: "remaining" });
       const secret = await createPaymentIntent(booking.id, "remaining");
       setClientSecret(secret);
       setPayModalOpen(true);
     } catch (err) {
       console.error("Failed to create payment intent", err);
       ShowToast("Could not initiate payment. Please try again.", "error");
+    }
+  };
+
+  const handlePayAdvance = async (booking) => {
+    try {
+      setPaymentMethod("card");
+      dispatch(fetchWallet());
+      setSelectedBooking({ ...booking, paymentType: "advance" });
+      const secret = await createPaymentIntent(booking.id, "advance");
+      setClientSecret(secret);
+      setPayModalOpen(true);
+    } catch (err) {
+      console.error("Failed to create payment intent", err);
+      ShowToast("Could not initiate payment. Please try again.", "error");
+    }
+  };
+
+  const handleWalletPay = async () => {
+    if (!selectedBooking) return;
+    try {
+      dispatch(startLoading());
+      await dispatch(payWithWalletThunk({
+        bookingId: selectedBooking.id,
+        paymentType: selectedBooking.paymentType
+      })).unwrap();
+
+      ShowToast(`${selectedBooking.paymentType === 'advance' ? 'Advance' : 'Remaining balance'} paid via wallet.`, "success");
+      setPayModalOpen(false);
+      dispatch(fetchBookings({ page }));
+    } catch (err) {
+      console.error("Wallet payment failed", err);
+      ShowToast(err?.message || "Wallet payment failed. Please try again.", "error");
+    } finally {
+      dispatch(stopLoading());
     }
   };
 
@@ -607,6 +662,7 @@ export default function Bookings() {
             onView={handleView}
             onInvoice={handleDownloadInvoice}
             onPayRemaining={handlePayRemaining}
+            onPayAdvance={handlePayAdvance}
             services={services}
           />
         ))
@@ -630,16 +686,68 @@ export default function Bookings() {
           borderRadius: 2
         }}>
           <Typography variant="h6" mb={2} fontWeight="bold">
-            Complete Remaining Payment
+            {selectedBooking?.paymentType === 'advance' ? 'Complete Advance Payment' : 'Complete Remaining Payment'}
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={3}>
-            Paying the remaining balance of <strong>₹{selectedBooking?.remaining_payment}</strong> for {selectedBooking?.service_name || 'service'}.
+            {selectedBooking?.paymentType === 'advance'
+              ? `Paying the advance amount of ₹${selectedBooking?.advance} for ${selectedBooking?.service_name || 'service'}.`
+              : `Paying the remaining balance of ₹${selectedBooking?.remaining_payment} for ${selectedBooking?.service_name || 'service'}.`
+            }
           </Typography>
 
-          {clientSecret && (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <CheckoutForm buttonLabel={`Pay ₹${selectedBooking?.remaining_payment} Now`} />
-            </Elements>
+          <Box sx={{ mb: 3 }}>
+            <FormControl component="fieldset">
+              <FormLabel component="legend" sx={{ fontWeight: "bold", mb: 1, fontSize: '0.9rem' }}>
+                Select Payment Method
+              </FormLabel>
+              <RadioGroup
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                <FormControlLabel
+                  value="card"
+                  control={<Radio size="small" />}
+                  label={<Typography variant="body2">Credit/Debit Card (Stripe)</Typography>}
+                />
+                <FormControlLabel
+                  value="wallet"
+                  control={<Radio size="small" />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2">Wallet</Typography>
+                      <Chip
+                        label={`Balance: ₹${walletBalance}`}
+                        size="small"
+                        color={Number(walletBalance) >= Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment) ? "success" : "error"}
+                        variant="outlined"
+                        sx={{ height: 20, fontSize: '0.65rem' }}
+                      />
+                    </Box>
+                  }
+                  disabled={Number(walletBalance) < Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment)}
+                />
+              </RadioGroup>
+            </FormControl>
+          </Box>
+
+          <Divider sx={{ mb: 3 }} />
+
+          {paymentMethod === 'card' ? (
+            clientSecret && (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <CheckoutForm buttonLabel={selectedBooking?.paymentType === 'advance' ? `Pay ₹${selectedBooking?.advance} Now` : `Pay ₹${selectedBooking?.remaining_payment} Now`} />
+              </Elements>
+            )
+          ) : (
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={handleWalletPay}
+              disabled={loading || Number(walletBalance) < Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment)}
+              sx={{ py: 1.5, fontWeight: "bold", textTransform: 'none' }}
+            >
+              {loading ? <CircularProgress size={24} /> : `Pay ₹${selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment} with Wallet`}
+            </Button>
           )}
         </Box>
       </Modal>

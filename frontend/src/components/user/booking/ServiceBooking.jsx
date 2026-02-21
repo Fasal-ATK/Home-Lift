@@ -131,7 +131,7 @@ const BookingPage = () => {
               console.error("Payment Intent Error:", err);
             }
           } else {
-            dispatch(payWithWalletThunk(bookingId))
+            dispatch(payWithWalletThunk({ bookingId, paymentType: "advance" }))
               .unwrap()
               .then(() => {
                 ShowToast("Booking confirmed! Advance paid via wallet.", "success");

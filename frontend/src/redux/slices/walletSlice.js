@@ -15,9 +15,9 @@ export const fetchWallet = createAsyncThunk(
 
 export const payWithWalletThunk = createAsyncThunk(
     'wallet/payWithWallet',
-    async (bookingId, { rejectWithValue }) => {
+    async ({ bookingId, paymentType = "advance" }, { rejectWithValue }) => {
         try {
-            const data = await apiPayWithWallet(bookingId);
+            const data = await apiPayWithWallet(bookingId, paymentType);
             return data;
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);

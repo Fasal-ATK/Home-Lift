@@ -10,9 +10,14 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormLabel,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchBookingDetails, updateBooking, fetchBookings } from "../../../redux/slices/bookingSlice";
+import { fetchWallet, payWithWalletThunk } from "../../../redux/slices/walletSlice";
 import ConfirmModal from "../../common/Confirm";
 import { createPaymentIntent } from "../../../services/apiServices";
 import { ShowToast } from "../../common/Toast";
@@ -49,6 +54,9 @@ export default function BookingDetails() {
   // Payment Modal State
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState("");
+  const [payType, setPayType] = useState("remaining"); // "remaining" or "advance"
+  const [paymentMethod, setPaymentMethod] = useState("card"); // "card" or "wallet"
+  const { balance: walletBalance } = useSelector((state) => state.wallet);
 
   // get id from location.state.bookingId OR query param ?id=123
   const bookingIdFromState = location.state?.bookingId;
@@ -87,12 +95,53 @@ export default function BookingDetails() {
   const handlePayRemaining = async () => {
     try {
       setBusy(true);
+      setPaymentMethod("card");
+      dispatch(fetchWallet());
+      setPayType("remaining");
       const secret = await createPaymentIntent(bookingId, "remaining");
       setClientSecret(secret);
       setPayModalOpen(true);
     } catch (err) {
       console.error("Failed to create payment intent", err);
       ShowToast("Could not initiate payment. Please try again.", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePayAdvance = async () => {
+    try {
+      setBusy(true);
+      setPaymentMethod("card");
+      dispatch(fetchWallet());
+      setPayType("advance");
+      const secret = await createPaymentIntent(bookingId, "advance");
+      setClientSecret(secret);
+      setPayModalOpen(true);
+    } catch (err) {
+      console.error("Failed to create payment intent", err);
+      ShowToast("Could not initiate payment. Please try again.", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleWalletPay = async () => {
+    if (!bookingId) return;
+    try {
+      setBusy(true);
+      await dispatch(payWithWalletThunk({
+        bookingId: bookingId,
+        paymentType: payType
+      })).unwrap();
+
+      ShowToast(`${payType === 'advance' ? 'Advance' : 'Remaining balance'} paid via wallet.`, "success");
+      setPayModalOpen(false);
+      dispatch(fetchBookingDetails(bookingId));
+      dispatch(fetchBookings());
+    } catch (err) {
+      console.error("Wallet payment failed", err);
+      ShowToast(err?.message || "Wallet payment failed. Please try again.", "error");
     } finally {
       setBusy(false);
     }
@@ -204,11 +253,29 @@ export default function BookingDetails() {
             <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems="center">
               <Box>
                 <Typography variant="body2">Total Price: <strong>₹{booking.price}</strong></Typography>
-                <Typography variant="body2">Advance Paid: <strong>₹{booking.advance}</strong></Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 0.5 }}>
+                  <Typography variant="body2">Advance Amount: <strong>₹{booking.advance}</strong></Typography>
+                  <Chip
+                    label={booking.is_advance_paid ? "Paid" : "Pending"}
+                    size="small"
+                    color={booking.is_advance_paid ? "success" : "warning"}
+                    variant="outlined"
+                    sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' }}
+                  />
+                </Box>
                 {booking.remaining_payment > 0 && (
-                  <Typography variant="body2" color="primary" fontWeight="bold">
-                    Remaining Balance: ₹{booking.remaining_payment} {booking.is_fully_paid ? '(Paid)' : ''}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                    <Typography variant="body2" color="primary" fontWeight="bold">
+                      Remaining Balance: ₹{booking.remaining_payment}
+                    </Typography>
+                    <Chip
+                      label={booking.is_fully_paid ? "Paid" : "Pending"}
+                      size="small"
+                      color={booking.is_fully_paid ? "success" : "info"}
+                      variant="outlined"
+                      sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' }}
+                    />
+                  </Box>
                 )}
                 {booking.is_refunded && (
                   <Typography variant="body2" color="info.main" fontWeight="bold">
@@ -232,6 +299,18 @@ export default function BookingDetails() {
                   </Button>
                 )}
 
+                {/* Show Pay Advance if Pending and unpaid (Retry) */}
+                {booking.status === 'pending' && !booking.is_advance_paid && (
+                  <Button
+                    variant="contained"
+                    color="warning"
+                    onClick={handlePayAdvance}
+                    disabled={busy}
+                  >
+                    Pay Advance Amount
+                  </Button>
+                )}
+
                 {/* Show Cancel if status allows it (pending/confirmed) */}
                 {canCancel(booking.status) && (
                   <Button
@@ -249,50 +328,102 @@ export default function BookingDetails() {
             <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: "block" }}>
               Created: {booking.created_at}
             </Typography>
+            {/* Modals inside booking check */}
+            <ConfirmModal
+              open={cancelConfirmOpen}
+              onClose={() => setCancelConfirmOpen(false)}
+              onConfirm={handleCancel}
+              message="Are you sure you want to cancel this booking?"
+              confirmLabel="Cancel Booking"
+              color="danger"
+            />
+
+            {/* Payment Modal */}
+            <Modal
+              open={payModalOpen}
+              onClose={() => setPayModalOpen(false)}
+              aria-labelledby="pay-remaining-modal"
+            >
+              <Box sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 450,
+                bgcolor: 'background.paper',
+                boxShadow: 24,
+                p: 4,
+                borderRadius: 2
+              }}>
+                <Typography variant="h6" mb={2} fontWeight="bold">
+                  {payType === 'advance' ? 'Complete Advance Payment' : 'Complete Remaining Payment'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" mb={3}>
+                  {payType === 'advance'
+                    ? `Paying the advance amount of ₹${booking.advance} for ${booking.service_name || 'service'}.`
+                    : `Paying the remaining balance of ₹${booking.remaining_payment} for ${booking.service_name || 'service'}.`
+                  }
+                </Typography>
+
+                <Box sx={{ mb: 3 }}>
+                  <FormControl component="fieldset">
+                    <FormLabel component="legend" sx={{ fontWeight: "bold", mb: 1, fontSize: '0.9rem' }}>
+                      Select Payment Method
+                    </FormLabel>
+                    <RadioGroup
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                    >
+                      <FormControlLabel
+                        value="card"
+                        control={<Radio size="small" />}
+                        label={<Typography variant="body2">Credit/Debit Card (Stripe)</Typography>}
+                      />
+                      <FormControlLabel
+                        value="wallet"
+                        control={<Radio size="small" />}
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2">Wallet</Typography>
+                            <Chip
+                              label={`Balance: ₹${walletBalance}`}
+                              size="small"
+                              color={Number(walletBalance) >= Number(payType === 'advance' ? booking.advance : booking.remaining_payment) ? "success" : "error"}
+                              variant="outlined"
+                              sx={{ height: 20, fontSize: '0.65rem' }}
+                            />
+                          </Box>
+                        }
+                        disabled={Number(walletBalance) < Number(payType === 'advance' ? booking.advance : booking.remaining_payment)}
+                      />
+                    </RadioGroup>
+                  </FormControl>
+                </Box>
+
+                <Divider sx={{ mb: 3 }} />
+
+                {paymentMethod === 'card' ? (
+                  clientSecret && (
+                    <Elements stripe={stripePromise} options={{ clientSecret }}>
+                      <CheckoutForm buttonLabel={payType === 'advance' ? `Pay ₹${booking.advance} Now` : `Pay ₹${booking.remaining_payment} Now`} />
+                    </Elements>
+                  )
+                ) : (
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={handleWalletPay}
+                    disabled={busy || Number(walletBalance) < Number(payType === 'advance' ? booking.advance : booking.remaining_payment)}
+                    sx={{ py: 1.5, fontWeight: "bold", textTransform: 'none' }}
+                  >
+                    {busy ? <CircularProgress size={24} /> : `Pay ₹${payType === 'advance' ? booking.advance : booking.remaining_payment} with Wallet`}
+                  </Button>
+                )}
+              </Box>
+            </Modal>
           </>
         )}
       </Paper>
-
-      <ConfirmModal
-        open={cancelConfirmOpen}
-        onClose={() => setCancelConfirmOpen(false)}
-        onConfirm={handleCancel}
-        message="Are you sure you want to cancel this booking?"
-        confirmLabel="Cancel Booking"
-        color="danger"
-      />
-
-      {/* Payment Modal */}
-      <Modal
-        open={payModalOpen}
-        onClose={() => setPayModalOpen(false)}
-        aria-labelledby="pay-remaining-modal"
-      >
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 450,
-          bgcolor: 'background.paper',
-          boxShadow: 24,
-          p: 4,
-          borderRadius: 2
-        }}>
-          <Typography variant="h6" mb={2} fontWeight="bold">
-            Complete Remaining Payment
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            Paying the remaining balance of <strong>₹{booking?.remaining_payment}</strong> for {booking?.service_name || 'service'}.
-          </Typography>
-
-          {clientSecret && (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <CheckoutForm buttonLabel={`Pay ₹${booking?.remaining_payment} Now`} />
-            </Elements>
-          )}
-        </Box>
-      </Modal>
     </Box>
   );
 }
