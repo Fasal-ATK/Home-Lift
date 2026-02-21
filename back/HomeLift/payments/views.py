@@ -67,39 +67,73 @@ class WalletPay(APIView):
     @transaction.atomic
     def post(self, request):
         booking_id = request.data.get("booking_id")
+        payment_type = request.data.get("payment_type", "advance")
+        
         if not booking_id:
             return Response({"error": "booking_id is required"}, status=400)
             
         # Securely fetch the booking
         booking = get_object_or_404(Booking, id=booking_id, user=request.user)
         
-        if booking.is_advance_paid:
-            return Response({"error": "Advance already paid for this booking."}, status=400)
+        if payment_type == "advance":
+            if booking.is_advance_paid:
+                return Response({"error": "Advance already paid for this booking."}, status=400)
+            amount_to_deduct = booking.advance
+        elif payment_type == "remaining":
+            if not booking.is_advance_paid:
+                return Response({"error": "Advance must be paid first."}, status=400)
+            
+            from payments.models import Payment
+            if Payment.objects.filter(booking=booking, status='succeeded', metadata__payment_type='remaining').exists():
+                return Response({"error": "Remaining balance already paid."}, status=400)
+            
+            amount_to_deduct = booking.price - booking.advance
+        else:
+            return Response({"error": "Invalid payment_type."}, status=400)
             
         wallet, created = Wallet.objects.get_or_create(user=request.user)
         
-        if wallet.balance < booking.advance:
-            return Response({"error": "Insufficient wallet balance to pay advance."}, status=400)
+        if wallet.balance < amount_to_deduct:
+            return Response({"error": f"Insufficient wallet balance. Need ₹{amount_to_deduct}."}, status=400)
 
         # Proceed with payment
-        wallet.balance -= booking.advance
+        wallet.balance -= amount_to_deduct
         wallet.save()
 
-        # Record the transaction
+        # Record the wallet transaction
         WalletTransaction.objects.create(
             wallet=wallet,
-            amount=booking.advance,
+            amount=amount_to_deduct,
             transaction_type='debit',
-            description=f"Advance payment for Booking #{booking.id}",
+            description=f"{payment_type.capitalize()} payment for Booking #{booking.id}",
             status='completed'
         )
 
-        # Update booking status
-        booking.is_advance_paid = True
-        booking.save(update_fields=["is_advance_paid", "updated_at"])
+        # Record in Payment model for consistency (especially for remaining balance calculation)
+        from payments.models import Payment
+        import uuid
+        Payment.objects.create(
+            booking=booking,
+            stripe_payment_intent_id=f"wallet_{booking.id}_{payment_type}_{uuid.uuid4().hex[:8]}", # Unique ID for wallet
+            amount=amount_to_deduct,
+            status="succeeded",
+            metadata={
+                "booking_id": booking.id,
+                "user_id": request.user.id,
+                "payment_type": payment_type,
+                "method": "wallet"
+            }
+        )
+
+        # Update booking if it was advance
+        if payment_type == "advance":
+            booking.is_advance_paid = True
+            booking.save(update_fields=["is_advance_paid", "updated_at"])
+        else:
+            booking.save(update_fields=["updated_at"])
 
         return Response({
-            "message": "Payment successful via wallet.",
+            "message": f"{payment_type.capitalize()} payment successful via wallet.",
             "balance": wallet.balance,
             "booking_id": booking.id
         })
