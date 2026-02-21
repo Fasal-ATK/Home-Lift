@@ -297,9 +297,17 @@ export const offersService = {
     },
 };
 
-export const createPaymentIntent = async (booking_id) => {
+export const createPaymentIntent = async (booking_id, payment_type = "advance") => {
     const res = await api.post(apiEndpoints.payment.createPaymentIntent, {
         booking_id,
+        payment_type,
     });
     return res.data.client_secret;
+};
+
+export const payWithWallet = async (booking_id) => {
+    const res = await api.post(apiEndpoints.payment.walletPay, {
+        booking_id,
+    });
+    return res.data;
 };

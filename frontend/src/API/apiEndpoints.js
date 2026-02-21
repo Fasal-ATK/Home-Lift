@@ -89,6 +89,7 @@ const apiEndpoints = {
 
     payment: {
         createPaymentIntent: '/payment/create-payment-intent/',
+        walletPay: '/payment/wallet-pay/',
     },
 
 

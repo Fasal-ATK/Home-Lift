@@ -79,10 +79,16 @@ const NotificationSocket = ({ userId }) => {
 
         return () => {
             if (socket) {
-                // Only close if it's not already closed
-                if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
-                    socket.onclose = null; // Prevent the close handler from triggering a reconnect
+                socket.onopen = null;
+                socket.onmessage = null;
+                socket.onclose = null;
+                socket.onerror = null;
+                if (socket.readyState === WebSocket.OPEN) {
                     socket.close(1000);
+                } else if (socket.readyState === WebSocket.CONNECTING) {
+                    // If connecting, we can't close cleanly without a warning in some browsers,
+                    // but nulling the handlers prevents unwanted state updates.
+                    socket.close();
                 }
             }
             if (reconnectTimeout) clearTimeout(reconnectTimeout);

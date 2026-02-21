@@ -105,10 +105,15 @@ const FileUpload = ({ file, onChange, label, uniqueId, maxSizeMB = 10 }) => {
 const ServiceField = ({
   index, field, categories, services,
   handleCategoryChange, handleServiceChange,
-  handleServiceDocChange, removeField, canRemove
+  handleServiceDocChange, removeField, canRemove,
+  selectedServiceIds
 }) => {
   const serviceOptions = field.category
-    ? services.filter((s) => s.category === parseInt(field.category))
+    ? services.filter((s) => {
+      const isInCategory = s.category === parseInt(field.category);
+      const isNotSelectedElsewhere = !selectedServiceIds.includes(s.id) || s.id === field.service;
+      return isInCategory && isNotSelectedElsewhere;
+    })
     : [];
 
   return (
@@ -259,6 +264,7 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
               handleServiceDocChange={handleServiceDocChange}
               removeField={removeField}
               canRemove={serviceFields.length > 1}
+              selectedServiceIds={serviceFields.map(s => s.service).filter(s => s !== '')}
             />
           ))}
 

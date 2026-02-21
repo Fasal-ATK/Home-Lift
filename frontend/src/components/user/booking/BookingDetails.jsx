@@ -14,6 +14,16 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { fetchBookingDetails, updateBooking, fetchBookings } from "../../../redux/slices/bookingSlice";
 import ConfirmModal from "../../common/Confirm";
+import { createPaymentIntent } from "../../../services/apiServices";
+import { ShowToast } from "../../common/Toast";
+import { stripePromise } from "../../../../stripe/stripe";
+import { Elements } from "@stripe/react-stripe-js";
+import CheckoutForm from "../../common/payment";
+import Modal from "@mui/material/Modal";
+import Avatar from "@mui/material/Avatar";
+import EmailIcon from "@mui/icons-material/Email";
+import PhoneIcon from "@mui/icons-material/Phone";
+import PersonIcon from "@mui/icons-material/Person";
 
 const statusColor = (status) => {
   switch (status) {
@@ -36,6 +46,10 @@ export default function BookingDetails() {
   const [busy, setBusy] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
+  // Payment Modal State
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [clientSecret, setClientSecret] = useState("");
+
   // get id from location.state.bookingId OR query param ?id=123
   const bookingIdFromState = location.state?.bookingId;
   const searchParams = new URLSearchParams(location.search);
@@ -52,7 +66,7 @@ export default function BookingDetails() {
 
   const canCancel = (s) => {
     if (!s) return false;
-    return !["cancelled", "completed"].includes(s);
+    return !["cancelled", "completed", "in_progress"].includes(s);
   };
 
   const handleCancel = async () => {
@@ -65,6 +79,20 @@ export default function BookingDetails() {
       await dispatch(fetchBookingDetails(bookingId));
     } catch (e) {
       console.error("Cancel booking failed:", e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePayRemaining = async () => {
+    try {
+      setBusy(true);
+      const secret = await createPaymentIntent(bookingId, "remaining");
+      setClientSecret(secret);
+      setPayModalOpen(true);
+    } catch (err) {
+      console.error("Failed to create payment intent", err);
+      ShowToast("Could not initiate payment. Please try again.", "error");
     } finally {
       setBusy(false);
     }
@@ -97,7 +125,27 @@ export default function BookingDetails() {
                 </Typography>
               </Box>
 
-              <Chip label={booking.status} color={statusColor(booking.status)} size="small" />
+              <Chip
+                label={(booking.status || "").replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                color={statusColor(booking.status)}
+                size="small"
+              />
+            </Stack>
+
+            <Divider sx={{ mb: 2 }} />
+
+            <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+              {booking.service_image && (
+                <Box
+                  component="img"
+                  src={booking.service_image}
+                  sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }}
+                />
+              )}
+              <Box>
+                <Typography variant="overline" color="text.secondary">{booking.category_name}</Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>{booking.service_description}</Typography>
+              </Box>
             </Stack>
 
             <Divider sx={{ mb: 2 }} />
@@ -128,6 +176,29 @@ export default function BookingDetails() {
               )}
             </Stack>
 
+            {booking.provider_contact && (
+              <>
+                <Divider sx={{ mb: 2 }} />
+                <Typography variant="h6" sx={{ mb: 1.5, fontSize: '1rem', fontWeight: 'bold' }}>Provider Contact</Typography>
+                <Stack direction="row" spacing={3} sx={{ mb: 2 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <PersonIcon fontSize="small" color="action" />
+                    <Typography variant="body2">{booking.provider_contact.name}</Typography>
+                  </Stack>
+                  {booking.provider_contact.phone && (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <PhoneIcon fontSize="small" color="action" />
+                      <Typography variant="body2">{booking.provider_contact.phone}</Typography>
+                    </Stack>
+                  )}
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <EmailIcon fontSize="small" color="action" />
+                    <Typography variant="body2">{booking.provider_contact.email}</Typography>
+                  </Stack>
+                </Stack>
+              </>
+            )}
+
             <Divider sx={{ mb: 2 }} />
 
             <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems="center">
@@ -136,7 +207,7 @@ export default function BookingDetails() {
                 <Typography variant="body2">Advance Paid: <strong>₹{booking.advance}</strong></Typography>
                 {booking.remaining_payment > 0 && (
                   <Typography variant="body2" color="primary" fontWeight="bold">
-                    Remaining Balance: ₹{booking.remaining_payment}
+                    Remaining Balance: ₹{booking.remaining_payment} {booking.is_fully_paid ? '(Paid)' : ''}
                   </Typography>
                 )}
                 {booking.is_refunded && (
@@ -148,14 +219,30 @@ export default function BookingDetails() {
 
               <Stack direction="row" spacing={1}>
                 <Button variant="outlined" onClick={handleBack} disabled={busy}>Back</Button>
-                <Button
-                  color="error"
-                  variant="contained"
-                  onClick={() => setCancelConfirmOpen(true)}
-                  disabled={!canCancel(booking.status) || busy}
-                >
-                  {busy ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Cancel Booking"}
-                </Button>
+
+                {/* Show Pay Balance if In Progress or Completed (and unpaid) */}
+                {(booking.status === 'in_progress' || booking.status === 'completed') && booking.remaining_payment > 0 && !booking.is_fully_paid && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handlePayRemaining}
+                    disabled={busy}
+                  >
+                    Pay Remaining balance
+                  </Button>
+                )}
+
+                {/* Show Cancel if status allows it (pending/confirmed) */}
+                {canCancel(booking.status) && (
+                  <Button
+                    color="error"
+                    variant="contained"
+                    onClick={() => setCancelConfirmOpen(true)}
+                    disabled={busy}
+                  >
+                    {busy ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Cancel Booking"}
+                  </Button>
+                )}
               </Stack>
             </Stack>
 
@@ -174,6 +261,38 @@ export default function BookingDetails() {
         confirmLabel="Cancel Booking"
         color="danger"
       />
+
+      {/* Payment Modal */}
+      <Modal
+        open={payModalOpen}
+        onClose={() => setPayModalOpen(false)}
+        aria-labelledby="pay-remaining-modal"
+      >
+        <Box sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 450,
+          bgcolor: 'background.paper',
+          boxShadow: 24,
+          p: 4,
+          borderRadius: 2
+        }}>
+          <Typography variant="h6" mb={2} fontWeight="bold">
+            Complete Remaining Payment
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Paying the remaining balance of <strong>₹{booking?.remaining_payment}</strong> for {booking?.service_name || 'service'}.
+          </Typography>
+
+          {clientSecret && (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <CheckoutForm buttonLabel={`Pay ₹${booking?.remaining_payment} Now`} />
+            </Elements>
+          )}
+        </Box>
+      </Modal>
     </Box>
   );
 }

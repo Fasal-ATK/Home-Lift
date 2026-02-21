@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "../../redux/slices/loadingSlice";
 
-const CheckoutForm = () => {
+const CheckoutForm = ({ buttonLabel = "Pay Now" }) => {
     const stripe = useStripe();
     const elements = useElements();
     const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ const CheckoutForm = () => {
                     disabled={!stripe || loading}
                     sx={{ py: 1.5, fontWeight: "bold" }}
                 >
-                    {loading ? <CircularProgress size={24} /> : "Pay Advance Now"}
+                    {loading ? <CircularProgress size={24} /> : buttonLabel}
                 </Button>
             </Box>
             {errorMessage && (

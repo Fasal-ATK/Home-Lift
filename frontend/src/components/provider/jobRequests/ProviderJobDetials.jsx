@@ -201,7 +201,7 @@ export default function ProviderJobDetail() {
   const addressText =
     booking.address_details?.line1 ||
     booking.address ||
-    `${booking.address_details?.city || ""} ${booking.address_details?.pincode || ""}`.trim() ||
+    `${booking.address_details?.address_line || ""} ${booking.address_details?.city || ""} ${booking.address_details?.postal_code || ""}`.trim() ||
     "—";
 
   const canAccept = booking.status === "pending";
@@ -237,6 +237,27 @@ export default function ProviderJobDetail() {
               <Typography variant="body2" color="text.secondary">
                 {booking.full_name || ""}
               </Typography>
+              {(booking.phone || booking.user_email) && (
+                <Typography variant="caption" color="text.secondary" display="block">
+                  {booking.phone} {booking.user_email ? `• ${booking.user_email}` : ''}
+                </Typography>
+              )}
+            </Box>
+          </Stack>
+
+          <Divider />
+
+          <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
+            {booking.service_image && (
+              <Box
+                component="img"
+                src={booking.service_image}
+                sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover' }}
+              />
+            )}
+            <Box>
+              <Typography variant="overline" color="text.secondary">{booking.category_name}</Typography>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>{booking.service_description}</Typography>
             </Box>
           </Stack>
 
@@ -289,6 +310,25 @@ export default function ProviderJobDetail() {
           <Divider />
 
           <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Payment Status
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                {booking.is_advance_paid ? (
+                  <Typography variant="body2" color="success.main" fontWeight="bold">Advance Paid</Typography>
+                ) : (
+                  <Typography variant="body2" color="warning.main" fontWeight="bold">Advance Pending</Typography>
+                )}
+                <Typography variant="body2" color="text.secondary">•</Typography>
+                {booking.is_fully_paid ? (
+                  <Typography variant="body2" color="success.main" fontWeight="bold">Fully Paid</Typography>
+                ) : (
+                  <Typography variant="body2" color="primary.main" fontWeight="bold">Remaining: ₹{booking.remaining_payment}</Typography>
+                )}
+              </Stack>
+            </Box>
+
             <Box>
               <Typography variant="caption" color="text.secondary">
                 Status

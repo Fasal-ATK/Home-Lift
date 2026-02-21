@@ -13,16 +13,24 @@ import {
   MenuItem,
   Box,
   Divider,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
+  Chip,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createBooking, fetchBookings } from "../../../redux/slices/bookingSlice";
 import Autocomplete from "@mui/material/Autocomplete";
 import { fetchAddresses } from "../../../redux/slices/user/userSlice";
 import { startLoading, stopLoading } from "../../../redux/slices/loadingSlice";
+import { fetchWallet, payWithWalletThunk } from "../../../redux/slices/walletSlice";
 import { Elements } from "@stripe/react-stripe-js";
 import { stripePromise } from "../../../../stripe/stripe";
 import CheckoutForm from "../../common/payment";
 import { createPaymentIntent } from "../../../services/apiServices";
+import { ShowToast } from "../../common/Toast";
 
 const calcAdvance = (p) => {
   if (!p) return 0;
@@ -54,8 +62,11 @@ const BookingPage = () => {
   const addressesLoading = useSelector(state => state.user.addressesLoading);
   const navigate = useNavigate();
   const [clientSecret, setClientSecret] = React.useState("");
+  const [paymentMethod, setPaymentMethod] = React.useState("card"); // "card" or "wallet"
+  const { balance: walletBalance } = useSelector((state) => state.wallet);
 
   useEffect(() => {
+    dispatch(fetchWallet());
     if (userAddresses.length === 0) dispatch(fetchAddresses());
   }, [dispatch, userAddresses.length]);
 
@@ -110,14 +121,26 @@ const BookingPage = () => {
     dispatch(createBooking(data))
       .unwrap()
       .then(async (res) => {
-        // res should contain the created booking with its ID
         const bookingId = res.id || (res.data && res.data.id);
         if (bookingId) {
-          try {
-            const secret = await createPaymentIntent(bookingId);
-            setClientSecret(secret);
-          } catch (err) {
-            console.error("Payment Intent Error:", err);
+          if (paymentMethod === "card") {
+            try {
+              const secret = await createPaymentIntent(bookingId);
+              setClientSecret(secret);
+            } catch (err) {
+              console.error("Payment Intent Error:", err);
+            }
+          } else {
+            dispatch(payWithWalletThunk(bookingId))
+              .unwrap()
+              .then(() => {
+                ShowToast("Booking confirmed! Advance paid via wallet.", "success");
+                navigate("/bookings?payment=success");
+              })
+              .catch((err) => {
+                console.error("Wallet Payment Error:", err);
+                ShowToast(err?.message || "Wallet payment failed. Please try again.", "error");
+              });
           }
         }
         dispatch(stopLoading());
@@ -303,6 +326,46 @@ const BookingPage = () => {
                 rules={{ required: "Time slot is required" }}
               />
 
+              <Box sx={{ mt: 3, mb: 2 }}>
+                <FormControl component="fieldset">
+                  <FormLabel component="legend" sx={{ fontWeight: "bold", mb: 1 }}>
+                    Select Payment Method
+                  </FormLabel>
+                  <RadioGroup
+                    row
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  >
+                    <FormControlLabel
+                      value="card"
+                      control={<Radio />}
+                      label="Credit/Debit Card (Stripe)"
+                    />
+                    <FormControlLabel
+                      value="wallet"
+                      control={<Radio />}
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          Wallet
+                          <Chip
+                            label={`Balance: ₹${walletBalance}`}
+                            size="small"
+                            color={Number(walletBalance) >= Number(calcAdvance(price)) ? "success" : "error"}
+                            variant="outlined"
+                          />
+                        </Box>
+                      }
+                      disabled={Number(walletBalance) < Number(calcAdvance(price))}
+                    />
+                  </RadioGroup>
+                  {paymentMethod === 'wallet' && Number(walletBalance) < Number(calcAdvance(price)) && (
+                    <Typography variant="caption" color="error">
+                      Insufficient wallet balance to pay advance.
+                    </Typography>
+                  )}
+                </FormControl>
+              </Box>
+
               {/* ✅ Payment Summary Display */}
               <Box sx={{ mt: 3, p: 2.5, bgcolor: "#f8f9fa", borderRadius: 3, border: "1px solid #e0e0e0" }}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight="bold">
@@ -374,9 +437,15 @@ const BookingPage = () => {
                     background: "linear-gradient(135deg,#1976d2 30%,#42a5f5 90%)",
                     "&:hover": { background: "linear-gradient(135deg,#1565c0 30%,#1e88e5 90%)" },
                   }}
-                  disabled={!selectedService || loading}
+                  disabled={!selectedService || loading || (paymentMethod === "wallet" && Number(walletBalance) < Number(calcAdvance(price)))}
                 >
-                  {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Confirm Booking & Pay Advance"}
+                  {loading ? (
+                    <CircularProgress size={24} sx={{ color: "#fff" }} />
+                  ) : paymentMethod === "wallet" ? (
+                    "Pay with Wallet"
+                  ) : (
+                    "Confirm Booking & Pay Advance"
+                  )}
                 </Button>
               )}
             </form>

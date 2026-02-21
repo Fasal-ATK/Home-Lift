@@ -1,5 +1,5 @@
-// src/pages/User/Bookings.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Paper,
@@ -33,8 +33,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchBookings, clearError, selectTotalBookingCount } from "../../redux/slices/bookingSlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
 import { fetchCategories } from "../../redux/slices/categorySlice";
-import { useNavigate } from "react-router-dom";
-import { bookingService } from "../../services/apiServices";
+import { bookingService, createPaymentIntent } from "../../services/apiServices";
+import { ShowToast } from "../../components/common/Toast";
+import { stripePromise } from "../../../stripe/stripe";
+import { Elements } from "@stripe/react-stripe-js";
+import CheckoutForm from "../../components/common/payment";
+
+import Modal from "@mui/material/Modal";
 
 const STATUSES = ["pending", "confirmed", "in_progress", "completed", "cancelled"];
 
@@ -112,7 +117,7 @@ const stringifyError = (err) => {
 };
 
 /* ---- OrderCard (uses services list & shows city/state only in header) ---- */
-function OrderCard({ booking, onView, onInvoice, services }) {
+function OrderCard({ booking, onView, onInvoice, onPayRemaining, services }) {
   const addr = booking.address_details;
   const thumb = resolveThumb(booking, services);
   const svcName =
@@ -169,7 +174,7 @@ function OrderCard({ booking, onView, onInvoice, services }) {
         <Typography variant="h6" fontWeight={800} sx={{ mb: 1 }}>
           {booking.status === "completed" || booking.status === "confirmed"
             ? "Delivered"
-            : booking.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+            : (booking.status || "").replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
           {booking.status === "completed" && booking.booking_date ? ` ${fmtDate(booking.booking_date)}` : ""}
         </Typography>
 
@@ -216,7 +221,7 @@ function OrderCard({ booking, onView, onInvoice, services }) {
 
           <Box sx={{ minWidth: 150, textAlign: "right", display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
             <Chip
-              label={booking.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+              label={(booking.status || "").replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
               color={statusColor(booking.status)}
               sx={{ fontWeight: 700, textTransform: "capitalize" }}
             />
@@ -247,12 +252,28 @@ function OrderCard({ booking, onView, onInvoice, services }) {
               )}
             </Box>
 
-            {/* Remaining Payment */}
-            {booking.status !== 'cancelled' && booking.remaining_payment > 0 && (
-              <Box sx={{ mt: 0.5 }}>
+            {/* Remaining Payment (only show if in_progress or completed) */}
+            {(booking.status === 'in_progress' || booking.status === 'completed') && booking.remaining_payment > 0 && (
+              <Box sx={{ mt: 0.5, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
                 <Typography variant="caption" color="text.secondary">
                   Remaining: <strong>₹{booking.remaining_payment}</strong>
                 </Typography>
+                {!booking.is_fully_paid && (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    color="primary"
+                    onClick={() => onPayRemaining(booking)}
+                    sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                  >
+                    Pay Balance
+                  </Button>
+                )}
+                {booking.is_fully_paid && (
+                  <Typography variant="caption" fontWeight={700} sx={{ color: "success.main" }}>
+                    Fully Paid
+                  </Typography>
+                )}
               </Box>
             )}
           </Box>
@@ -283,6 +304,11 @@ export default function Bookings() {
   const [perPage, setPerPage] = useState(10);
   const [search, setSearch] = useState("");
   const [pastRange, setPastRange] = useState("all");
+
+  // Payment Modal State
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [clientSecret, setClientSecret] = useState("");
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   // snackbar state for transient error display
   const [snackOpen, setSnackOpen] = useState(false);
@@ -420,6 +446,18 @@ export default function Bookings() {
       link.parentNode.removeChild(link);
     } catch (err) {
       console.error("Invoice download failed", err);
+    }
+  };
+
+  const handlePayRemaining = async (booking) => {
+    try {
+      setSelectedBooking(booking);
+      const secret = await createPaymentIntent(booking.id, "remaining");
+      setClientSecret(secret);
+      setPayModalOpen(true);
+    } catch (err) {
+      console.error("Failed to create payment intent", err);
+      ShowToast("Could not initiate payment. Please try again.", "error");
     }
   };
 
@@ -563,14 +601,53 @@ export default function Bookings() {
         </Box>
       ) : (
         bookings.map((b) => (
-          <OrderCard key={b.id} booking={b} onView={handleView} onInvoice={handleDownloadInvoice} services={services} />
+          <OrderCard
+            key={b.id}
+            booking={b}
+            onView={handleView}
+            onInvoice={handleDownloadInvoice}
+            onPayRemaining={handlePayRemaining}
+            services={services}
+          />
         ))
       )}
+
+      {/* Payment Modal */}
+      <Modal
+        open={payModalOpen}
+        onClose={() => setPayModalOpen(false)}
+        aria-labelledby="pay-remaining-modal"
+      >
+        <Box sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 450,
+          bgcolor: 'background.paper',
+          boxShadow: 24,
+          p: 4,
+          borderRadius: 2
+        }}>
+          <Typography variant="h6" mb={2} fontWeight="bold">
+            Complete Remaining Payment
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Paying the remaining balance of <strong>₹{selectedBooking?.remaining_payment}</strong> for {selectedBooking?.service_name || 'service'}.
+          </Typography>
+
+          {clientSecret && (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <CheckoutForm buttonLabel={`Pay ₹${selectedBooking?.remaining_payment} Now`} />
+            </Elements>
+          )}
+        </Box>
+      </Modal>
 
       {/* pagination */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
         <Pagination
-          count={Math.ceil(totalCount / 20)} // Assuming backend page size is 20
+          count={Math.ceil((totalCount || 0) / 20)} // Assuming backend page size is 20
           page={page}
           onChange={(_, p) => setPage(p)}
           color="primary"
