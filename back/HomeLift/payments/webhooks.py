@@ -28,14 +28,22 @@ def stripe_webhook(request):
 
     if event["type"] == "payment_intent.succeeded":
         intent = event["data"]["object"]
-        booking_id = intent.get("metadata", {}).get("booking_id")
+        metadata = intent.get("metadata", {})
+        booking_id = metadata.get("booking_id")
+        payment_type = metadata.get("payment_type", "advance")
         
         if booking_id:
             try:
                 from payments.models import Payment
                 booking = Booking.objects.get(id=booking_id)
-                booking.is_advance_paid = True
-                booking.save(update_fields=["is_advance_paid", "updated_at"])
+                
+                if payment_type == "remaining":
+                    # We don't have is_fully_paid in model, so we just track via Payment object
+                    # We can still update updated_at if we want
+                    booking.save(update_fields=["updated_at"])
+                else:
+                    booking.is_advance_paid = True
+                    booking.save(update_fields=["is_advance_paid", "updated_at"])
                 
                 # Record the payment
                 Payment.objects.update_or_create(
