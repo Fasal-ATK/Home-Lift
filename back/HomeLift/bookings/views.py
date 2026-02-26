@@ -348,11 +348,40 @@ class BookingStatusUpdateView(APIView):
         if booking.status == "completed" and new_status != "completed":
             return Response({"error": "Cannot move out of completed status."}, status=status.HTTP_400_BAD_REQUEST)
 
+        if new_status == "completed" and booking.status != "completed":
+            # 💰 Credit provider's wallet
+            if booking.provider and not getattr(booking, 'is_provider_paid', False):
+                from wallet.models import Wallet, WalletTransaction
+                from decimal import Decimal
+                
+                # Calculate platform commission (7% capped at ₹500)
+                commission = min(booking.price * Decimal('0.07'), Decimal('500.00'))
+                provider_earnings = booking.price - commission
+                
+                wallet, _ = Wallet.objects.get_or_create(user=booking.provider)
+                wallet.balance += provider_earnings
+                wallet.save()
+                
+                WalletTransaction.objects.create(
+                    wallet=wallet,
+                    amount=provider_earnings,
+                    transaction_type='credit',
+                    description=f"Earnings for Booking #{booking.id} (after platform fee)",
+                    status='completed'
+                )
+                
+                booking.is_provider_paid = True
+                # Note: we save below with update_fields, including status
+
         booking.status = new_status
-        booking.save(update_fields=["status", "updated_at"])
+        save_fields = ["status", "updated_at"]
+        if hasattr(booking, 'is_provider_paid') and booking.is_provider_paid:
+            save_fields.append("is_provider_paid")
+            
+        booking.save(update_fields=save_fields)
         booking.refresh_from_db()
 
-        return Response({"message": "Status updated.", "data": BookingSerializer(booking, context={"request": request}).data}, status=status.HTTP_200_OK)
+        return Response({"message": f"Status updated to {new_status}. Provider credited: {provider_earnings if 'provider_earnings' in locals() else 'N/A'}", "data": BookingSerializer(booking, context={"request": request}).data}, status=status.HTTP_200_OK)
 
 
 # ---------------------------------------------------------------------------
