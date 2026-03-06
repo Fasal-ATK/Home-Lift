@@ -11,7 +11,7 @@ class WalletSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Wallet
-        fields = ['id', 'balance', 'recent_transactions']
+        fields = ['id', 'balance', 'wallet_type', 'recent_transactions']
 
     def get_recent_transactions(self, obj):
         transactions = obj.transactions.all().order_by('-created_at')[:10]

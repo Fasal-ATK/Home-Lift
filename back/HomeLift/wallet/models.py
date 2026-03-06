@@ -3,17 +3,25 @@ from django.conf import settings
 import uuid
 
 class Wallet(models.Model):
-    user = models.OneToOneField(
+    WALLET_TYPES = [
+        ('user', 'User'),
+        ('provider', 'Provider'),
+    ]
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='wallet'
+        related_name='wallets'
     )
+    wallet_type = models.CharField(max_length=10, choices=WALLET_TYPES, default='user')
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ('user', 'wallet_type')
+
     def __str__(self):
-        return f"{self.user.email}'s Wallet - Balance: {self.balance}"
+        return f"{self.user.email}'s {self.get_wallet_type_display()} Wallet - Balance: {self.balance}"
 
 class WalletTransaction(models.Model):
     TRANSACTION_TYPES = [
