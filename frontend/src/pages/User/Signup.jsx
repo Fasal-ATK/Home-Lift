@@ -77,7 +77,6 @@ function Signup() {
     }
 
     setLoading(true);
-    dispatch(startLoading());
     try {
       const response = await otpService.sendOtp({ email });
       console.log('OTP response:', response.message);
@@ -90,7 +89,7 @@ function Signup() {
       setErrorState(extractErrorMessage(err.response?.data) || "Failed to send OTP");
     }
     setLoading(false);
-    dispatch(stopLoading());
+    // dispatch(stopLoading());
   };
 
   // Resend OTP
@@ -112,7 +111,6 @@ function Signup() {
   // Verify OTP and register user
   const handleOtpVerify = async (otp) => {
     setErrorState('');
-    dispatch(startLoading());
     try {
       console.log('Verifying OTP:', { email, otp });
       const otpResponse = await otpService.verifyOtp({ email, otp });
@@ -141,7 +139,7 @@ function Signup() {
       const msg = extractErrorMessage(error.response?.data) || 'Invalid OTP or Registration failed';
       throw new Error(msg);
     } finally {
-      dispatch(stopLoading());
+      // dispatch(stopLoading());
     }
   };
 

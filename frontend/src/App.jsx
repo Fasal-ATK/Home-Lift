@@ -1,6 +1,7 @@
 // src/App.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastWrapper } from './components/common/Toast';
+import LoadingOverlay from './components/common/LoadingOverlay';
 
 // User Pages
 import Login from './pages/User/Login';
@@ -62,6 +63,7 @@ function App() {
   return (
     <>
       <ToastWrapper />
+      <LoadingOverlay />
       <ScrollToTop />
 
       {/* Initialize Socket for logged-in user */}

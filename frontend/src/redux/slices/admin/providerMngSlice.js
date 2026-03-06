@@ -35,7 +35,6 @@ const providerSlice = createSlice({
       .addCase(fetchProviders.pending, (state) => {
         state.loading = true;
         state.error = null;
-        state.list = []; // Clear current list to avoid stale data on page change
       })
       .addCase(fetchProviders.fulfilled, (state, action) => {
         state.loading = false;

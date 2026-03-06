@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Box } from '@mui/material';
 import AdminSidebar from '../components/admin/AdminSidebar';
-import LoadingOverlay from '../components/common/LoadingOverlay';
 import { Outlet } from 'react-router-dom';
 
 const AdminLayout = () => {
@@ -22,7 +21,6 @@ const AdminLayout = () => {
           transition: 'margin-left 0.3s ease-in-out',
         }}
       >
-        <LoadingOverlay />
         <Outlet />
       </Box>
     </Box>

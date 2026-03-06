@@ -1,9 +1,9 @@
-import React from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, CircularProgress, TableSortLabel, Box
+  Paper, TableSortLabel, Box, Typography
 } from '@mui/material';
 import Pagination from '../common/Pagination';
+import HLProgress from '../common/HLProgress';
 
 const DataTable = ({
   columns,
@@ -28,58 +28,74 @@ const DataTable = ({
   );
 
   return (
-    <Paper elevation={3}>
-      {loading ? (
-        <Box display="flex" justifyContent="center" p={5}>
-          <CircularProgress />
+    <Paper elevation={3} sx={{ position: 'relative', overflow: 'hidden', minHeight: '200px' }}>
+      {/* Branded HL Animation Overlay - Professional & Contextual */}
+      {loading && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.4)',
+            backdropFilter: 'blur(1px)',
+            transition: 'all 0.3s ease',
+          }}
+        >
+          <HLProgress size={50} />
         </Box>
-      ) : (
-        <>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: '#ffe088' }}>
+      )}
+
+      <TableContainer sx={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s ease-in-out' }}>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: '#ffe088' }}>
+              {columns.map((col) => (
+                <TableCell key={col.key} align={col.align || 'left'} sx={{ fontWeight: 'bold' }}>
+                  {col.label} {col.sortable && renderSortLabel(col.key)}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.length === 0 && !loading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} align="center" sx={{ py: 8 }}>
+                  {emptyMessage}
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((row, idx) => (
+                <TableRow key={row.id || idx} hover>
                   {columns.map((col) => (
                     <TableCell key={col.key} align={col.align || 'left'}>
-                      {col.label} {col.sortable && renderSortLabel(col.key)}
+                      {col.render ? col.render(row) : row[col.key]}
                     </TableCell>
                   ))}
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} align="center">
-                      {emptyMessage}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rows.map((row, idx) => (
-                    <TableRow key={row.id || idx}>
-                      {columns.map((col) => (
-                        <TableCell key={col.key} align={col.align || 'left'}>
-                          {col.render ? col.render(row) : row[col.key]}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          {/* Render pagination if count or totalItems is provided */}
-          {(count > 1 || (totalItems > rowsPerPage)) && (
-            <Box p={2} display="flex" justifyContent="flex-end">
-              <Pagination
-                count={count}
-                page={page}
-                onChange={onPageChange}
-                totalCount={totalItems}
-                pageSize={rowsPerPage}
-              />
-            </Box>
-          )}
-        </>
+              ))
+            )}
+
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Render pagination if count or totalItems is provided */}
+      {(count > 1 || (totalItems > rowsPerPage)) && (
+        <Box p={2} display="flex" justifyContent="flex-end">
+          <Pagination
+            count={count}
+            page={page}
+            onChange={onPageChange}
+            totalCount={totalItems}
+            pageSize={rowsPerPage}
+          />
+        </Box>
       )}
     </Paper>
   );

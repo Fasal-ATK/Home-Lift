@@ -6,49 +6,7 @@ import { fetchCategories } from "../../redux/slices/categorySlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
 import allCategory from "../../assets/services/All.png";
 
-const Card = ({ name, icon, onClick, selected }) => (
-  <Paper
-    onClick={onClick}
-    sx={{
-      width: 120,
-      height: 140,
-      textAlign: "center",
-      backgroundColor: selected ? "#f0f8ff" : "white",
-      border: selected ? "2px solid #1976d2" : "1px solid #e0e0e0",
-      borderRadius: "10px",
-      cursor: "pointer",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      "&:hover": { backgroundColor: "#f9f9f9" },
-      transition: "0.2s ease",
-    }}
-  >
-    <Box
-      component="img"
-      src={icon}
-      alt={name}
-      sx={{
-        width: 50,
-        height: 50,
-        objectFit: "contain",
-        mb: 2,
-      }}
-    />
-    <Typography
-      variant="body2"
-      fontWeight="bold"
-      sx={{
-        textAlign: "center",
-        whiteSpace: "normal",
-        wordBreak: "break-word",
-      }}
-    >
-      {name}
-    </Typography>
-  </Paper>
-);
+import ServiceCard from "../../components/common/ServiceCard";
 
 function Services() {
   const dispatch = useDispatch();
@@ -85,7 +43,7 @@ function Services() {
       {/* Categories */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-          <Card
+          <ServiceCard
             name="All Services"
             icon={allCategory}
             onClick={() => setSelectedCategory(null)}
@@ -95,7 +53,7 @@ function Services() {
 
         {categories.map((cat) => (
           <Grid size={{ xs: 6, sm: 4, md: 2 }} key={cat.id}>
-            <Card
+            <ServiceCard
               name={cat.name}
               icon={cat.icon}
               onClick={() => setSelectedCategory(cat.id)}
@@ -118,7 +76,7 @@ function Services() {
         ) : (
           filteredServices.map((srv) => (
             <Grid size={{ xs: 6, sm: 4, md: 2 }} key={srv.id}>
-              <Card
+              <ServiceCard
                 name={srv.name}
                 icon={srv.icon}
                 onClick={() => handleServiceClick(srv)} // ✅ Redirect with service data

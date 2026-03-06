@@ -65,7 +65,6 @@ const offersSlice = createSlice({
             .addCase(fetchOffers.pending, (state) => {
                 state.loading = true;
                 state.error = null;
-                state.list = [];
             })
             .addCase(fetchOffers.fulfilled, (state, action) => {
                 state.loading = false;

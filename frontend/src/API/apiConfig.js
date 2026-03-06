@@ -12,6 +12,18 @@ const api = axios.create({
 // Attach access token to all requests
 api.interceptors.request.use(
   (config) => {
+    // Determine if we should show the global loader
+    // Default: GET = false, others = true
+    const method = config.method?.toLowerCase() || 'get';
+    const shouldShowLoader = config.useLoader !== undefined
+      ? config.useLoader
+      : method !== 'get';
+
+    if (shouldShowLoader) {
+      config._globalLoader = true; // Flag to track if this specific request triggered the loader
+      store.dispatch(startLoading());
+    }
+
     const token = localStorage.getItem('accessToken');
 
     if (token) {
@@ -24,6 +36,9 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    if (error.config?._globalLoader) {
+      store.dispatch(stopLoading());
+    }
     return Promise.reject(error);
   }
 );
@@ -31,9 +46,15 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
+    if (response.config?._globalLoader) {
+      store.dispatch(stopLoading());
+    }
     return response;
   },
   async (error) => {
+    if (error.config?._globalLoader) {
+      store.dispatch(stopLoading());
+    }
     const originalRequest = error.config;
 
 

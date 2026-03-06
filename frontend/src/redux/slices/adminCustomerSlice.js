@@ -42,7 +42,6 @@ const adminCustomerSlice = createSlice({
       .addCase(fetchCustomers.pending, (state) => {
         state.loading = true;
         state.error = null;
-        state.customers = []; // Clear current list to avoid stale data on page change
       })
       .addCase(fetchCustomers.fulfilled, (state, action) => {
         state.loading = false;

@@ -35,7 +35,8 @@ const apiEndpoints = {
 
     notification: {
         list: 'user/notifications/',
-        markRead: (id) => `user/notifications/${id}/read/`,
+        bulk: 'user/notifications/bulk/',
+        detail: (id) => `user/notifications/${id}/`,
     },
 
     adminDashboard: {},

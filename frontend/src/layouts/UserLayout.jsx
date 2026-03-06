@@ -1,7 +1,6 @@
 import { Box } from '@mui/material';
 import { Outlet } from 'react-router-dom';
 import UserNavbar from '../components/user/UserNavbar';
-import LoadingOverlay from '../components/common/LoadingOverlay';
 import Footer from '../components/user/Footer';
 
 const UserLayout = () => {
@@ -12,7 +11,6 @@ const UserLayout = () => {
         sx={{ flexGrow: 1, p: 3, bgcolor: 'white', minHeight: '100vh' }}
       >
         <UserNavbar />
-        <LoadingOverlay />
         <Outlet />
         <Footer />
       </Box>

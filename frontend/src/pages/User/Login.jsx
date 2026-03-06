@@ -61,8 +61,6 @@ function Login() {
     }
 
     setLoading(true);
-    dispatch(startLoading());
-
     try {
       const data = { email, password: pass };
       const response = await authService.login(data);
@@ -90,7 +88,7 @@ function Login() {
       }
     } finally {
       setLoading(false);
-      dispatch(stopLoading());
+      // dispatch(stopLoading());
     }
   };
 
@@ -113,7 +111,6 @@ function Login() {
     }
 
     setOtpLoading(true);
-    dispatch(startLoading());
     try {
       await otpService.sendOtp({ email, purpose: 'forgot-password' });
       ShowToast('OTP sent to your email', 'success');
@@ -123,7 +120,7 @@ function Login() {
       setError(extractErrorMessage(err.response?.data) || "Failed to send OTP");
     }
     setOtpLoading(false);
-    dispatch(stopLoading());
+    // dispatch(stopLoading());
   };
 
   // Resend OTP
@@ -142,7 +139,6 @@ function Login() {
   // Verify OTP and navigate to password reset page
   const handleOtpVerify = async (otp) => {
     setError('');
-    dispatch(startLoading());
     try {
       await otpService.verifyOtp({
         email,
@@ -157,7 +153,7 @@ function Login() {
       setError(extractErrorMessage(error.response?.data));
       setShowOtpModal(false);
     } finally {
-      dispatch(stopLoading());
+      // dispatch(stopLoading());
     }
   };
 

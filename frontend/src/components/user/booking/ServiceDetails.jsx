@@ -12,6 +12,7 @@ import {
 import { ExpandMore } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import ServiceCard from "../../common/ServiceCard";
 
 
 
@@ -109,24 +110,12 @@ const ServiceDetails = () => {
         {relatedServices?.length ? (
           <Grid container spacing={2}>
             {relatedServices.map((srv) => (
-              <Grid size={{ xs: 6, sm: 4 }} key={srv.id}>
-                <Paper
-                  sx={{
-                    textAlign: "center",
-                    p: 2,
-                    cursor: "pointer",
-                    "&:hover": { boxShadow: 4 },
-                  }}
-                  onClick={() => navigate("/service-booking", { state: { service: srv } })}
-                >
-                  <Box
-                    component="img"
-                    src={srv.icon}
-                    alt={srv.name}
-                    sx={{ width: 60, height: 60, mb: 1 }}
-                  />
-                  <Typography variant="body2">{srv.name}</Typography>
-                </Paper>
+              <Grid size={{ xs: 6, sm: 4, md: 2 }} key={srv.id}>
+                <ServiceCard
+                  name={srv.name}
+                  icon={srv.icon}
+                  onClick={() => navigate("/service-details", { state: { service: srv } })}
+                />
               </Grid>
             ))}
           </Grid>

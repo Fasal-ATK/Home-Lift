@@ -3,9 +3,9 @@ import { bookingService, payWithWallet as apiPayWithWallet } from '../../service
 
 export const fetchWallet = createAsyncThunk(
     'wallet/fetchWallet',
-    async (_, { rejectWithValue }) => {
+    async (type = 'user', { rejectWithValue }) => {
         try {
-            const data = await bookingService.getWallet();
+            const data = await bookingService.getWallet(type);
             return data;
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);

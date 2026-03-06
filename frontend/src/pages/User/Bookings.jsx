@@ -40,8 +40,6 @@ import { fetchCategories } from "../../redux/slices/categorySlice";
 import { fetchWallet, payWithWalletThunk } from "../../redux/slices/walletSlice";
 import { bookingService, createPaymentIntent } from "../../services/apiServices";
 import { ShowToast } from "../../components/common/Toast";
-import { startLoading, stopLoading } from "../../redux/slices/loadingSlice";
-import { stripePromise } from "../../../stripe/stripe";
 import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "../../components/common/payment";
 
@@ -499,7 +497,6 @@ export default function Bookings() {
   const handleWalletPay = async () => {
     if (!selectedBooking) return;
     try {
-      dispatch(startLoading());
       await dispatch(payWithWalletThunk({
         bookingId: selectedBooking.id,
         paymentType: selectedBooking.paymentType
@@ -511,8 +508,6 @@ export default function Bookings() {
     } catch (err) {
       console.error("Wallet payment failed", err);
       ShowToast(err?.message || "Wallet payment failed. Please try again.", "error");
-    } finally {
-      dispatch(stopLoading());
     }
   };
 

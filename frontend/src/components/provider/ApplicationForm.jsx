@@ -7,7 +7,6 @@ import { Add, Remove, UploadFile, Close } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useDispatch, useSelector } from 'react-redux';
 import { applyProvider } from '../../redux/slices/user/userSlice';
-import { startLoading, stopLoading } from '../../redux/slices/loadingSlice';
 import { ShowToast } from '../../components/common/Toast';
 
 const StyledBox = styled(Paper)(({ theme }) => ({
@@ -203,7 +202,6 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
     };
     console.log('🚀 Submitting application with data:', applicationData);
 
-    dispatch(startLoading());
     dispatch(applyProvider(applicationData))
       .unwrap()
       .then(() => {
@@ -217,9 +215,6 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
         } else {
           ShowToast('Failed to submit application: ' + err, 'error');
         }
-      })
-      .finally(() => {
-        dispatch(stopLoading());
       });
   };
 

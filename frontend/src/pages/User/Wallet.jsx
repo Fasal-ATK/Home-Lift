@@ -21,7 +21,7 @@ const Wallet = () => {
     const { balance, recentTransactions, loading, error } = useSelector((state) => state.wallet);
 
     useEffect(() => {
-        dispatch(fetchWallet());
+        dispatch(fetchWallet('user'));
     }, [dispatch]);
 
     if (loading && !balance) {

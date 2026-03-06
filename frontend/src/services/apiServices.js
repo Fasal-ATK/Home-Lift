@@ -106,8 +106,8 @@ export const bookingService = {
         return response.data;
     },
 
-    getWallet: async () => {
-        const response = await api.get(apiEndpoints.user.wallet);
+    getWallet: async (type = 'user') => {
+        const response = await api.get(apiEndpoints.user.wallet, { params: { type } });
         return response.data;
     },
 };
@@ -146,7 +146,15 @@ export const notificationService = {
         return response.data;
     },
     markRead: async (id) => {
-        const response = await api.patch(apiEndpoints.notification.markRead(id));
+        const response = await api.patch(apiEndpoints.notification.detail(id), { action: 'read' });
+        return response.data;
+    },
+    delete: async (id) => {
+        const response = await api.delete(apiEndpoints.notification.detail(id));
+        return response.data;
+    },
+    bulkAction: async (ids, action) => {
+        const response = await api.post(apiEndpoints.notification.bulk, { ids, action });
         return response.data;
     },
 };

@@ -23,7 +23,7 @@ const ProviderWallet = () => {
   const { balance, recentTransactions, loading, error } = useSelector((state) => state.wallet);
 
   useEffect(() => {
-    dispatch(fetchWallet());
+    dispatch(fetchWallet('provider'));
   }, [dispatch]);
 
   if (loading && !balance) {

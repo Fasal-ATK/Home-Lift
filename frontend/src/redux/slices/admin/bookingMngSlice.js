@@ -47,7 +47,6 @@ const adminBookingSlice = createSlice({
             .addCase(fetchAdminBookings.pending, (state) => {
                 state.loading = true;
                 state.error = null;
-                state.bookings = []; // Clear current list to avoid stale data on page change
             })
             .addCase(fetchAdminBookings.fulfilled, (state, action) => {
                 state.loading = false;

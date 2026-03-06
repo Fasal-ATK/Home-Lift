@@ -22,45 +22,7 @@ import productivityIcon from "../../assets/user/home/partner/Improve-Productivit
 import customerBaseIcon from "../../assets/user/home/partner/Large-Customer-Base.png";
 
 // ------------------- Reusable Components ------------------- //
-const ServiceCard = ({ name, icon, isMore, onClick }) => (
-  <Paper
-    onClick={onClick}
-    sx={{
-      width: 130,
-      height: 140,
-      textAlign: "center",
-      backgroundColor: "white",
-      borderRadius: "10px",
-      cursor: "pointer",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      "&:hover": { backgroundColor: "#f9f9f9" },
-      p: isMore ? 1 : 0,
-    }}
-  >
-    <Box
-      component="img"
-      src={icon}
-      alt={name}
-      sx={{
-        width: 60,
-        height: 60,
-        objectFit: "contain",
-        mb: isMore ? 1 : 2,
-        pt: isMore ? 0 : 2,
-      }}
-    />
-    <Typography
-      variant="body2"
-      fontWeight="bold"
-      sx={{ textAlign: "center", whiteSpace: "normal", wordBreak: "break-word" }}
-    >
-      {name}
-    </Typography>
-  </Paper>
-);
+import ServiceCard from "../../components/common/ServiceCard";
 
 const BenefitItem = ({ icon, title, description }) => (
   <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
@@ -204,6 +166,11 @@ const Home = () => {
     return null;
   };
 
+  // ✅ Navigate to ServiceBooking when service card clicked
+  const handleServiceClick = (srv) => {
+    navigate("/service-details", { state: { service: srv } });
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 2 }}>
       {/* Popular Services */}
@@ -220,7 +187,7 @@ const Home = () => {
               <ServiceCard
                 name={srv.name}
                 icon={srv.icon || ""}
-                onClick={() => navigate(`/#`)} // optional
+                onClick={() => handleServiceClick(srv)}
               />
             </Grid>
           ))}
