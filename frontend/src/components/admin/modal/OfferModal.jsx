@@ -41,7 +41,6 @@ export default function OfferModal({ open, handleClose, offer = null }) {
         discount_type: "percentage",
         discount_value: "",
         max_discount: "",
-        category: "",
         service: "",
         start_date: "",
         end_date: "",
@@ -62,7 +61,6 @@ export default function OfferModal({ open, handleClose, offer = null }) {
                 discount_type: offer.discount_type || "percentage",
                 discount_value: offer.discount_value || "",
                 max_discount: offer.max_discount || "",
-                category: offer.category || "",
                 service: offer.service || "",
                 start_date: offer.start_date || "",
                 end_date: offer.end_date || "",
@@ -74,7 +72,6 @@ export default function OfferModal({ open, handleClose, offer = null }) {
                 discount_type: "percentage",
                 discount_value: "",
                 max_discount: "",
-                category: "",
                 service: "",
                 start_date: "",
                 end_date: "",
@@ -85,8 +82,6 @@ export default function OfferModal({ open, handleClose, offer = null }) {
     const handleChange = (e) => {
         const { name, value } = e.target;
         let updates = { [name]: value };
-        if (name === "category" && value) updates.service = "";
-        if (name === "service" && value) updates.category = "";
         setFormData((prev) => ({ ...prev, ...updates }));
     };
 
@@ -98,7 +93,6 @@ export default function OfferModal({ open, handleClose, offer = null }) {
         }
 
         const data = { ...formData };
-        if (!data.category) delete data.category;
         if (!data.service) delete data.service;
         if (!data.max_discount) delete data.max_discount;
 
@@ -238,23 +232,6 @@ export default function OfferModal({ open, handleClose, offer = null }) {
                                 TARGET AUDIENCE
                             </Typography>
                             <Stack spacing={2}>
-                                <TextField
-                                    fullWidth
-                                    select
-                                    label="Target Category"
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleChange}
-                                    size="small"
-                                    InputProps={{
-                                        startAdornment: <InputAdornment position="start"><CategoryIcon fontSize="small" /></InputAdornment>
-                                    }}
-                                >
-                                    <MenuItem value=""><em>Global Offer (All Categories)</em></MenuItem>
-                                    {categories.map((cat) => (
-                                        <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-                                    ))}
-                                </TextField>
                                 <TextField
                                     fullWidth
                                     select

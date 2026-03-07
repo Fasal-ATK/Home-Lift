@@ -74,12 +74,27 @@ export default function ProviderRequestsWithServices() {
   const checkOverlap = (booking) => {
     if (!booking.booking_date || !booking.booking_time) return false;
 
-    // Check against confirmed or in-progress appointments
-    return myAppointments.some(mine =>
-      mine.booking_date === booking.booking_date &&
-      mine.booking_time === booking.booking_time &&
-      ["confirmed", "in_progress"].includes(mine.status)
-    );
+    // Default duration to 60 minutes if backend doesn't provide it
+    const durationMins = booking.service_duration || 60;
+
+    // Create Date objects for the incoming booking
+    const bStart = new Date(`${booking.booking_date}T${booking.booking_time}`);
+    const bEnd = new Date(bStart.getTime() + durationMins * 60000);
+
+    return myAppointments.some(mine => {
+      if (!mine.booking_date || !mine.booking_time || mine.id === booking.id) return false;
+      if (!["confirmed", "in_progress"].includes(mine.status)) return false;
+
+      // Only check the same day to save processing
+      if (mine.booking_date !== booking.booking_date) return false;
+
+      const mDuration = mine.service_duration || 60;
+      const mStart = new Date(`${mine.booking_date}T${mine.booking_time}`);
+      const mEnd = new Date(mStart.getTime() + mDuration * 60000);
+
+      // Overlap condition: start of new is before end of old AND end of new is after start of old
+      return bStart < mEnd && bEnd > mStart;
+    });
   };
 
   // derive service list from jobs - NOTE: This only works for loaded jobs now. 
@@ -106,11 +121,15 @@ export default function ProviderRequestsWithServices() {
       const resultAction = await dispatch(acceptJob(Number(id)));
       if (acceptJob.fulfilled.match(resultAction)) {
         setSnack({ open: true, message: `Job #${id} accepted successfully!`, severity: "success" });
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
       } else {
-        setSnack({ open: true, message: resultAction.payload || "Failed to accept job", severity: "error" });
+        const errorMsg = resultAction.payload?.error || resultAction.payload?.message || (typeof resultAction.payload === 'string' ? resultAction.payload : "Failed to accept job");
+        setSnack({ open: true, message: errorMsg, severity: "error" });
       }
     } catch (err) {
-      setSnack({ open: true, message: err.message || "Failed to accept job", severity: "error" });
+      setSnack({ open: true, message: err?.message || "Failed to accept job", severity: "error" });
     }
   };
 

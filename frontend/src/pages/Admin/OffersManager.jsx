@@ -89,7 +89,6 @@ export default function OffersManager() {
       label: "Targeting",
       render: (row) => {
         if (row.service_name) return <Chip size="small" label={`Service: ${row.service_name}`} color="primary" variant="outlined" />;
-        if (row.category_name) return <Chip size="small" label={`Category: ${row.category_name}`} color="secondary" variant="outlined" />;
         return <Chip size="small" label="Global" variant="outlined" />;
       }
     },

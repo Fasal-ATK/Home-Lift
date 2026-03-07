@@ -41,6 +41,7 @@ import { fetchWallet, payWithWalletThunk } from "../../redux/slices/walletSlice"
 import { bookingService, createPaymentIntent } from "../../services/apiServices";
 import { ShowToast } from "../../components/common/Toast";
 import { Elements } from "@stripe/react-stripe-js";
+import { stripePromise } from "../../../stripe/stripe";
 import CheckoutForm from "../../components/common/payment";
 
 import Modal from "@mui/material/Modal";
