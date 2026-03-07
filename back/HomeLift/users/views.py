@@ -46,7 +46,8 @@ class GoogleLoginAPIView(APIView):
             idinfo = id_token.verify_oauth2_token(
                 id_token_from_client,
                 requests.Request(),
-                settings.GOOGLE_CLIENT_ID
+                settings.GOOGLE_CLIENT_ID,
+                clock_skew_in_seconds=10  # Correct parameter name
             )
 
             email = idinfo.get("email")

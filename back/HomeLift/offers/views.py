@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Offer
 from .serializers import OfferSerializer
-from core.permissions import IsAdminUserCustom
+from core.permissions import IsAdminUserCustom, AllowAnyCustom
+from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -64,3 +65,47 @@ class AdminOfferDetailUpdateDeleteView(APIView):
             return Response({"detail": "Offer not found"}, status=status.HTTP_404_NOT_FOUND)
         offer.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class PublicOfferListView(APIView):
+    permission_classes = [AllowAnyCustom]
+
+    def get(self, request):
+        now = timezone.now().date()
+        offers = Offer.objects.filter(
+            is_active=True,
+            start_date__lte=now,
+            end_date__gte=now
+        ).select_related('category', 'service')
+        
+        expanded_data = []
+        seen_service_ids = set()
+
+        # Step 1: Process Service-specific offers
+        for offer in [o for o in offers if o.service]:
+            if offer.service_id not in seen_service_ids:
+                data = OfferSerializer(offer).data
+                data['unique_key'] = f"srv-{offer.id}-{offer.service_id}"
+                expanded_data.append(data)
+                seen_service_ids.add(offer.service_id)
+
+        # Step 2: Process Category-specific offers (Expansion)
+        for offer in [o for o in offers if o.category and not o.service]:
+            services = offer.category.services.filter(is_active=True)
+            for service in services:
+                if service.id not in seen_service_ids:
+                    data = OfferSerializer(offer).data
+                    data['service'] = service.id
+                    data['service_name'] = service.name
+                    data['service_icon'] = service.icon.url if service.icon else None
+                    data['unique_key'] = f"cat-{offer.id}-{service.id}"
+                    expanded_data.append(data)
+                    seen_service_ids.add(service.id)
+
+        # Step 3: Global offers (optional)
+        processed_ids = [o['id'] for o in expanded_data if 'unique_key' in o] # Simplified check
+        for offer in [o for o in offers if not o.category and not o.service]:
+            data = OfferSerializer(offer).data
+            data['unique_key'] = f"global-{offer.id}"
+            expanded_data.append(data)
+
+        return Response(expanded_data, status=status.HTTP_200_OK)

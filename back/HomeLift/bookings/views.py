@@ -358,7 +358,7 @@ class BookingStatusUpdateView(APIView):
                 commission = min(booking.price * Decimal('0.07'), Decimal('500.00'))
                 provider_earnings = booking.price - commission
                 
-                wallet, _ = Wallet.objects.get_or_create(user=booking.provider)
+                wallet, _ = Wallet.objects.get_or_create(user=booking.provider, wallet_type='provider')
                 wallet.balance += provider_earnings
                 wallet.save()
                 

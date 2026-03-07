@@ -113,7 +113,41 @@ class BookingSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        """Attach user automatically before creation."""
+        """Attach user and apply active discounts before creation."""
         user = self.context['request'].user
+        service = validated_data.get('service')
+        
+        # Security: Always calculate final price on backend
+        from offers.models import Offer
+        from django.utils import timezone
+        from django.db.models import Q
+        from decimal import Decimal
+        
+        now = timezone.now().date()
+        base_price = service.price
+        
+        # Find best active offer (Service specific > Category specific)
+        offer = Offer.objects.filter(
+            Q(service=service) | Q(category=service.category, service__isnull=True),
+            is_active=True,
+            start_date__lte=now,
+            end_date__gte=now
+        ).order_by('-discount_value').first()
+        
+        final_price = base_price
+        if offer:
+            if offer.discount_type == 'percentage':
+                discount = (base_price * Decimal(str(offer.discount_value))) / Decimal('100')
+                if offer.max_discount:
+                    discount = min(discount, offer.max_discount)
+                final_price = base_price - discount
+            else:  # fixed amount
+                final_price = base_price - Decimal(str(offer.discount_value))
+            
+            final_price = max(final_price, Decimal('0'))
+            
         validated_data['user'] = user
+        validated_data['price'] = final_price
+        # Advance is automatically calculated in Booking.save()
+        
         return super().create(validated_data)

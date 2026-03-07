@@ -6,4 +6,4 @@ from .models import Wallet
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_wallet(sender, instance, created, **kwargs):
     if created:
-        Wallet.objects.get_or_create(user=instance)
+        Wallet.objects.get_or_create(user=instance, wallet_type='user')

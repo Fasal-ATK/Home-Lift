@@ -91,7 +91,7 @@ class WalletPay(APIView):
         else:
             return Response({"error": "Invalid payment_type."}, status=400)
             
-        wallet, created = Wallet.objects.get_or_create(user=request.user)
+        wallet, created = Wallet.objects.get_or_create(user=request.user, wallet_type='user')
         
         if wallet.balance < amount_to_deduct:
             return Response({"error": f"Insufficient wallet balance. Need ₹{amount_to_deduct}."}, status=400)

@@ -133,7 +133,7 @@ def booking_post_save(sender, instance, created, **kwargs):
                     WalletTransaction = apps.get_model('wallet', 'WalletTransaction')
 
                     with transaction.atomic():
-                        wallet, _ = Wallet.objects.get_or_create(user=instance.user)
+                        wallet, _ = Wallet.objects.get_or_create(user=instance.user, wallet_type='user')
                         wallet.balance += instance.advance
                         wallet.save(update_fields=['balance'])
 
