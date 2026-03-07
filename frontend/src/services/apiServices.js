@@ -303,6 +303,10 @@ export const offersService = {
         const response = await api.delete(apiEndpoints.offers.detail(id));
         return response.data;
     },
+    getPublicOffers: async () => {
+        const response = await api.get(apiEndpoints.offers.publicList);
+        return response.data;
+    },
 };
 
 export const createPaymentIntent = async (booking_id, payment_type = "advance") => {

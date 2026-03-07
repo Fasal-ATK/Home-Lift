@@ -9,6 +9,7 @@ import { Paper, Box, Typography } from "@mui/material";
  * @param {function} onClick - Handle card click.
  * @param {boolean} selected - Whether the card is in a selected state (used in Categories).
  * @param {boolean} isMore - Special styling for the "More Services" card.
+ * @param {object} offer - Offer data if available.
  * @param {object} sx - Additional styles to override defaults.
  */
 const ServiceCard = ({
@@ -17,6 +18,8 @@ const ServiceCard = ({
     onClick,
     selected = false,
     isMore = false,
+    offer = null,
+    price = null,
     sx = {}
 }) => {
     return (
@@ -37,6 +40,8 @@ const ServiceCard = ({
                 alignItems: "center",
                 justifyContent: "center",
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                position: "relative",
+                overflow: "hidden", // Important for ribbon
                 "&:hover": {
                     backgroundColor: "#f9f9f9",
                     transform: "translateY(-4px)",
@@ -46,6 +51,31 @@ const ServiceCard = ({
                 ...sx,
             }}
         >
+            {/* Offer Ribbon */}
+            {offer && (
+                <Box
+                    sx={{
+                        position: "absolute",
+                        top: 10,
+                        right: -30,
+                        backgroundColor: "#f2b705",
+                        color: "black",
+                        px: 4,
+                        py: 0.5,
+                        transform: "rotate(45deg)",
+                        fontSize: "0.65rem",
+                        fontWeight: "bold",
+                        zIndex: 1,
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                        whiteSpace: "nowrap",
+                    }}
+                >
+                    {offer.discount_type === 'percentage'
+                        ? `${parseInt(offer.discount_value)}% OFF`
+                        : `SAVE ₹${parseInt(offer.discount_value)}`}
+                </Box>
+            )}
+
             <Box
                 component="img"
                 src={icon || ""}
@@ -57,6 +87,7 @@ const ServiceCard = ({
                     mb: isMore ? 1 : 2,
                     pt: isMore ? 0 : 2,
                     opacity: icon ? 1 : 0.3,
+                    mt: offer ? 1 : 0, // Push down slightly if there's an offer
                 }}
             />
             <Typography
@@ -74,6 +105,48 @@ const ServiceCard = ({
             >
                 {name}
             </Typography>
+
+            {price && (
+                <Box sx={{ mt: 0.5, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    {offer ? (
+                        <>
+                            <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ textDecoration: "line-through", fontSize: "0.7rem" }}
+                                >
+                                    ₹{price}
+                                </Typography>
+                                <Typography
+                                    variant="caption"
+                                    fontWeight="bold"
+                                    color="success.main"
+                                    sx={{ fontSize: "0.75rem" }}
+                                >
+                                    ₹{(() => {
+                                        const p = Number(price);
+                                        const dv = Number(offer.discount_value);
+                                        let final = p;
+                                        if (offer.discount_type === 'percentage') {
+                                            let disc = (p * dv) / 100;
+                                            if (offer.max_discount) disc = Math.min(disc, Number(offer.max_discount));
+                                            final = p - disc;
+                                        } else {
+                                            final = p - dv;
+                                        }
+                                        return Math.max(final, 0).toFixed(0);
+                                    })()}
+                                </Typography>
+                            </Box>
+                        </>
+                    ) : (
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+                            ₹{price}
+                        </Typography>
+                    )}
+                </Box>
+            )}
         </Paper>
     );
 };

@@ -6,6 +6,7 @@ import ProviderStatusModal from "../../components/provider/ProviderStatusModal";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
+import { fetchPublicOffers } from "../../redux/slices/admin/offersSlice";
 import { fetchProviderApplicationStatus } from "../../redux/slices/user/userSlice";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/common/Loader";
@@ -44,6 +45,7 @@ const Home = () => {
 
   const { list: categories } = useSelector((state) => state.categories);
   const { list: services, loading: servicesLoading, error: servicesError } = useSelector((state) => state.services);
+  const { list: activeOffers, loading: offersLoading } = useSelector((state) => state.offers);
   const { providerApplicationStatus, rejectionReason, isProviderActive } = useSelector((state) => state.user);
   const { isProvider, user } = useSelector((state) => state.auth);
 
@@ -51,6 +53,7 @@ const Home = () => {
     if (!categories.length) dispatch(fetchCategories());
     if (!services.length) dispatch(fetchServices());
     if (!providerApplicationStatus) dispatch(fetchProviderApplicationStatus());
+    dispatch(fetchPublicOffers());
   }, [dispatch, categories.length, services.length, providerApplicationStatus]);
 
 
@@ -187,6 +190,8 @@ const Home = () => {
               <ServiceCard
                 name={srv.name}
                 icon={srv.icon || ""}
+                offer={srv.active_offer}
+                price={srv.price}
                 onClick={() => handleServiceClick(srv)}
               />
             </Grid>
@@ -202,6 +207,43 @@ const Home = () => {
           </Grid>
         </Grid>
 
+      )}
+
+      {/* Offers & Discount Section */}
+      {activeOffers.length > 0 && (
+        <Box sx={{ mt: 6 }}>
+          <Typography variant="h5" fontWeight="bold" mb={3}>Offers & Discount</Typography>
+          <Grid container spacing={2}>
+            {activeOffers.map((offer) => {
+              // Determine if it's a category or service offer
+              const name = offer.service_name || offer.category_name || offer.title;
+              const icon = offer.service_icon || offer.category_icon || "";
+
+              return (
+                <Grid size={{ xs: 6, sm: 4, md: 2 }} key={offer.unique_key || offer.id}>
+                  <ServiceCard
+                    name={name}
+                    icon={icon}
+                    offer={offer}
+                    price={offer.service_price}
+                    onClick={() => {
+                      if (offer.service) {
+                        const fullService = services.find(s => s.id === offer.service);
+                        if (fullService) {
+                          handleServiceClick(fullService);
+                        } else {
+                          navigate("/service-details", { state: { service: { id: offer.service, name: offer.service_name, icon: offer.service_icon } } });
+                        }
+                      } else if (offer.category) {
+                        navigate("/services");
+                      }
+                    }}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Box>
       )}
 
 

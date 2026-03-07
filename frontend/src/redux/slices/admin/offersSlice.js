@@ -12,6 +12,17 @@ export const fetchOffers = createAsyncThunk(
     }
 );
 
+export const fetchPublicOffers = createAsyncThunk(
+    'offers/fetchPublicOffers',
+    async (_, { rejectWithValue }) => {
+        try {
+            return await offersService.getPublicOffers();
+        } catch (err) {
+            return rejectWithValue(err.response?.data || 'Failed to fetch public offers');
+        }
+    }
+);
+
 export const createOffer = createAsyncThunk(
     'offers/createOffer',
     async (offerData, { rejectWithValue }) => {
@@ -78,6 +89,19 @@ const offersSlice = createSlice({
                 }
             })
             .addCase(fetchOffers.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // Public Offers
+            .addCase(fetchPublicOffers.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchPublicOffers.fulfilled, (state, action) => {
+                state.loading = false;
+                state.list = action.payload;
+            })
+            .addCase(fetchPublicOffers.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })

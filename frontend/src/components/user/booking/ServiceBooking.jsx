@@ -32,17 +32,39 @@ import { createPaymentIntent } from "../../../services/apiServices";
 import { ShowToast } from "../../common/Toast";
 
 const calcAdvance = (p) => {
-  if (!p) return 0;
-  const calculated = p * 0.02;
+  const price = Number(p);
+  if (!price) return "0.00";
+  const calculated = price * 0.02;
   const capped = Math.min(calculated, 200);
   // Stripe minimum is ₹50
   return Math.max(capped, 50).toFixed(2);
+};
+
+const getDiscountedPrice = (price, offer) => {
+  const basePrice = Number(price);
+  if (!offer || !basePrice) return basePrice;
+  let discounted = basePrice;
+  const discountVal = Number(offer.discount_value);
+
+  if (offer.discount_type === 'percentage') {
+    let discount = (basePrice * discountVal) / 100;
+    if (offer.max_discount) {
+      discount = Math.min(discount, Number(offer.max_discount));
+    }
+    discounted = basePrice - discount;
+  } else {
+    discounted = basePrice - discountVal;
+  }
+  return Math.max(discounted, 0);
 };
 
 const BookingPage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const selectedService = location.state?.service || null;
+  const offer = selectedService?.active_offer;
+  const finalPrice = getDiscountedPrice(selectedService?.price, offer);
+
   const { loading, error } = useSelector((state) => state.bookings);
   const { handleSubmit, control, reset, watch, setValue } = useForm({
     defaultValues: {
@@ -53,8 +75,8 @@ const BookingPage = () => {
       notes: "",
       booking_date: "",
       booking_time: "",
-      price: selectedService?.price || 0,
-      advance: calcAdvance(selectedService?.price) || 0,
+      price: finalPrice || 0,
+      advance: calcAdvance(finalPrice) || 0,
     }
   });
   const userAddresses = useSelector(state => state.user.addresses);
@@ -98,9 +120,9 @@ const BookingPage = () => {
   useEffect(() => {
     if (selectedService) {
       setValue("service", selectedService.id);
-      setValue("price", selectedService.price || "");
+      setValue("price", finalPrice || "");
     }
-  }, [selectedService, setValue]);
+  }, [selectedService, setValue, finalPrice]);
 
   // Reset time slot if it becomes unavailable
   useEffect(() => {
@@ -221,7 +243,26 @@ const BookingPage = () => {
                   }}
                 >
                   <Typography fontWeight="bold">{selectedService.name}</Typography>
-                  <Typography color="text.secondary">₹{selectedService.price}</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {offer ? (
+                      <>
+                        <Typography color="text.secondary" sx={{ textDecoration: 'line-through', fontSize: '0.9rem' }}>
+                          ₹{selectedService.price}
+                        </Typography>
+                        <Typography color="success.main" fontWeight="bold">
+                          ₹{Number(finalPrice).toFixed(2)}
+                        </Typography>
+                        <Chip
+                          label={offer.discount_type === 'percentage' ? `${offer.discount_value}% OFF` : `₹${offer.discount_value} OFF`}
+                          size="small"
+                          color="success"
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </>
+                    ) : (
+                      <Typography color="text.secondary">₹{selectedService.price}</Typography>
+                    )}
+                  </Box>
                 </Paper>
               ) : (
                 <Typography color="error" mb={2}>
@@ -370,23 +411,34 @@ const BookingPage = () => {
                 <Divider sx={{ mb: 2 }} />
 
                 <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-                  <Typography color="text.secondary">Service Price</Typography>
-                  <Typography fontWeight="700">₹{price || 0}</Typography>
+                  <Typography color="text.secondary">Main Price</Typography>
+                  <Typography fontWeight="700" sx={{ textDecoration: offer ? "line-through" : "none", color: offer ? "text.disabled" : "inherit" }}>
+                    ₹{selectedService?.price || 0}
+                  </Typography>
                 </Box>
+
+                {offer && (
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
+                    <Typography color="text.secondary">Offer Price</Typography>
+                    <Typography fontWeight="700" color="success.main">
+                      ₹{Number(finalPrice).toFixed(2)}
+                    </Typography>
+                  </Box>
+                )}
 
                 <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
                   <Typography color="text.secondary">Advance Payment (Pay now)</Typography>
                   <Typography fontWeight="700" color="primary.main">
-                    ₹{calcAdvance(price)}
+                    ₹{calcAdvance(Number(finalPrice))}
                   </Typography>
                 </Box>
 
                 <Divider sx={{ my: 1.5, borderStyle: "dashed" }} />
 
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography variant="subtitle1" fontWeight="bold">Remaining Balance</Typography>
-                  <Typography variant="subtitle1" fontWeight="800" color="success.main">
-                    ₹{(price - calcAdvance(price)).toFixed(2)}
+                <Box sx={{ display: "flex", justifyContent: "space-between", opacity: 0.6 }}>
+                  <Typography variant="body2">Remaining Balance</Typography>
+                  <Typography variant="body2" fontWeight="700">
+                    ₹{(Number(finalPrice) - Number(calcAdvance(finalPrice))).toFixed(2)}
                   </Typography>
                 </Box>
 

@@ -64,6 +64,7 @@ const apiEndpoints = {
     offers: {
         list: '/admin/offers/admin/all/', // GET, POST
         detail: (id) => `/admin/offers/admin/${id}/`, // GET, PATCH, DELETE
+        publicList: '/admin/offers/public/',
     },
 
     adminServiceManagement: {

@@ -114,6 +114,8 @@ const ServiceDetails = () => {
                 <ServiceCard
                   name={srv.name}
                   icon={srv.icon}
+                  offer={srv.active_offer}
+                  price={srv.price}
                   onClick={() => navigate("/service-details", { state: { service: srv } })}
                 />
               </Grid>

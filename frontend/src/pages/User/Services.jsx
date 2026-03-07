@@ -56,6 +56,7 @@ function Services() {
             <ServiceCard
               name={cat.name}
               icon={cat.icon}
+              offer={cat.active_offer}
               onClick={() => setSelectedCategory(cat.id)}
               selected={selectedCategory === cat.id}
             />
@@ -79,6 +80,8 @@ function Services() {
               <ServiceCard
                 name={srv.name}
                 icon={srv.icon}
+                offer={srv.active_offer}
+                price={srv.price}
                 onClick={() => handleServiceClick(srv)} // ✅ Redirect with service data
               />
             </Grid>
