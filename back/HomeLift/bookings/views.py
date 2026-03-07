@@ -10,6 +10,7 @@ from django.db.models import Q
 from .models import Booking
 from .serializers import BookingSerializer
 from core.permissions import IsProviderUser, IsAdminUserCustom
+from datetime import datetime, timedelta, date
 
 # Provider models
 from providers.models import ProviderService
@@ -195,20 +196,43 @@ class ProviderAcceptBookingView(APIView):
             return Response({"error": "You are not approved to accept this service."}, status=status.HTTP_403_FORBIDDEN)
 
         # ✅ Overlap Check
-        # Check if this provider already has a confirmed/in_progress booking at the same date & time
-        # Assuming fixed 1-hour duration (3600 seconds)
-        overlapping_bookings = Booking.objects.filter(
+        # Generate the start and end datetime for the incoming booking
+        if not booking.booking_date or not booking.booking_time:
+            return Response({"error": "Booking is missing date or time."}, status=status.HTTP_400_BAD_REQUEST)
+
+        incoming_start = datetime.combine(booking.booking_date, booking.booking_time)
+        try:
+            # Service duration is assumed to be in minutes
+            incoming_duration = booking.service.duration
+            incoming_end = incoming_start + timedelta(minutes=incoming_duration)
+        except AttributeError:
+            # Fallback if service doesn't have a duration
+            incoming_end = incoming_start + timedelta(minutes=60)
+
+        # Fetch existing confirmed/in_progress bookings for the provider on the same date
+        existing_bookings = Booking.objects.filter(
             provider=provider,
             booking_date=booking.booking_date,
-            booking_time=booking.booking_time,
             status__in=["confirmed", "in_progress"]
-        ).exists()
+        ).select_related("service")
 
-        if overlapping_bookings:
-            return Response(
-                {"error": "You already have a confirmed or in-progress booking at this time."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        for existing in existing_bookings:
+            if not existing.booking_time:
+                continue
+            
+            existing_start = datetime.combine(existing.booking_date, existing.booking_time)
+            try:
+                existing_duration = existing.service.duration
+                existing_end = existing_start + timedelta(minutes=existing_duration)
+            except AttributeError:
+                existing_end = existing_start + timedelta(minutes=60)
+            
+            # Check for overlap: new_start < existing_end AND new_end > existing_start
+            if incoming_start < existing_end and incoming_end > existing_start:
+                return Response(
+                    {"error": "You already have a confirmed or in-progress booking at this time."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         booking.provider = provider
         booking.status = "confirmed"

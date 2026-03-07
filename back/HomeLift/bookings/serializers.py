@@ -14,6 +14,7 @@ class BookingSerializer(serializers.ModelSerializer):
     address_details = AddressSerializer(source='address', read_only=True)
     service_description = serializers.ReadOnlyField(source='service.description')
     service_image = serializers.SerializerMethodField()
+    service_duration = serializers.ReadOnlyField(source='service.duration')
     category_name = serializers.ReadOnlyField(source='service.category.name')
     user_email = serializers.SerializerMethodField()
     provider_contact = serializers.SerializerMethodField()
@@ -40,7 +41,7 @@ class BookingSerializer(serializers.ModelSerializer):
             # UI helpers
             'is_owner', 'is_assigned_to_user',
             # Enriched data
-            'service_description', 'service_image', 'category_name',
+            'service_description', 'service_image', 'service_duration', 'category_name',
             'provider_contact', 'user_email', 'customer_contact',
         ]
         read_only_fields = ('advance', 'created_at', 'updated_at', 'is_owner', 'is_assigned_to_user', 'is_refunded', 'remaining_payment')
@@ -123,12 +124,12 @@ class BookingSerializer(serializers.ModelSerializer):
         from django.db.models import Q
         from decimal import Decimal
         
-        now = timezone.now().date()
+        now = timezone.localtime(timezone.now()).date()
         base_price = service.price
         
-        # Find best active offer (Service specific > Category specific)
+        # Find best active offer (Service-specific > Global)
         offer = Offer.objects.filter(
-            Q(service=service) | Q(category=service.category, service__isnull=True),
+            Q(service=service) | Q(service__isnull=True),
             is_active=True,
             start_date__lte=now,
             end_date__gte=now

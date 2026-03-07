@@ -14,7 +14,6 @@ class Offer(models.Model):
     max_discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Maximum discount amount (useful for percentage discounts)")
     
     # Targeting
-    category = models.ForeignKey('services.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='offers')
     service = models.ForeignKey('services.Service', on_delete=models.SET_NULL, null=True, blank=True, related_name='offers')
 
     start_date = models.DateField()

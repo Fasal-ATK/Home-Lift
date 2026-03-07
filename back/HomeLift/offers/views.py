@@ -70,12 +70,12 @@ class PublicOfferListView(APIView):
     permission_classes = [AllowAnyCustom]
 
     def get(self, request):
-        now = timezone.now().date()
+        now = timezone.localtime(timezone.now()).date()
         offers = Offer.objects.filter(
             is_active=True,
             start_date__lte=now,
             end_date__gte=now
-        ).select_related('category', 'service')
+        ).select_related('service')
         
         expanded_data = []
         seen_service_ids = set()
@@ -88,22 +88,8 @@ class PublicOfferListView(APIView):
                 expanded_data.append(data)
                 seen_service_ids.add(offer.service_id)
 
-        # Step 2: Process Category-specific offers (Expansion)
-        for offer in [o for o in offers if o.category and not o.service]:
-            services = offer.category.services.filter(is_active=True)
-            for service in services:
-                if service.id not in seen_service_ids:
-                    data = OfferSerializer(offer).data
-                    data['service'] = service.id
-                    data['service_name'] = service.name
-                    data['service_icon'] = service.icon.url if service.icon else None
-                    data['unique_key'] = f"cat-{offer.id}-{service.id}"
-                    expanded_data.append(data)
-                    seen_service_ids.add(service.id)
-
-        # Step 3: Global offers (optional)
-        processed_ids = [o['id'] for o in expanded_data if 'unique_key' in o] # Simplified check
-        for offer in [o for o in offers if not o.category and not o.service]:
+        # Step 2: Global offers
+        for offer in [o for o in offers if not o.service]:
             data = OfferSerializer(offer).data
             data['unique_key'] = f"global-{offer.id}"
             expanded_data.append(data)
