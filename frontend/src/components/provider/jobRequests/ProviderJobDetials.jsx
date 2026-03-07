@@ -117,6 +117,9 @@ export default function ProviderJobDetail() {
         if (action.payload?.data) {
           setBooking(action.payload.data);
         }
+        setTimeout(() => {
+          navigate("/provider/job-requests");
+        }, 1000);
       } else {
         setSnack({ open: true, message: action.payload || "Failed to accept job", severity: "error" });
       }

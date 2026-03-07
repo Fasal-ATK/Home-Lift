@@ -355,11 +355,12 @@ class BookingStatusUpdateView(APIView):
                 from decimal import Decimal
                 
                 # Calculate platform commission (7% capped at ₹500)
-                commission = min(booking.price * Decimal('0.07'), Decimal('500.00'))
-                provider_earnings = booking.price - commission
+                price_dec = Decimal(str(booking.price))
+                commission = min(price_dec * Decimal('0.07'), Decimal('500.00'))
+                provider_earnings = price_dec - commission
                 
                 wallet, _ = Wallet.objects.get_or_create(user=booking.provider, wallet_type='provider')
-                wallet.balance += provider_earnings
+                wallet.balance = Decimal(str(wallet.balance)) + provider_earnings
                 wallet.save()
                 
                 WalletTransaction.objects.create(
