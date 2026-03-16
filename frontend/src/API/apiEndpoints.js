@@ -53,6 +53,10 @@ const apiEndpoints = {
         // Applications
         applicationList: '/admin/providers/applications/',
         applicationDetail: (id) => `/admin/providers/update-applications/${id}/`, // PATCH for approve/reject
+
+        // Service Requests
+        serviceRequests: '/admin/providers/service-requests/',
+        serviceRequestAction: (id) => `/admin/providers/service-requests/${id}/action/`,
     },
 
 
@@ -81,6 +85,8 @@ const apiEndpoints = {
         apply: '/provider/apply/',
         applicationStatus: '/provider/status/',
         me: '/provider/me/',
+        myServiceRequests: '/provider/my-service-requests/',
+        myServiceRequestDetail: (id) => `/provider/my-service-requests/${id}/`,
         jobs: {
             list: '/provider/jobs/appointments',
             myAppointments: '/provider/jobs/my-appointments/',

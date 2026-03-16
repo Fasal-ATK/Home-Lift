@@ -171,6 +171,25 @@ export const providerService = {
         return response.data;
     },
     fetchApplicationStatus: () => api.get(apiEndpoints.provider.applicationStatus),
+
+    // Self-manage service requests
+    listMyServiceRequests: async () => {
+        const response = await api.get(apiEndpoints.provider.myServiceRequests);
+        return response.data;
+    },
+    submitServiceRequest: async (data) => {
+        const response = await api.post(apiEndpoints.provider.myServiceRequests, data);
+        return response.data;
+    },
+    cancelServiceRequest: async (id) => {
+        const response = await api.delete(apiEndpoints.provider.myServiceRequestDetail(id));
+        return response.data;
+    },
+    // Available catalogue services (active only)
+    listAvailableServices: async () => {
+        const response = await api.get(apiEndpoints.adminServiceManagement.listServices, { params: { status: 'active' } });
+        return response.data;
+    },
 };
 
 export const adminServiceManagementService = {
@@ -268,6 +287,24 @@ export const adminProviderManagementService = {
             status: "rejected",
             rejection_reason: extraData.rejection_reason || "Rejected by admin",
         });
+    },
+
+    // Service Requests
+    getServiceRequests: async (params = {}) => {
+        const response = await api.get(
+            apiEndpoints.adminProviderManagement.serviceRequests,
+            { params }
+        );
+        return response.data;
+    },
+
+    actionServiceRequest: async (id, data) => {
+        // data: { status: 'approved' } or { status: 'rejected', rejection_reason: '...' }
+        const response = await api.patch(
+            apiEndpoints.adminProviderManagement.serviceRequestAction(id),
+            data
+        );
+        return response.data;
     },
 };
 

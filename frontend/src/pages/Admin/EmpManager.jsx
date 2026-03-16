@@ -2,6 +2,7 @@ import { Box, Button } from "@mui/material";
 import React, { useState } from "react";
 import ProviderManager from "../../components/admin/emp/ProviderManager";
 import ProviderApplications from "../../components/admin/emp/ProviderApplications";
+import ServiceRequests from "../../components/admin/emp/ServiceRequests";
 
 function EmpManager() {
   const [activeTab, setActiveTab] = useState("providers");
@@ -40,12 +41,14 @@ function EmpManager() {
             p: 2,
             fontSize: "1.2rem",
             fontWeight: "bold",
-            borderRadius: "0 12px 12px 0",
+            borderRadius: "0",
             backgroundColor:
               activeTab === "applications" ? "#1976d2" : "rgba(25, 118, 210, 0.3)",
             color: "white",
             textTransform: "none",
             transition: "0.3s",
+            borderLeft: "1px solid rgba(255,255,255,0.2)",
+            borderRight: "1px solid rgba(255,255,255,0.2)",
             "&:hover": {
               backgroundColor:
                 activeTab === "applications"
@@ -56,11 +59,36 @@ function EmpManager() {
         >
           Applications
         </Button>
+        <Button
+          fullWidth
+          onClick={() => setActiveTab("requests")}
+          sx={{
+            p: 2,
+            fontSize: "1.2rem",
+            fontWeight: "bold",
+            borderRadius: "0 12px 12px 0",
+            backgroundColor:
+              activeTab === "requests" ? "#1976d2" : "rgba(25, 118, 210, 0.3)",
+            color: "white",
+            textTransform: "none",
+            transition: "0.3s",
+            "&:hover": {
+              backgroundColor:
+                activeTab === "requests"
+                  ? "#1565c0"
+                  : "rgba(25, 118, 210, 0.5)",
+            },
+          }}
+        >
+          Service Requests
+        </Button>
       </Box>
 
       {/* Render Component based on selection */}
       <Box>
-        {activeTab === "providers" ? <ProviderManager /> : <ProviderApplications />}
+        {activeTab === "providers" && <ProviderManager />}
+        {activeTab === "applications" && <ProviderApplications />}
+        {activeTab === "requests" && <ServiceRequests />}
       </Box>
     </Box>
   );
