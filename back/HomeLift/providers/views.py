@@ -2,8 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
-from .models import ProviderApplication, ProviderDetails
-from .serializers import ProviderApplicationSerializer, ProviderDetailsSerializer
+from .models import ProviderApplication, ProviderDetails, ProviderService, ProviderServiceRequest
+from .serializers import (
+    ProviderApplicationSerializer,
+    ProviderDetailsSerializer,
+    ProviderServiceSerializer,
+    ProviderServiceRequestSerializer,
+)
 from core.permissions import IsNormalUser, IsAdminUserCustom, IsProviderUser
 import logging
 import json
@@ -220,4 +225,152 @@ class ProviderMeView(APIView):
             return Response({"detail": "Provider profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ProviderDetailsSerializer(provider)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ------------------------------
+# Provider Service Requests  (provider side)
+# ------------------------------
+class ProviderMyServiceRequestsView(APIView):
+    """GET  → list all of the provider's own service requests.
+       POST → submit a new service-addition request (pending admin approval)."""
+    permission_classes = [IsProviderUser]
+
+    def _get_provider(self, user):
+        try:
+            return ProviderDetails.objects.get(user=user)
+        except ProviderDetails.DoesNotExist:
+            return None
+
+    def get(self, request, *args, **kwargs):
+        provider = self._get_provider(request.user)
+        if not provider:
+            return Response({"detail": "Provider profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        requests_qs = ProviderServiceRequest.objects.filter(provider=provider) \
+            .select_related('service', 'service__category')
+        serializer = ProviderServiceRequestSerializer(requests_qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        provider = self._get_provider(request.user)
+        if not provider:
+            return Response({"detail": "Provider profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        service_id = request.data.get('service')
+        if not service_id:
+            return Response({"detail": "service field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from services.models import Service as ServiceModel
+        try:
+            service_obj = ServiceModel.objects.get(pk=service_id, is_active=True)
+        except ServiceModel.DoesNotExist:
+            return Response({"detail": "Service not found or inactive."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Guard: already an approved ProviderService?
+        if ProviderService.objects.filter(provider=provider, service=service_obj).exists():
+            return Response(
+                {"detail": "You already offer this service."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Guard: already a pending request for this service?
+        if ProviderServiceRequest.objects.filter(
+            provider=provider, service=service_obj, status='pending'
+        ).exists():
+            return Response(
+                {"detail": "You already have a pending request for this service."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ProviderServiceRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(provider=provider, service=service_obj)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProviderMyServiceRequestDetailView(APIView):
+    """DELETE → cancel a pending request."""
+    permission_classes = [IsProviderUser]
+
+    def _get_request(self, pk, user):
+        try:
+            provider = ProviderDetails.objects.get(user=user)
+            return ProviderServiceRequest.objects.get(pk=pk, provider=provider)
+        except (ProviderDetails.DoesNotExist, ProviderServiceRequest.DoesNotExist):
+            return None
+
+    def delete(self, request, pk, *args, **kwargs):
+        sr = self._get_request(pk, request.user)
+        if not sr:
+            return Response({"detail": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
+        if sr.status != 'pending':
+            return Response(
+                {"detail": "Only pending requests can be cancelled."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        sr.delete()
+        return Response({"detail": "Request cancelled."}, status=status.HTTP_204_NO_CONTENT)
+
+
+# -----------------------------------------------
+# Admin — Review service requests
+# -----------------------------------------------
+class AdminServiceRequestListView(APIView):
+    """GET → list all pending service requests (admin only)."""
+    permission_classes = [IsAdminUserCustom]
+
+    def get(self, request, *args, **kwargs):
+        from core.pagination import StandardResultsSetPagination
+        qs = ProviderServiceRequest.objects.filter(status='pending') \
+            .select_related('provider__user', 'service', 'service__category') \
+            .order_by('-created_at')
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = ProviderServiceRequestSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class AdminServiceRequestActionView(APIView):
+    """PATCH → approve or reject a service request.
+    Approving automatically creates the ProviderService entry."""
+    permission_classes = [IsAdminUserCustom]
+
+    def patch(self, request, pk, *args, **kwargs):
+        try:
+            sr = ProviderServiceRequest.objects.select_related(
+                'provider', 'service'
+            ).get(pk=pk)
+        except ProviderServiceRequest.DoesNotExist:
+            return Response({"detail": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get('status')
+        if action not in ('approved', 'rejected'):
+            return Response({"detail": "status must be 'approved' or 'rejected'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        rejection_reason = request.data.get('rejection_reason', '')
+        if action == 'rejected' and not rejection_reason:
+            return Response({"detail": "rejection_reason is required when rejecting."}, status=status.HTTP_400_BAD_REQUEST)
+
+        sr.status = action
+        sr.replied_at = timezone.now()
+        if action == 'rejected':
+            sr.rejection_reason = rejection_reason
+        sr.save()
+
+        if action == 'approved':
+            # Create ProviderService only if not already present
+            ProviderService.objects.get_or_create(
+                provider=sr.provider,
+                service=sr.service,
+                defaults={
+                    'price': sr.price,
+                    'experience_years': sr.experience_years,
+                    'is_active': True,
+                }
+            )
+
+        serializer = ProviderServiceRequestSerializer(sr)
         return Response(serializer.data, status=status.HTTP_200_OK)

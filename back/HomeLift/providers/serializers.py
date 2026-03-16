@@ -3,7 +3,8 @@ from .models import (
     ProviderApplication, 
     ProviderApplicationService, 
     ProviderDetails, 
-    ProviderService
+    ProviderService,
+    ProviderServiceRequest,
 )
 from services.models import Service
 import cloudinary
@@ -97,11 +98,22 @@ class ProviderApplicationSerializer(serializers.ModelSerializer):
 # -----------------------------
 class ProviderServiceSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source='service.name', read_only=True)
+    category_name = serializers.CharField(source='service.category.name', read_only=True)
 
     class Meta:
         model = ProviderService
-        fields = ['id', 'service', 'service_name', 'doc', 'price', 'experience_years', 'is_active', 'created_at']
+        fields = [
+            'id', 'service', 'service_name', 'category_name',
+            'doc', 'price', 'experience_years', 'is_active', 'created_at'
+        ]
         read_only_fields = ['created_at']
+        extra_kwargs = {
+            'service': {'required': True},
+            'price': {'required': False, 'allow_null': True},
+            'experience_years': {'required': False},
+            'is_active': {'required': False},
+            'doc': {'required': False, 'allow_null': True},
+        }
 
 
 class ProviderDetailsSerializer(serializers.ModelSerializer):
@@ -114,3 +126,26 @@ class ProviderDetailsSerializer(serializers.ModelSerializer):
         model = ProviderDetails
         fields = ['id', 'user', 'user_name', 'user_email', 'user_phone', 'is_active', 'approved_at', 'approved_by', 'services']
         read_only_fields = ['approved_at', 'approved_by', 'id']
+
+
+# -----------------------------
+# Provider Service Request
+# -----------------------------
+class ProviderServiceRequestSerializer(serializers.ModelSerializer):
+    service_name     = serializers.CharField(source='service.name', read_only=True)
+    category_name    = serializers.CharField(source='service.category.name', read_only=True)
+    provider_name    = serializers.CharField(source='provider.user.username', read_only=True)
+    provider_email   = serializers.CharField(source='provider.user.email', read_only=True)
+
+    class Meta:
+        model = ProviderServiceRequest
+        fields = [
+            'id',
+            'service', 'service_name', 'category_name',
+            'provider_name', 'provider_email',
+            'price', 'experience_years',
+            'status', 'rejection_reason',
+            'created_at', 'replied_at',
+        ]
+        read_only_fields = ['status', 'rejection_reason', 'created_at', 'replied_at',
+                            'provider_name', 'provider_email', 'service_name', 'category_name']

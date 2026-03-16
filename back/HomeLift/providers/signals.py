@@ -7,7 +7,13 @@ from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from .models import ProviderApplication, ProviderApplicationService, ProviderDetails, ProviderService
+from .models import (
+    ProviderApplication, 
+    ProviderApplicationService, 
+    ProviderDetails, 
+    ProviderService,
+    ProviderServiceRequest,
+)
 from notifications.models import Notification
 from notifications.utils import send_user_notification
 
@@ -121,6 +127,36 @@ def handle_provider_application_update(sender, instance, created, **kwargs):
             type='provider',
             title='Provider Application Rejected',
             message=f"Your provider application has been rejected. Reason: {reason}"
+        )
+
+
+@receiver(post_save, sender=ProviderServiceRequest)
+def handle_provider_service_request_update(sender, instance, created, **kwargs):
+    """
+    Notify provider when their request to add a new service is approved or rejected.
+    """
+    if created or instance.status == 'pending':
+        return  # Only notify on resolved states
+
+    user = instance.provider.user
+    service_name = instance.service.name
+
+    if instance.status == 'approved':
+        safe_create_notification(
+            recipient=user,
+            sender=None,
+            type='provider',
+            title='Service Addition Approved',
+            message=f"Your request to add '{service_name}' to your profile has been approved."
+        )
+    elif instance.status == 'rejected':
+        reason = instance.rejection_reason or "No reason provided."
+        safe_create_notification(
+            recipient=user,
+            sender=None,
+            type='provider',
+            title='Service Addition Rejected',
+            message=f"Your request to add '{service_name}' was rejected. Reason: {reason}"
         )
 
 

@@ -181,3 +181,49 @@ class ProviderService(models.Model):
     @property
     def effective_price(self):
         return self.price if self.price is not None else self.service.price
+
+
+# -----------------------------
+# Provider Service Addition Request (pending admin approval)
+# -----------------------------
+class ProviderServiceRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending',  'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    provider = models.ForeignKey(
+        'ProviderDetails',
+        on_delete=models.CASCADE,
+        related_name='service_requests'
+    )
+    service = models.ForeignKey(
+        Service,
+        on_delete=models.CASCADE,
+        related_name='provider_requests'
+    )
+    price = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        blank=True, null=True,
+        help_text="Custom price requested by the provider (optional)"
+    )
+    experience_years = models.PositiveIntegerField(default=0)
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+    rejection_reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    replied_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        # A provider should not have two pending requests for the same service
+        unique_together = ('provider', 'service', 'status')
+        verbose_name = "Provider Service Request"
+        verbose_name_plural = "Provider Service Requests"
+
+    def __str__(self):
+        return f"{self.provider.user.username} → {self.service.name} [{self.status}]"
