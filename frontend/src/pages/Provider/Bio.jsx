@@ -503,13 +503,17 @@ function Bio() {
                 <Card
                   variant="outlined"
                   sx={{
-                    height: "100%",
+                    minHeight: 220,
+                    height: "auto",
                     borderRadius: 2,
-                    transition: "transform 0.2s, box-shadow 0.2s",
+                    transition: "all 0.3s ease",
+                    position: "relative",
+                    overflow: "visible",
                     "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: 4,
-                      borderColor: "primary.light",
+                      transform: "translateY(-8px) scale(1.05)",
+                      boxShadow: 12,
+                      borderColor: "primary.main",
+                      zIndex: 10,
                     },
                   }}
                 >

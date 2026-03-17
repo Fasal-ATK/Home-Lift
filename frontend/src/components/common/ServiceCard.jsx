@@ -29,7 +29,8 @@ const ServiceCard = ({
             sx={{
                 width: "100%",
                 maxWidth: 130,
-                height: 140,
+                minHeight: 160, // Increased from 140 to ensure content fits better
+                height: "auto",
                 textAlign: "center",
                 backgroundColor: selected ? "#f0f8ff" : "white",
                 border: selected ? "2px solid #1976d2" : "1px solid #e0e0e0",
@@ -38,41 +39,58 @@ const ServiceCard = ({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
+                justifyContent: "flex-start", // Changed to start to let content flow
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 position: "relative",
-                overflow: "hidden", // Important for ribbon
+                overflow: "visible", // Allow content to show on hover if it overflows
+                zIndex: 1,
                 "&:hover": {
                     backgroundColor: "#f9f9f9",
-                    transform: "translateY(-4px)",
-                    boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
+                    transform: "translateY(-9px) scale(1)", // Slightly less scale but more lift
+                    boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
+                    zIndex: 20,
+                    // The border "expands" because we allow overflow and scaled box
                 },
-                p: isMore ? 1 : 0,
+                p: isMore ? 1 : 1.5,
+                pb: 2, 
                 ...sx,
             }}
         >
-            {/* Offer Ribbon */}
+            {/* Offer Ribbon - wrapped in a clipping mask container */}
             {offer && (
                 <Box
                     sx={{
                         position: "absolute",
-                        top: 10,
-                        right: -30,
-                        backgroundColor: "#f2b705",
-                        color: "black",
-                        px: 4,
-                        py: 0.5,
-                        transform: "rotate(45deg)",
-                        fontSize: "0.65rem",
-                        fontWeight: "bold",
-                        zIndex: 1,
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                        whiteSpace: "nowrap",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        overflow: "hidden",
+                        borderRadius: "12px",
+                        pointerEvents: "none",
+                        zIndex: 2,
                     }}
                 >
-                    {offer.discount_type === 'percentage'
-                        ? `${parseInt(offer.discount_value)}% OFF`
-                        : `SAVE ₹${parseInt(offer.discount_value)}`}
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            top: 10,
+                            right: -30,
+                            backgroundColor: "#f2b705",
+                            color: "black",
+                            px: 4,
+                            py: 0.5,
+                            transform: "rotate(45deg)",
+                            fontSize: "0.65rem",
+                            fontWeight: "bold",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                            whiteSpace: "nowrap",
+                        }}
+                    >
+                        {offer.discount_type === 'percentage'
+                            ? `${parseInt(offer.discount_value)}% OFF`
+                            : `SAVE ₹${parseInt(offer.discount_value)}`}
+                    </Box>
                 </Box>
             )}
 
