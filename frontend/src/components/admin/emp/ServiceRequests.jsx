@@ -117,6 +117,23 @@ export default function ServiceRequests() {
       ),
     },
     {
+      key: "doc_url",
+      label: "Document",
+      render: (row) => row.doc_url ? (
+        <Button 
+          variant="text" 
+          size="small" 
+          href={row.doc_url} 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          View Doc
+        </Button>
+      ) : (
+        <Typography variant="caption" color="text.secondary">No Doc</Typography>
+      )
+    },
+    {
       key: "created_at",
       label: "Requested On",
       sortable: true,

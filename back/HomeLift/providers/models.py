@@ -208,6 +208,15 @@ class ProviderServiceRequest(models.Model):
         blank=True, null=True,
         help_text="Custom price requested by the provider (optional)"
     )
+    doc = CloudinaryField(
+        'raw',
+        folder='documents/provider_service_requests',
+        resource_type='auto',
+        blank=True,
+        null=True,
+        help_text="Optional service verification document (max 10 MB)",
+        validators=[validate_document_size]
+    )
     experience_years = models.PositiveIntegerField(default=0)
     status = models.CharField(
         max_length=10,

@@ -23,7 +23,11 @@ import {
   MenuItem,
   Tooltip,
   Snackbar,
+  Modal,
+  FormControl,
+  Select,
 } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import {
   Email as EmailIcon,
   Phone as PhoneIcon,
@@ -34,14 +38,188 @@ import {
   Add as AddIcon,
   Schedule as ScheduleIcon,
   Close as CloseIcon,
+  Remove as RemoveIcon,
+  UploadFile as UploadFileIcon,
 } from "@mui/icons-material";
-import { providerService } from "../../services/apiServices";
+import { providerService, adminServiceManagementService } from "../../services/apiServices";
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-const EMPTY_FORM = {
-  service: "",
-  price: "",
-  experience_years: 0,
+const StyledBox = styled(Paper)(({ theme }) => ({
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%,-50%)',
+  width: 700,
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: 12,
+  boxShadow: theme.shadows[10],
+  padding: theme.spacing(4),
+  maxHeight: '90vh',
+  overflowY: 'auto',
+}));
+
+const SectionTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: 600,
+  marginBottom: theme.spacing(2),
+  color: theme.palette.text.primary,
+}));
+
+const FileButton = styled(Button)(({ theme }) => ({
+  borderColor: theme.palette.primary.main,
+  textTransform: 'none',
+  minWidth: 180,
+}));
+
+// ================= FileUpload Component (Reusable) =================
+const FileUpload = ({ file, onChange, label, uniqueId, maxSizeMB = 10 }) => {
+  const [error, setError] = React.useState(null);
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const handleFileChange = (selectedFile) => {
+    if (!selectedFile) {
+      onChange(null);
+      setError(null);
+      return;
+    }
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    if (selectedFile.size > maxSizeBytes) {
+      setError(`File size exceeds ${maxSizeMB} MB limit.`);
+      onChange(null);
+      return;
+    }
+    setError(null);
+    onChange(selectedFile);
+  };
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx,.png,.jpg"
+          style={{ display: 'none' }}
+          id={uniqueId}
+          onChange={(e) => handleFileChange(e.target.files[0])}
+        />
+        <label htmlFor={uniqueId}>
+          <FileButton variant="outlined" component="span" startIcon={<UploadFileIcon />}>
+            {file ? file.name : label}
+          </FileButton>
+        </label>
+        {file && (
+          <IconButton size="small" color="error" onClick={() => handleFileChange(null)}>
+            <RemoveIcon />
+          </IconButton>
+        )}
+      </Box>
+      {file && !error && (
+        <Typography variant="caption" color="text.secondary">
+          Size: {formatFileSize(file.size)}
+        </Typography>
+      )}
+      {error && (
+        <Typography variant="caption" color="error">
+          {error}
+        </Typography>
+      )}
+    </Box>
+  );
+};
+
+// ================= BioServiceField Component =================
+const BioServiceField = ({
+  index, field, categories, fullCatalogue,
+  handleCategoryChange, handleServiceChange,
+  handlePriceChange, handleExperienceChange,
+  handleDocChange,
+  removeField, canRemove,
+  selectedServiceIds
+}) => {
+  const serviceOptions = field.category
+    ? fullCatalogue.filter((s) => {
+      const isInCategory = (s.category === parseInt(field.category)) || (s.category?.id === parseInt(field.category));
+      const isNotSelectedElsewhere = !selectedServiceIds.includes(s.id) || s.id === field.service;
+      return isInCategory && isNotSelectedElsewhere;
+    })
+    : [];
+
+  return (
+    <Box mb={3} p={2} border="1px solid #e0e0e0" borderRadius={2} boxShadow={1}>
+      <Box display="flex" flexDirection="column" gap={2}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <FormControl fullWidth size="small">
+            <Select
+              value={field.category}
+              onChange={(e) => handleCategoryChange(index, e.target.value)}
+              displayEmpty
+            >
+              <MenuItem value="" disabled>Select Category</MenuItem>
+              {categories.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth size="small">
+            <Select
+              value={field.service}
+              onChange={(e) => handleServiceChange(index, e.target.value)}
+              displayEmpty
+              disabled={!field.category}
+            >
+              <MenuItem value="" disabled>Select Service</MenuItem>
+              {serviceOptions.map((s) => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+
+          {canRemove && (
+            <IconButton size="small" color="error" onClick={() => removeField(index)}>
+              <RemoveIcon />
+            </IconButton>
+          )}
+        </Box>
+
+        <Box display="flex" alignItems="flex-start" gap={2}>
+           <Box flex={1}>
+            <TextField
+                label="Requested Price (₹)"
+                type="number"
+                size="small"
+                fullWidth
+                value={field.price}
+                onChange={(e) => handlePriceChange(index, e.target.value)}
+                helperText="Leave blank for default"
+                InputProps={{ inputProps: { min: 0 } }}
+                sx={{ mb: 2 }}
+              />
+
+              <TextField
+                label="Experience (Years)"
+                type="number"
+                size="small"
+                fullWidth
+                value={field.experience_years}
+                onChange={(e) => handleExperienceChange(index, e.target.value)}
+                InputProps={{ inputProps: { min: 0 } }}
+              />
+           </Box>
+           
+           <Box flex={1}>
+              <FileUpload
+                file={field.doc}
+                onChange={(file) => handleDocChange(index, file)}
+                label="Service Doc (Optional)"
+                uniqueId={`bio-svc-doc-${index}`}
+              />
+           </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
 };
 
 // ─── main component ─────────────────────────────────────────────────────────
@@ -51,12 +229,12 @@ function Bio() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // catalogue of all active services (for the "Request" dropdown)
+  // catalogue of all active services and categories
   const [catalogue, setCatalogue] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   // dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -83,11 +261,14 @@ function Bio() {
 
   const fetchCatalogue = useCallback(async () => {
     try {
-      const data = await providerService.listAvailableServices();
-      // data may be paginated or a plain array
-      setCatalogue(Array.isArray(data) ? data : data.results ?? []);
+      const [svcData, catData] = await Promise.all([
+        providerService.listAvailableServices(),
+        adminServiceManagementService.getCategories()
+      ]);
+      setCatalogue(Array.isArray(svcData) ? svcData : svcData.results ?? []);
+      setCategories(Array.isArray(catData) ? catData : catData.results ?? []);
     } catch (err) {
-      console.error("Failed to fetch catalogue:", err);
+      console.error("Failed to fetch catalogue/categories:", err);
     }
   }, []);
 
@@ -98,7 +279,7 @@ function Bio() {
 
   // ── dialog helpers ────────────────────────────────────────────────────────
   const openRequestDialog = () => {
-    setForm(EMPTY_FORM);
+    setServiceFields([{ category: '', service: '', price: '', experience_years: 0, doc: null }]);
     setFormError("");
     setDialogOpen(true);
   };
@@ -108,30 +289,72 @@ function Bio() {
     setDialogOpen(false);
   };
 
-  const handleFormChange = (field) => (e) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const [serviceFields, setServiceFields] = useState([{ category: '', service: '', price: '', experience_years: 0, doc: null }]);
+
+  const addField = () => serviceFields.length < 4 && setServiceFields([...serviceFields, { category: '', service: '', price: '', experience_years: 0, doc: null }]);
+  const removeField = (i) => setServiceFields(serviceFields.filter((_, idx) => idx !== i));
+  
+  const handleCategoryChange = (i, value) => {
+    const updated = [...serviceFields];
+    updated[i] = { category: value, service: '', price: '', experience_years: 0, doc: null };
+    setServiceFields(updated);
+  };
+
+  const handleServiceChange = (i, value) => {
+    const updated = [...serviceFields];
+    updated[i].service = value;
+    setServiceFields(updated);
+  };
+
+  const handlePriceChange = (i, value) => {
+    const updated = [...serviceFields];
+    updated[i].price = value;
+    setServiceFields(updated);
+  };
+
+  const handleExperienceChange = (i, value) => {
+    const updated = [...serviceFields];
+    updated[i].experience_years = value;
+    setServiceFields(updated);
+  };
+
+  const handleDocChange = (i, file) => {
+    const updated = [...serviceFields];
+    updated[i].doc = file;
+    setServiceFields(updated);
   };
 
   // ── submit request ────────────────────────────────────────────────────────
   const handleSubmitRequest = async () => {
     setFormError("");
-    if (!form.service) {
-      setFormError("Please select a service.");
+    const filledFields = serviceFields.filter(f => f.service);
+    if (filledFields.length === 0) {
+      setFormError("Please select at least one service.");
       return;
     }
 
-    const payload = {
-      service: form.service,
-      price: form.price === "" ? null : parseFloat(form.price),
-      experience_years: parseInt(form.experience_years, 10) || 0,
-    };
+    const selectedServices = filledFields.map((s) => s.service);
+    if (new Set(selectedServices).size !== selectedServices.length) {
+      setFormError("Each service can only be selected once.");
+      return;
+    }
 
     setSaving(true);
     try {
-      await providerService.submitServiceRequest(payload);
-      showSnack("Service request submitted for admin approval.");
+      // Send requests in parallel using FormData for each
+      await Promise.all(filledFields.map(field => {
+        const formData = new FormData();
+        formData.append('service', field.service);
+        if (field.price !== "") formData.append('price', field.price);
+        formData.append('experience_years', field.experience_years || 0);
+        if (field.doc) formData.append('doc', field.doc);
+        
+        return providerService.submitServiceRequest(formData);
+      }));
+
+      showSnack("Service request(s) submitted for admin approval.");
       setDialogOpen(false);
-      await fetchData(); // Refresh bio & requests
+      await fetchData(); 
     } catch (err) {
       const msg =
         err?.response?.data?.detail ||
@@ -402,73 +625,62 @@ function Bio() {
         </Box>
       )}
 
-      {/* ── Request Dialog ─────────────────────────────────────────── */}
-      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="xs" fullWidth>
-        <DialogTitle>Request New Service</DialogTitle>
+      {/* ── Request Modal ─────────────────────────────────────────── */}
+      <Modal open={dialogOpen} onClose={closeDialog}>
+        <StyledBox>
+           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <SectionTitle variant="h6" sx={{ mb: 0 }}>Request New Services</SectionTitle>
+              <IconButton size="small" onClick={closeDialog} disabled={saving}><CloseIcon /></IconButton>
+           </Box>
 
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "16px !important" }}>
-          {formError && <Alert severity="error">{formError}</Alert>}
-          <Alert severity="info" sx={{ mb: 1 }}>
-            Adding a new service requires administrator approval.
-          </Alert>
+           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
+           
+           <Alert severity="info" sx={{ mb: 3 }}>
+              Adding new services requires administrator approval.
+           </Alert>
 
-          {/* Service picker */}
-          <TextField
-            select
-            label="Service"
-            value={form.service}
-            onChange={handleFormChange("service")}
-            fullWidth
-            required
-            size="small"
-          >
-            {availableToRequest.length === 0 ? (
-              <MenuItem disabled value="">
-                No new services available
-              </MenuItem>
-            ) : (
-              availableToRequest.map((s) => (
-                <MenuItem key={s.id} value={s.id}>
-                  {s.name}
-                  {s.category ? ` — ${s.category_name ?? s.category}` : ""}
-                </MenuItem>
-              ))
-            )}
-          </TextField>
+           <Box component="form" noValidate>
+             {serviceFields.map((f, i) => (
+                <BioServiceField
+                  key={i}
+                  index={i}
+                  field={f}
+                  categories={categories}
+                  fullCatalogue={availableToRequest}
+                  handleCategoryChange={handleCategoryChange}
+                  handleServiceChange={handleServiceChange}
+                  handlePriceChange={handlePriceChange}
+                  handleExperienceChange={handleExperienceChange}
+                  handleDocChange={handleDocChange}
+                  removeField={removeField}
+                  canRemove={serviceFields.length > 1}
+                  selectedServiceIds={serviceFields.map(s => s.service).filter(s => s !== '')}
+                />
+             ))}
 
-          {/* Price */}
-          <TextField
-            label="Your Requested Price (₹)"
-            type="number"
-            value={form.price}
-            onChange={handleFormChange("price")}
-            fullWidth
-            size="small"
-            helperText="Leave blank to use the default service price"
-            inputProps={{ min: 0, step: 0.01 }}
-          />
+             {serviceFields.length < 4 && (
+                <Box mb={3}>
+                  <Button variant="outlined" startIcon={<AddIcon />} onClick={addField} size="small">
+                    Add Another Service
+                  </Button>
+                </Box>
+              )}
 
-          {/* Experience */}
-          <TextField
-            label="Years of Experience"
-            type="number"
-            value={form.experience_years}
-            onChange={handleFormChange("experience_years")}
-            fullWidth
-            size="small"
-            inputProps={{ min: 0, step: 1 }}
-          />
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={closeDialog} disabled={saving}>
-            Cancel
-          </Button>
-          <Button variant="contained" onClick={handleSubmitRequest} disabled={saving}>
-            {saving ? "Submitting…" : "Submit Request"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+              <Box mt={4} display="flex" justifyContent="flex-end" gap={2}>
+                <Button onClick={closeDialog} disabled={saving}>
+                  Cancel
+                </Button>
+                <Button 
+                  variant="contained" 
+                  onClick={handleSubmitRequest} 
+                  disabled={saving || serviceFields.every(f => !f.service)}
+                >
+                  {saving ? "Submitting…" : "Submit Requests"}
+                </Button>
+              </Box>
+           </Box>
+        </StyledBox>
+      </Modal>
 
       {/* ── Snackbar ─────────────────────────────────────────────────── */}
       <Snackbar

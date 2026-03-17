@@ -369,6 +369,7 @@ class AdminServiceRequestActionView(APIView):
                     'price': sr.price,
                     'experience_years': sr.experience_years,
                     'is_active': True,
+                    'doc': sr.doc,
                 }
             )
 

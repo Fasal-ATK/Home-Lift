@@ -137,15 +137,26 @@ class ProviderServiceRequestSerializer(serializers.ModelSerializer):
     provider_name    = serializers.CharField(source='provider.user.username', read_only=True)
     provider_email   = serializers.CharField(source='provider.user.email', read_only=True)
 
+    doc = serializers.FileField(required=False, allow_null=True, write_only=True)
+    doc_url = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = ProviderServiceRequest
         fields = [
             'id',
             'service', 'service_name', 'category_name',
             'provider_name', 'provider_email',
-            'price', 'experience_years',
+            'price', 'doc', 'doc_url', 'experience_years',
             'status', 'rejection_reason',
             'created_at', 'replied_at',
         ]
         read_only_fields = ['status', 'rejection_reason', 'created_at', 'replied_at',
                             'provider_name', 'provider_email', 'service_name', 'category_name']
+
+    def get_doc_url(self, obj):
+        if not obj.doc:
+            return None
+        try:
+            return obj.doc.url
+        except AttributeError:
+            return None

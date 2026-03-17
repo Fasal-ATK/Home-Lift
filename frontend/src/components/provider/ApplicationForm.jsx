@@ -1,7 +1,7 @@
 // src/components/provider/ApplicationForm.jsx
 import React, { useState } from 'react';
 import {
-  Modal, Box, Typography, Button, IconButton, MenuItem, FormControl, Select, Paper, InputLabel
+  Modal, Box, Typography, Button, IconButton, MenuItem, FormControl, Select, Paper, InputLabel, TextField
 } from '@mui/material';
 import { Add, Remove, UploadFile, Close } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
@@ -104,7 +104,8 @@ const FileUpload = ({ file, onChange, label, uniqueId, maxSizeMB = 10 }) => {
 const ServiceField = ({
   index, field, categories, services,
   handleCategoryChange, handleServiceChange,
-  handleServiceDocChange, removeField, canRemove,
+  handleServiceDocChange, handlePriceChange, handleExperienceChange,
+  removeField, canRemove,
   selectedServiceIds
 }) => {
   const serviceOptions = field.category
@@ -141,6 +142,26 @@ const ServiceField = ({
           </Select>
         </FormControl>
 
+        <TextField
+          label="Price"
+          type="number"
+          size="small"
+          value={field.price}
+          onChange={(e) => handlePriceChange(index, e.target.value)}
+          sx={{ width: 140 }}
+          InputProps={{ inputProps: { min: 0 } }}
+        />
+
+        <TextField
+          label="Exp (Years)"
+          type="number"
+          size="small"
+          value={field.experience_years}
+          onChange={(e) => handleExperienceChange(index, e.target.value)}
+          sx={{ width: 140 }}
+          InputProps={{ inputProps: { min: 0 } }}
+        />
+
         {canRemove && (
           <IconButton size="small" color="error" onClick={() => removeField(index)}>
             <Remove />
@@ -168,13 +189,13 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
   const { loading, error, providerApplicationStatus } = useSelector((state) => state.user);
 
   const [personalDoc, setPersonalDoc] = useState(null);
-  const [serviceFields, setServiceFields] = useState([{ category: '', service: '', doc: null }]);
+  const [serviceFields, setServiceFields] = useState([{ category: '', service: '', doc: null, price: '', experience_years: 0 }]);
 
-  const addField = () => serviceFields.length < 4 && setServiceFields([...serviceFields, { category: '', service: '', doc: null }]);
+  const addField = () => serviceFields.length < 4 && setServiceFields([...serviceFields, { category: '', service: '', doc: null, price: '', experience_years: 0 }]);
   const removeField = (i) => setServiceFields(serviceFields.filter((_, idx) => idx !== i));
   const handleCategoryChange = (i, value) => {
     const updated = [...serviceFields];
-    updated[i] = { category: value, service: '', doc: null };
+    updated[i] = { category: value, service: '', doc: null, price: '', experience_years: 0 };
     setServiceFields(updated);
   };
   const handleServiceChange = (i, value) => {
@@ -188,6 +209,18 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
     setServiceFields(updated);
   };
 
+  const handlePriceChange = (i, value) => {
+    const updated = [...serviceFields];
+    updated[i].price = value;
+    setServiceFields(updated);
+  };
+
+  const handleExperienceChange = (i, value) => {
+    const updated = [...serviceFields];
+    updated[i].experience_years = value;
+    setServiceFields(updated);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!personalDoc) return ShowToast('Please upload your personal verification document.', 'error');
@@ -198,7 +231,12 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
 
     const applicationData = {
       id_doc: personalDoc,
-      services: serviceFields.map((s) => ({ service_id: s.service, doc: s.doc })),
+      services: serviceFields.map((s) => ({ 
+        service_id: s.service, 
+        doc: s.doc,
+        price: s.price || null,
+        experience_years: s.experience_years || 0
+      })),
     };
     console.log('🚀 Submitting application with data:', applicationData);
 
@@ -257,6 +295,8 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
               handleCategoryChange={handleCategoryChange}
               handleServiceChange={handleServiceChange}
               handleServiceDocChange={handleServiceDocChange}
+              handlePriceChange={handlePriceChange}
+              handleExperienceChange={handleExperienceChange}
               removeField={removeField}
               canRemove={serviceFields.length > 1}
               selectedServiceIds={serviceFields.map(s => s.service).filter(s => s !== '')}
