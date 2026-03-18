@@ -40,6 +40,8 @@ import {
   Close as CloseIcon,
   Remove as RemoveIcon,
   UploadFile as UploadFileIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { providerService, adminServiceManagementService } from "../../services/apiServices";
 
@@ -241,6 +243,12 @@ function Bio() {
   // snackbar
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
+  // Edit Service State
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [editPrice, setEditPrice] = useState("");
+  const [editExperience, setEditExperience] = useState("");
+
   // ── fetches ──────────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -381,6 +389,49 @@ function Bio() {
   const showSnack = (msg, severity = "success") =>
     setSnack({ open: true, msg, severity });
 
+  // ── edit/delete service ──────────────────────────────────────────────────
+  const openEditDialog = (svc) => {
+    setEditingService(svc);
+    setEditPrice(svc.price);
+    setEditExperience(svc.experience_years);
+    setEditDialogOpen(true);
+  };
+
+  const closeEditDialog = () => {
+    if (saving) return;
+    setEditDialogOpen(false);
+    setEditingService(null);
+  };
+
+  const handleUpdateService = async () => {
+    if (!editingService) return;
+    setSaving(true);
+    try {
+      await providerService.updateService(editingService.id, {
+        price: editPrice === "" ? null : editPrice,
+        experience_years: editExperience || 0,
+      });
+      showSnack("Service updated successfully.");
+      setEditDialogOpen(false);
+      await fetchData();
+    } catch (err) {
+      showSnack("Failed to update service.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteService = async (svcId) => {
+    if (!window.confirm("Remove this service from your profile? This cannot be undone easily.")) return;
+    try {
+      await providerService.deleteService(svcId);
+      showSnack("Service removed.");
+      await fetchData();
+    } catch (err) {
+      showSnack("Failed to remove service.", "error");
+    }
+  };
+
   // ── filter catalogue dropdown ──────────────────────────────────────────────
   // Don't show services that are already approved OR currently pending
   const existingServiceIds = new Set([
@@ -518,13 +569,27 @@ function Bio() {
                   }}
                 >
                   <CardContent>
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="h6" fontWeight="bold" gutterBottom>
-                        {svc.service_name}
-                      </Typography>
-                      {svc.category_name && (
-                        <Chip label={svc.category_name} size="small" variant="outlined" />
-                      )}
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
+                      <Box>
+                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                          {svc.service_name}
+                        </Typography>
+                        {svc.category_name && (
+                          <Chip label={svc.category_name} size="small" variant="outlined" />
+                        )}
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <Tooltip title="Edit Service">
+                           <IconButton size="small" onClick={() => openEditDialog(svc)}>
+                              <EditIcon fontSize="small" />
+                           </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Remove Service">
+                           <IconButton size="small" color="error" onClick={() => handleDeleteService(svc.id)}>
+                              <DeleteIcon fontSize="small" />
+                           </IconButton>
+                        </Tooltip>
+                      </Box>
                     </Box>
 
                     <Divider sx={{ my: 1.5 }} />
@@ -685,6 +750,46 @@ function Bio() {
            </Box>
         </StyledBox>
       </Modal>
+
+      {/* ── Edit Dialog ────────────────────────────────────────────── */}
+      <Dialog open={editDialogOpen} onClose={closeEditDialog} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>Update Service Details</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Modify your service price and experience for <strong>{editingService?.service_name}</strong>.
+          </Typography>
+          
+          <Stack spacing={3}>
+            <TextField
+              label="Service Price (₹)"
+              type="number"
+              fullWidth
+              value={editPrice}
+              onChange={(e) => setEditPrice(e.target.value)}
+              helperText="Set custom price or leave empty for default"
+              size="small"
+            />
+            <TextField
+              label="Experience (Years)"
+              type="number"
+              fullWidth
+              value={editExperience}
+              onChange={(e) => setEditExperience(e.target.value)}
+              size="small"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={closeEditDialog} disabled={saving}>Cancel</Button>
+          <Button 
+            variant="contained" 
+            onClick={handleUpdateService} 
+            disabled={saving}
+          >
+            {saving ? "Updating..." : "Save Changes"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Snackbar ─────────────────────────────────────────────────── */}
       <Snackbar

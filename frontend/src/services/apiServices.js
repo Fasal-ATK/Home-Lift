@@ -185,6 +185,15 @@ export const providerService = {
         const response = await api.delete(apiEndpoints.provider.myServiceRequestDetail(id));
         return response.data;
     },
+    // Manage existing services
+    updateService: async (id, data) => {
+        const response = await api.patch(apiEndpoints.provider.myServiceDetail(id), data);
+        return response.data;
+    },
+    deleteService: async (id) => {
+        const response = await api.delete(apiEndpoints.provider.myServiceDetail(id));
+        return response.data;
+    },
     // Available catalogue services (active only)
     listAvailableServices: async () => {
         const response = await api.get(apiEndpoints.adminServiceManagement.listServices, { params: { status: 'active' } });

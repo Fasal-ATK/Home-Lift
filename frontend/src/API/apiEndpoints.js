@@ -85,6 +85,8 @@ const apiEndpoints = {
         apply: '/provider/apply/',
         applicationStatus: '/provider/status/',
         me: '/provider/me/',
+        myServices: '/provider/my-services/',
+        myServiceDetail: (id) => `/provider/my-services/${id}/`,
         myServiceRequests: '/provider/my-service-requests/',
         myServiceRequestDetail: (id) => `/provider/my-service-requests/${id}/`,
         jobs: {
