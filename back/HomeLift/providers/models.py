@@ -117,6 +117,7 @@ class ProviderDetails(models.Model):
         limit_choices_to={'is_provider': True},
     )
     is_active = models.BooleanField(default=True)
+    stripe_account_id = models.CharField(max_length=255, null=True, blank=True, help_text="Stripe Connected Account ID for payouts")
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(blank=True, null=True)
     approved_by = models.ForeignKey(

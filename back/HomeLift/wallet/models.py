@@ -52,3 +52,25 @@ class WalletTransaction(models.Model):
     @property
     def user(self):
         return self.wallet.user
+
+
+class WithdrawalRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+    provider = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='withdrawals'
+    )
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='withdrawals')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    stripe_transfer_id = models.CharField(max_length=255, null=True, blank=True)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Withdrawal - {self.amount} - {self.provider.email} [{self.status}]"

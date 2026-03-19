@@ -124,7 +124,7 @@ class ProviderDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProviderDetails
-        fields = ['id', 'user', 'user_name', 'user_email', 'user_phone', 'is_active', 'approved_at', 'approved_by', 'services']
+        fields = ['id', 'user', 'user_name', 'user_email', 'user_phone', 'is_active', 'approved_at', 'approved_by', 'services', 'stripe_account_id']
         read_only_fields = ['approved_at', 'approved_by', 'id']
 
 

@@ -227,6 +227,20 @@ class ProviderMeView(APIView):
         serializer = ProviderDetailsSerializer(provider)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def patch(self, request, *args, **kwargs):
+        try:
+            provider = ProviderDetails.objects.get(user=request.user)
+        except ProviderDetails.DoesNotExist:
+            return Response({"detail": "Provider profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Allow updating stripe_account_id
+        if 'stripe_account_id' in request.data:
+            provider.stripe_account_id = request.data['stripe_account_id']
+            provider.save()
+            return Response(ProviderDetailsSerializer(provider).data, status=status.HTTP_200_OK)
+        
+        return Response({"detail": "No valid fields to update."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 # ------------------------------
 # Provider Service Requests  (provider side)
@@ -313,6 +327,38 @@ class ProviderMyServiceRequestDetailView(APIView):
             )
         sr.delete()
         return Response({"detail": "Request cancelled."}, status=status.HTTP_204_NO_CONTENT)
+
+
+class ProviderMyServiceDetailView(APIView):
+    """PATCH → update active service (price, experience).
+       DELETE → remove the service from provider's catalog."""
+    permission_classes = [IsProviderUser]
+
+    def _get_ps(self, pk, user):
+        try:
+            provider = ProviderDetails.objects.get(user=user)
+            return ProviderService.objects.get(pk=pk, provider=provider)
+        except (ProviderDetails.DoesNotExist, ProviderService.DoesNotExist):
+            return None
+
+    def patch(self, request, pk, *args, **kwargs):
+        ps = self._get_ps(pk, request.user)
+        if not ps:
+            return Response({"detail": "Active service not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = ProviderServiceSerializer(ps, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, *args, **kwargs):
+        ps = self._get_ps(pk, request.user)
+        if not ps:
+            return Response({"detail": "Active service not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        ps.delete()
+        return Response({"detail": "Service removed from your profile."}, status=status.HTTP_204_NO_CONTENT)
 
 
 # -----------------------------------------------

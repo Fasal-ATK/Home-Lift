@@ -16,6 +16,7 @@ from .views import (
 
     ProviderMyServiceRequestsView,
     ProviderMyServiceRequestDetailView,
+    ProviderMyServiceDetailView,
     AdminServiceRequestListView,
     AdminServiceRequestActionView,
 )
@@ -26,6 +27,7 @@ urlpatterns = [
     path('me/', ProviderMeView.as_view()),
 
     # Provider self-manage services
+    path('my-services/<int:pk>/', ProviderMyServiceDetailView.as_view()),
     path('my-service-requests/', ProviderMyServiceRequestsView.as_view()),
     path('my-service-requests/<int:pk>/', ProviderMyServiceRequestDetailView.as_view()),
 
