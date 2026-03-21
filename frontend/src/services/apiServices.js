@@ -239,6 +239,21 @@ export const adminServiceManagementService = {
     },
 };
 
+export const walletService = {
+    getWalletDetails: async (type = 'user') => {
+        const response = await api.get(apiEndpoints.wallet.detail(type));
+        return response.data;
+    },
+    withdrawFunds: async (amount) => {
+        const response = await api.post(apiEndpoints.wallet.withdraw, { amount });
+        return response.data;
+    },
+    listWithdrawals: async () => {
+        const response = await api.get(apiEndpoints.wallet.withdraw);
+        return response.data;
+    }
+};
+
 
 export const adminCustomerManagementService = {
     getCustomers: async (params = {}) => {

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { bookingService, payWithWallet as apiPayWithWallet } from '../../services/apiServices';
+import { bookingService, payWithWallet as apiPayWithWallet, walletService } from '../../services/apiServices';
 
 export const fetchWallet = createAsyncThunk(
     'wallet/fetchWallet',
@@ -9,6 +9,20 @@ export const fetchWallet = createAsyncThunk(
             return data;
         } catch (error) {
             return rejectWithValue(error.response?.data || error.message);
+        }
+    }
+);
+
+export const withdrawWalletThunk = createAsyncThunk(
+    'wallet/withdrawWallet',
+    async (amount, { rejectWithValue, dispatch }) => {
+        try {
+            const data = await walletService.withdrawFunds(amount);
+            // Refresh wallet after withdrawal
+            dispatch(fetchWallet('provider'));
+            return data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.detail || error.message);
         }
     }
 );
@@ -31,6 +45,7 @@ const walletSlice = createSlice({
         balance: 0,
         recentTransactions: [],
         loading: false,
+        withdrawLoading: false,
         error: null,
     },
     reducers: {},
@@ -45,14 +60,23 @@ const walletSlice = createSlice({
                 state.balance = action.payload.balance;
                 state.recentTransactions = action.payload.recent_transactions;
             })
+            .addCase(withdrawWalletThunk.pending, (state) => {
+                state.withdrawLoading = true;
+                state.error = null;
+            })
+            .addCase(withdrawWalletThunk.fulfilled, (state) => {
+                state.withdrawLoading = false;
+            })
+            .addCase(withdrawWalletThunk.rejected, (state, action) => {
+                state.withdrawLoading = false;
+                state.error = action.payload;
+            })
             .addCase(payWithWalletThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(payWithWalletThunk.fulfilled, (state, action) => {
                 state.loading = false;
-                // Assuming action.payload contains the updated balance or we can fetch it again
-                // For now, let's assume it returns something like { balance: ... } or just success
                 if (action.payload.balance !== undefined) {
                     state.balance = action.payload.balance;
                 }

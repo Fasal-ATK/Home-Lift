@@ -102,6 +102,11 @@ const apiEndpoints = {
         walletPay: '/payment/wallet-pay/',
     },
 
+    wallet: {
+        detail: (type = 'user') => `/wallet/?type=${type}`,
+        withdraw: '/wallet/withdraw/',
+    },
+
 
 };
 
