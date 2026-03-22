@@ -1,7 +1,16 @@
 from rest_framework import serializers
-from .models import Booking
+from .models import Booking, Review
 from core.models import Address
 from core.serializers import AddressSerializer  # import your existing serializer
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user_name = serializers.ReadOnlyField(source='user.username')
+    provider_name = serializers.ReadOnlyField(source='provider.username')
+    
+    class Meta:
+        model = Review
+        fields = ['id', 'booking', 'user', 'user_name', 'provider', 'provider_name', 'rating', 'comment', 'created_at']
+        read_only_fields = ['id', 'user', 'user_name', 'provider', 'provider_name', 'created_at']
 
 
 class BookingSerializer(serializers.ModelSerializer):
@@ -25,6 +34,7 @@ class BookingSerializer(serializers.ModelSerializer):
     is_assigned_to_user = serializers.SerializerMethodField(read_only=True)
     remaining_payment = serializers.SerializerMethodField(read_only=True)
     is_fully_paid = serializers.SerializerMethodField(read_only=True)
+    review = ReviewSerializer(read_only=True)
 
     class Meta:
         model = Booking
@@ -43,8 +53,9 @@ class BookingSerializer(serializers.ModelSerializer):
             # Enriched data
             'service_description', 'service_image', 'service_duration', 'category_name',
             'provider_contact', 'user_email', 'customer_contact',
+            'review',
         ]
-        read_only_fields = ('advance', 'created_at', 'updated_at', 'is_owner', 'is_assigned_to_user', 'is_refunded', 'remaining_payment')
+        read_only_fields = ('advance', 'created_at', 'updated_at', 'is_owner', 'is_assigned_to_user', 'is_refunded', 'remaining_payment', 'review')
 
     def get_remaining_payment(self, obj):
         if obj.price and obj.advance:

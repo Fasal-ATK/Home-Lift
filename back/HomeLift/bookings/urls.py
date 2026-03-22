@@ -8,11 +8,13 @@ from .views import (
     BookingDetailUpdateView,
     BookingStatusUpdateView,
     DownloadInvoiceView,
+    BookingReviewCreateView,
 )
 
 urlpatterns = [
 
     path("", BookingListCreateView.as_view(), name="booking-list-create"),
+    path("<int:pk>/review/", BookingReviewCreateView.as_view(), name="booking-review"),
     path("<int:pk>/invoice/", DownloadInvoiceView.as_view(), name="booking-invoice"),
     path("details/<int:pk>/", BookingDetailUpdateView.as_view(), name="booking-detail"),
 

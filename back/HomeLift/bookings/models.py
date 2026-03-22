@@ -89,3 +89,28 @@ class Booking(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+class Review(models.Model):
+    booking = models.OneToOneField(
+        Booking,
+        on_delete=models.CASCADE,
+        related_name="review"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="given_reviews"
+    )
+    provider = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="received_reviews"
+    )
+    rating = models.PositiveSmallIntegerField(
+        help_text="Rating from 1 to 5"
+    )
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Review by {self.user.username} for {self.provider.username} ({self.rating}/5)"

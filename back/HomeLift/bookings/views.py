@@ -447,3 +447,45 @@ class DownloadInvoiceView(APIView):
         response = HttpResponse(pdf_buffer, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
+
+
+# ---------------------------------------------------------------------------
+#  USER VIEW → Submit Review
+# ---------------------------------------------------------------------------
+from .models import Review
+from .serializers import ReviewSerializer
+
+class BookingReviewCreateView(APIView):
+    """
+    POST /bookings/<pk>/review/
+    User submits a review for a completed booking.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        booking = get_object_or_404(Booking, pk=pk, user=request.user)
+        
+        if booking.status != "completed":
+            return Response({"error": "You can only review completed bookings."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if hasattr(booking, 'review'):
+            return Response({"error": "You have already reviewed this booking."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        serializer = ReviewSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(
+                booking=booking,
+                user=request.user,
+                provider=booking.provider
+            )
+            
+            # Send notification to provider
+            try:
+                from notifications.utils import send_user_notification
+                send_user_notification(booking.provider.id, f"You received a new {serializer.validated_data.get('rating')}-star review from {request.user.username}.")
+            except Exception as e:
+                print(f"Failed to send review notification: {e}")
+
+            return Response({"message": "Review submitted successfully.", "data": serializer.data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
