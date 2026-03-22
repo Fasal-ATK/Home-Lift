@@ -10,7 +10,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ['id', 'booking', 'user', 'user_name', 'provider', 'provider_name', 'rating', 'comment', 'created_at']
-        read_only_fields = ['id', 'user', 'user_name', 'provider', 'provider_name', 'created_at']
+        read_only_fields = ['id', 'booking', 'user', 'user_name', 'provider', 'provider_name', 'created_at']
 
 
 class BookingSerializer(serializers.ModelSerializer):
@@ -34,7 +34,7 @@ class BookingSerializer(serializers.ModelSerializer):
     is_assigned_to_user = serializers.SerializerMethodField(read_only=True)
     remaining_payment = serializers.SerializerMethodField(read_only=True)
     is_fully_paid = serializers.SerializerMethodField(read_only=True)
-    review = ReviewSerializer(read_only=True)
+    review = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -105,7 +105,8 @@ class BookingSerializer(serializers.ModelSerializer):
         if obj.provider and obj.status in ['confirmed', 'in_progress', 'completed']:
             phone_obj = getattr(obj.provider, 'phone', None)
             return {
-                "name": f"{obj.provider.first_name} {obj.provider.last_name}".strip() or obj.provider.username,
+                "name": f"{obj.provider.first_name} {obj.provider.last_name}".strip(),
+                "username": obj.provider.username,
                 "phone": str(phone_obj) if phone_obj else None,
                 "email": obj.provider.email
             }
@@ -123,6 +124,12 @@ class BookingSerializer(serializers.ModelSerializer):
             "phone": obj.phone,
             "email": obj.user.email
         }
+
+    def get_review(self, obj):
+        try:
+            return ReviewSerializer(obj.review).data if hasattr(obj, 'review') else None
+        except Exception:
+            return None
 
     def create(self, validated_data):
         """Attach user and apply active discounts before creation."""

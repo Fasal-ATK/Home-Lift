@@ -28,16 +28,16 @@ def stripe_webhook(request):
         intent = event["data"]["object"]
         metadata = intent.get("metadata", {})
         booking_id = metadata.get("booking_id")
+        user_id = metadata.get("user_id")
         payment_type = metadata.get("payment_type", "advance")
         
         if booking_id:
             try:
                 from payments.models import Payment
+                from notifications.utils import send_user_notification
                 booking = Booking.objects.get(id=booking_id)
                 
                 if payment_type == "remaining":
-                    # We don't have is_fully_paid in model, so we just track via Payment object
-                    # We can still update updated_at if we want
                     booking.save(update_fields=["updated_at"])
                 else:
                     booking.is_advance_paid = True
@@ -54,10 +54,19 @@ def stripe_webhook(request):
                         "metadata": intent.get("metadata")
                     }
                 )
-                print(f"✅ Booking #{booking_id} marked as paid and payment recorded.")
+                
+                print(f"✅ Booking #{booking_id} marked as paid.")
+                if user_id:
+                    send_user_notification(user_id, f"Payment of ₹{intent['amount']/100.0} was successful!")
+
             except Booking.DoesNotExist:
                 print(f"❌ Webhook error: Booking #{booking_id} not found.")
-            except Exception as e:
-                print(f"❌ Webhook error recording payment: {e}")
+
+    elif event["type"] == "transfer.created":
+        # This handles the withdrawal to provider
+        transfer = event["data"]["object"]
+        metadata = transfer.get("metadata", {})
+        # Note: We don't always have user_id in transfer metadata unless we pass it specifically
+        print(f"💰 Transfer Created: {transfer['id']} for {transfer['amount']/100.0}")
 
     return HttpResponse(status=200)
