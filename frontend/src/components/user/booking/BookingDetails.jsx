@@ -261,7 +261,9 @@ export default function BookingDetails() {
                 <Stack direction="row" spacing={3} sx={{ mb: 2 }}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <PersonIcon fontSize="small" color="action" />
-                    <Typography variant="body2">{booking.provider_contact.name}</Typography>
+                    <Typography variant="body2">
+                      {booking.provider_contact.name ? `${booking.provider_contact.name} (@${booking.provider_contact.username})` : `@${booking.provider_contact.username}`}
+                    </Typography>
                   </Stack>
                   {booking.provider_contact.phone && (
                     <Stack direction="row" spacing={1} alignItems="center">

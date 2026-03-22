@@ -19,8 +19,14 @@ import {
   TextField,
   InputAdornment,
   Skeleton,
+  Rating,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import StarIcon from "@mui/icons-material/Star";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
@@ -158,6 +164,25 @@ const JobDetailDialog = ({ job, open, onClose }) => {
             </Box>
           )}
 
+          {/* Customer Review */}
+          {job.review && (
+            <>
+              <Divider sx={{ my: 1 }} />
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                <StarIcon fontSize="small" color="primary" sx={{ mt: 0.3 }} />
+                <Box sx={{ width: '100%' }}>
+                  <Typography variant="caption" color="text.secondary">Rating & Review</Typography>
+                  <Rating value={job.review.rating} readOnly size="small" sx={{ display: 'block', mt: 0.5, mb: 0.5 }} />
+                  {job.review.comment && (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', bgcolor: '#f5f5f5', p: 1.5, borderRadius: 2 }}>
+                      "{job.review.comment}"
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </>
+          )}
+
           <Divider />
 
           {/* Earnings breakdown */}
@@ -219,12 +244,22 @@ const JobCard = ({ job, onClick }) => {
             #{job.id} · {job.category_name}
           </Typography>
         </Box>
-        <Chip
-          label={job.status?.replace("_", " ")}
-          color={STATUS_COLOR[job.status] || "default"}
-          size="small"
-          variant="outlined"
-        />
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.8 }}>
+          <Chip
+            label={job.status?.replace("_", " ")}
+            color={STATUS_COLOR[job.status] || "default"}
+            size="small"
+            variant="outlined"
+          />
+          {job.review && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, bgcolor: "grey.100", px: 1, py: 0.2, borderRadius: 1 }}>
+              <StarIcon sx={{ fontSize: 14, color: "#faaf00" }} />
+              <Typography variant="caption" fontWeight="bold">
+                {job.review.rating}
+              </Typography>
+            </Box>
+          )}
+        </Box>
       </Box>
 
       <Stack spacing={0.6} mb={1.5}>
@@ -299,6 +334,7 @@ const History = () => {
   const [search, setSearch] = useState("");
   const [selectedJob, setSelectedJob] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [starFilter, setStarFilter] = useState("all");
 
   useEffect(() => {
     dispatch(fetchMyAppointments());
@@ -316,7 +352,12 @@ const History = () => {
       j.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       String(j.id).includes(search);
     const matchFilter = filter === "all" || j.status === filter;
-    return matchSearch && matchFilter;
+    let matchStars = true;
+    if (starFilter !== "all") {
+      if (starFilter === "unrated") matchStars = !j.review;
+      else matchStars = j.review && String(j.review.rating) === String(starFilter);
+    }
+    return matchSearch && matchFilter && matchStars;
   });
 
   // Summary stats
@@ -393,6 +434,24 @@ const History = () => {
             />
           ))}
         </Stack>
+
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel>Rating Filter</InputLabel>
+          <Select
+            label="Rating Filter"
+            value={starFilter}
+            onChange={(e) => setStarFilter(e.target.value)}
+            sx={{ borderRadius: 8 }}
+          >
+            <MenuItem value="all">All Ratings</MenuItem>
+            <MenuItem value="5">⭐⭐⭐⭐⭐</MenuItem>
+            <MenuItem value="4">⭐⭐⭐⭐</MenuItem>
+            <MenuItem value="3">⭐⭐⭐</MenuItem>
+            <MenuItem value="2">⭐⭐</MenuItem>
+            <MenuItem value="1">⭐</MenuItem>
+            <MenuItem value="unrated">No Review</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
 
       {/* Job Grid */}
