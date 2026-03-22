@@ -99,6 +99,11 @@ export const bookingService = {
         return response.data;
     },
 
+    reviewBooking: async (id, data) => {
+        const response = await api.post(apiEndpoints.user.reviewBooking(id), data);
+        return response.data;
+    },
+
     downloadInvoice: async (id) => {
         const response = await api.get(apiEndpoints.user.downloadInvoice(id), {
             responseType: 'blob', // Important for PDF download
@@ -250,6 +255,10 @@ export const walletService = {
     },
     listWithdrawals: async () => {
         const response = await api.get(apiEndpoints.wallet.withdraw);
+        return response.data;
+    },
+    getStripeConnectUrl: async (data = {}) => {
+        const response = await api.post(apiEndpoints.wallet.stripeConnect, data);
         return response.data;
     }
 };

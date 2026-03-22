@@ -15,12 +15,14 @@ import {
   FormControl,
   FormControlLabel,
   FormLabel,
+  Rating,
+  TextField,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchBookingDetails, updateBooking, fetchBookings } from "../../../redux/slices/bookingSlice";
 import { fetchWallet, payWithWalletThunk } from "../../../redux/slices/walletSlice";
 import ConfirmModal from "../../common/Confirm";
-import { createPaymentIntent } from "../../../services/apiServices";
+import { createPaymentIntent, bookingService } from "../../../services/apiServices";
 import { ShowToast } from "../../common/Toast";
 import { stripePromise } from "../../../../stripe/stripe";
 import { Elements } from "@stripe/react-stripe-js";
@@ -58,6 +60,11 @@ export default function BookingDetails() {
   const [payType, setPayType] = useState("remaining"); // "remaining" or "advance"
   const [paymentMethod, setPaymentMethod] = useState("card"); // "card" or "wallet"
   const { balance: walletBalance } = useSelector((state) => state.wallet);
+
+  // Review Modal State
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
 
   // get id from location.state.bookingId OR query param ?id=123
   const bookingIdFromState = location.state?.bookingId;
@@ -148,7 +155,28 @@ export default function BookingDetails() {
     }
   };
 
+  const handleReviewSubmit = async () => {
+    if (!rating) {
+        ShowToast("Please provide a star rating.", "error");
+        return;
+    }
+    setBusy(true);
+    try {
+        await bookingService.reviewBooking(bookingId, { rating, comment });
+        ShowToast("Review submitted successfully!", "success");
+        setReviewModalOpen(false);
+        dispatch(fetchBookingDetails(bookingId));
+        dispatch(fetchBookings());
+    } catch (e) {
+        console.error("Failed to submit review", e);
+        ShowToast(e?.response?.data?.error || e?.response?.data?.detail || "Failed to submit review", "error");
+    } finally {
+        setBusy(false);
+    }
+  };
+
   const handleBack = () => navigate("/bookings");
+
 
   return (
     <Box sx={{ py: 4, px: { xs: 2, md: 4 } }}>
@@ -323,8 +351,31 @@ export default function BookingDetails() {
                     {busy ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Cancel Booking"}
                   </Button>
                 )}
+
+                {/* Show Rate & Review if completed and no review yet */}
+                {booking.status === "completed" && !booking.review && (
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={() => setReviewModalOpen(true)}
+                    disabled={busy}
+                  >
+                    Rate & Review
+                  </Button>
+                )}
               </Stack>
             </Stack>
+
+            {/* Existing Review */}
+            {booking.review && (
+              <Box sx={{ p: 2, bgcolor: "grey.50", borderRadius: 2, mt: 3 }}>
+                <Typography variant="subtitle2" fontWeight="bold">Your Review</Typography>
+                <Rating value={booking.review.rating} readOnly size="small" sx={{ my: 0.5 }} />
+                {booking.review.comment && (
+                  <Typography variant="body2" color="text.secondary">"{booking.review.comment}"</Typography>
+                )}
+              </Box>
+            )}
 
             <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: "block" }}>
               Created: {booking.created_at}
@@ -338,6 +389,38 @@ export default function BookingDetails() {
               confirmLabel="Cancel Booking"
               color="danger"
             />
+
+            {/* Review Modal */}
+            <Modal open={reviewModalOpen} onClose={() => setReviewModalOpen(false)}>
+              <Box sx={{
+                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4, borderRadius: 2
+              }}>
+                <Typography variant="h6" mb={2} fontWeight="bold">Rate Provider</Typography>
+                <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
+                  <Rating
+                    size="large"
+                    value={rating}
+                    onChange={(event, newValue) => setRating(newValue)}
+                  />
+                </Box>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Leave a comment (optional)"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  sx={{ mb: 3 }}
+                />
+                <Stack direction="row" spacing={2} justifyContent="flex-end">
+                  <Button onClick={() => setReviewModalOpen(false)} disabled={busy}>Cancel</Button>
+                  <Button variant="contained" onClick={handleReviewSubmit} disabled={busy || !rating}>
+                    {busy ? <CircularProgress size={24} color="inherit" /> : "Submit Review"}
+                  </Button>
+                </Stack>
+              </Box>
+            </Modal>
 
             {/* Payment Modal */}
             <Modal

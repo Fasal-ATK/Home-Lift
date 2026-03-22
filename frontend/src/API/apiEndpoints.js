@@ -26,6 +26,7 @@ const apiEndpoints = {
         booking: '/user/booking/',
         updateBooking: (id) => `/user/booking/details/${id}/`,
         downloadInvoice: (id) => `/user/booking/${id}/invoice/`,
+        reviewBooking: (id) => `/user/booking/${id}/review/`,
         wallet: '/user/wallet/',
 
         // Addresses
@@ -105,6 +106,7 @@ const apiEndpoints = {
     wallet: {
         detail: (type = 'user') => `/wallet/?type=${type}`,
         withdraw: '/wallet/withdraw/',
+        stripeConnect: '/wallet/stripe-connect/',
     },
 
 

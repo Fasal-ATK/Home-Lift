@@ -26,7 +26,6 @@ import {
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchWallet, withdrawWalletThunk } from '../../redux/slices/walletSlice';
-import { providerService } from '../../services/apiServices';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -37,48 +36,16 @@ const ProviderWallet = () => {
   const dispatch = useDispatch();
   const { balance, recentTransactions, loading, withdrawLoading, error: walletError } = useSelector((state) => state.wallet);
   
-  const [providerDetails, setProviderDetails] = useState(null);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [stripeAccountId, setStripeAccountId] = useState("");
-  const [linkingStripe, setLinkingStripe] = useState(false);
-  
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
     dispatch(fetchWallet('provider'));
-    loadProviderDetails();
   }, [dispatch]);
-
-  const loadProviderDetails = async () => {
-    try {
-      const details = await providerService.fetchDetails();
-      setProviderDetails(details);
-      setStripeAccountId(details.stripe_account_id || "");
-    } catch (err) {
-      console.error("Failed to load provider details:", err);
-    }
-  };
 
   const showSnack = (msg, severity = "success") =>
     setSnack({ open: true, msg, severity });
-
-  const handleLinkStripe = async () => {
-    if (!stripeAccountId) {
-      showSnack("Please enter a Stripe Account ID.", "error");
-      return;
-    }
-    setLinkingStripe(true);
-    try {
-      await providerService.updateDetails({ stripe_account_id: stripeAccountId });
-      showSnack("Stripe account linked successfully.");
-      await loadProviderDetails();
-    } catch (err) {
-      showSnack("Failed to link Stripe account.", "error");
-    } finally {
-      setLinkingStripe(false);
-    }
-  };
 
   const handleWithdraw = async () => {
     if (!withdrawAmount || isNaN(withdrawAmount) || parseFloat(withdrawAmount) <= 0) {
@@ -193,39 +160,23 @@ const ProviderWallet = () => {
             <Typography variant="h6" fontWeight="bold">Payout Method</Typography>
           </Box>
           
-          {providerDetails?.stripe_account_id ? (
-            <Box>
-                <Typography variant="body1" fontWeight="bold" sx={{ mb: 1 }}>
-                    Stripe Connected
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
-                   <Typography variant="body2">Account ID: {providerDetails.stripe_account_id}</Typography>
-                   <Chip label="Verified" size="small" color="success" variant="outlined" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
-                </Box>
-                <Button 
-                    variant="text" 
-                    size="small" 
-                    sx={{ mt: 2, color: 'primary.main', fontWeight: 'bold', p: 0 }}
-                    onClick={() => setWithdrawDialogOpen(true)}
-                >
-                    Change Account
-                </Button>
-            </Box>
-          ) : (
-            <Box>
-                <Alert severity="info" sx={{ py: 0, '& .MuiAlert-message': { fontSize: '0.85rem' } }}>
-                    Connect your Stripe account to start receiving payouts.
-                </Alert>
-                <Button 
-                    variant="contained" 
-                    size="small" 
-                    sx={{ mt: 2, bgcolor: '#000', color: 'white', borderRadius: 2, textTransform: 'none' }}
-                    onClick={() => setWithdrawDialogOpen(true)}
-                >
-                    Connect Stripe
-                </Button>
-            </Box>
-          )}
+          <Box>
+              <Typography variant="body1" fontWeight="bold" sx={{ mb: 1 }}>
+                  Automatic Payouts
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
+                 <Typography variant="body2">Your funds will be processed automatically.</Typography>
+                 <Chip label="Ready" size="small" color="success" variant="outlined" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
+              </Box>
+              <Button 
+                  variant="text" 
+                  size="small" 
+                  sx={{ mt: 2, color: 'primary.main', fontWeight: 'bold', p: 0 }}
+                  onClick={() => setWithdrawDialogOpen(true)}
+              >
+                  Initiate Withdrawal
+              </Button>
+          </Box>
         </Paper>
       </Box>
 
@@ -330,100 +281,72 @@ const ProviderWallet = () => {
         <DialogTitle sx={{ fontWeight: '900', fontSize: '1.5rem', pb: 1 }}>Withdraw Funds</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-            Direct transfer your balance to your Stripe connected bank account.
+            Transfer your balance to your bank account.
           </Typography>
-
-          {!providerDetails?.stripe_account_id ? (
-            <Box sx={{ mt: 1 }}>
-               <Alert severity="warning" variant="outlined" sx={{ mb: 3, borderRadius: 2 }}>
-                  Before you can withdraw, you must link your <strong>Stripe Connect</strong> account.
-               </Alert>
-               <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Linked Stripe Account ID</Typography>
-               <TextField
-                 placeholder="acct_xxxxxxxxxxxx"
-                 fullWidth
-                 variant="outlined"
-                 value={stripeAccountId}
-                 onChange={(e) => setStripeAccountId(e.target.value)}
-                 disabled={linkingStripe}
-                 sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-               />
-               <Button 
-                variant="contained" 
-                fullWidth 
-                onClick={handleLinkStripe} 
-                disabled={linkingStripe || !stripeAccountId}
-                sx={{ bgcolor: '#000', borderRadius: 2, py: 1.5, '&:hover': { bgcolor: '#333' } }}
-               >
-                 {linkingStripe ? <CircularProgress size={24} color="inherit" /> : "Link Stripe Account"}
-               </Button>
-            </Box>
-          ) : (
-            <Stack spacing={4} sx={{ mt: 1 }}>
-               <Box 
+          
+          <Stack spacing={4} sx={{ mt: 1 }}>
+            <Box>
+              <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1, color: 'text.secondary' }}>
+                Amount to Withdraw (₹)
+              </Typography>
+              <TextField
+                fullWidth
+                type="number"
+                placeholder="Enter amount (e.g. 500)"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                disabled={withdrawLoading}
                 sx={{ 
-                    p: 3, 
-                    bgcolor: '#fafafa', 
-                    borderRadius: 3, 
-                    border: '1px solid #eee',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center'
+                  '& .MuiOutlinedInput-root': { 
+                    borderRadius: 3,
+                    bgcolor: 'rgba(0,0,0,0.02)',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold'
+                  } 
                 }}
-               >
-                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 'bold', mb: 1 }}>
-                    Available Payout
-                  </Typography>
-                  <Typography variant="h4" fontWeight="900" color="primary.main">₹{balance}</Typography>
-               </Box>
-               
-               <Box>
-                    <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Amount to Withdraw</Typography>
-                    <TextField
-                        placeholder="0.00"
-                        type="number"
-                        fullWidth
-                        value={withdrawAmount}
-                        onChange={(e) => setWithdrawAmount(e.target.value)}
-                        InputProps={{ 
-                            inputProps: { max: balance, min: 1 },
-                            startAdornment: <Typography sx={{ mr: 1, fontWeight: 'bold' }}>₹</Typography>
-                        }}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                    />
-               </Box>
+              />
+              <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
+                Available: ₹{balance || 0}
+              </Typography>
+            </Box>
 
-               <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                   <InfoOutlinedIcon fontSize="small" color="disabled" />
-                   <Typography variant="caption" color="text.secondary">
-                        Funds will be sent to Stripe Account: <strong>{providerDetails.stripe_account_id}</strong>. 
-                        Payouts typically arrive in your bank account in 1-2 business days.
-                   </Typography>
-               </Box>
-            </Stack>
-          )}
+            <Button
+              variant="contained"
+              fullWidth
+              size="large"
+              onClick={async () => {
+                if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
+                   showSnack("Please enter a valid amount.", "error");
+                   return;
+                }
+                
+                // 1-second delay as requested
+                setTimeout(() => {
+                    handleWithdraw();
+                }, 1000);
+              }}
+              disabled={withdrawLoading || !withdrawAmount}
+              sx={{ 
+                bgcolor: '#000', 
+                color: '#fff',
+                borderRadius: 3, 
+                py: 2,
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                '&:hover': { bgcolor: '#333' }
+              }}
+            >
+              {withdrawLoading ? <CircularProgress size={24} color="inherit" /> : "Confirm Withdrawal"}
+            </Button>
+
+            <Typography variant="caption" align="center" sx={{ display: 'block', color: 'text.secondary', px: 2 }}>
+                Funds will be processed and sent to your bank account.
+            </Typography>
+          </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 3, gap: 1 }}>
+        <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setWithdrawDialogOpen(false)} disabled={withdrawLoading} sx={{ borderRadius: 2, fontWeight: 'bold' }}>
-            Cancel
-          </Button>
-          <Button 
-            variant="contained" 
-            fullWidth={!providerDetails?.stripe_account_id}
-            onClick={handleWithdraw} 
-            disabled={withdrawLoading || !providerDetails?.stripe_account_id || !withdrawAmount || parseFloat(withdrawAmount) > parseFloat(balance)}
-            sx={{ 
-                bgcolor: '#F4E04D', 
-                color: 'black', 
-                borderRadius: 2, 
-                px: 4,
-                py: 1.2,
-                fontWeight: '900',
-                '&:hover': { bgcolor: '#e5d142' },
-                '&.Mui-disabled': { bgcolor: '#f5f5f5' }
-            }}
-          >
-            {withdrawLoading ? "Processing..." : "Confirm Withdrawal"}
+            Close
           </Button>
         </DialogActions>
       </Dialog>
