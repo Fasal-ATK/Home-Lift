@@ -379,35 +379,37 @@ const History = () => {
       </Box>
 
       {/* Stats */}
-      <Grid container spacing={2} mb={3}>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <StatCard
-            icon={<CheckCircleOutlineIcon />}
-            label="Completed Jobs"
-            value={totalJobs}
-            color="success"
-          />
+      <Box sx={{ mb: 6 }}>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <StatCard
+              icon={<CheckCircleOutlineIcon />}
+              label="Completed Jobs"
+              value={totalJobs}
+              color="success"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <StatCard
+              icon={<AccountBalanceWalletIcon />}
+              label="Total Earnings"
+              value={`₹${totalEarnings.toFixed(0)}`}
+              color="primary"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <StatCard
+              icon={<AttachMoneyIcon />}
+              label="Avg. Per Job"
+              value={`₹${avgEarning}`}
+              color="warning"
+            />
+          </Grid>
         </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <StatCard
-            icon={<AccountBalanceWalletIcon />}
-            label="Total Earnings"
-            value={`₹${totalEarnings.toFixed(0)}`}
-            color="primary"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <StatCard
-            icon={<AttachMoneyIcon />}
-            label="Avg. Per Job"
-            value={`₹${avgEarning}`}
-            color="warning"
-          />
-        </Grid>
-      </Grid>
+      </Box>
 
       {/* Filters */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap", alignItems: "center" }}>
+      <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap", alignItems: "center" }}>
         <TextField
           size="small"
           placeholder="Search by service, customer, ID..."
