@@ -1,6 +1,6 @@
 // src/components/user/booking/BookingDetails.jsx
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Paper,
@@ -318,6 +318,17 @@ export default function BookingDetails() {
               <Stack direction="row" spacing={1}>
                 <Button variant="outlined" onClick={handleBack} disabled={busy}>Back</Button>
 
+                <Button
+                  variant="outlined"
+                  color="error"
+                  component={Link}
+                  to="/support"
+                  state={{ prefill: `Issue with Booking #${booking.id}`, type: "provider" }}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Report Issue
+                </Button>
+
                 {/* Show Pay Balance if In Progress or Completed (and unpaid) */}
                 {(booking.status === 'in_progress' || booking.status === 'completed') && booking.remaining_payment > 0 && !booking.is_fully_paid && (
                   <Button
@@ -380,7 +391,14 @@ export default function BookingDetails() {
             )}
 
             <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: "block" }}>
-              Created: {booking.created_at}
+              Created: {new Date(booking.created_at).toLocaleString('en-IN', { 
+                hour: 'numeric', 
+                minute: 'numeric', 
+                hour12: true, 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric' 
+              })}
             </Typography>
             {/* Modals inside booking check */}
             <ConfirmModal

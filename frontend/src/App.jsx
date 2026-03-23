@@ -26,6 +26,8 @@ import ServiceCategroies from './pages/Admin/ServiceCategroies';
 import Reports from './pages/Admin/Reports';
 import OffersManager from './pages/Admin/OffersManager';
 import BookingMng from './pages/Admin/BookingMng';
+import AdminTickets from './pages/Admin/Tickets';
+import Support from './pages/User/Support';
 
 import Landing from './pages/Landing';
 
@@ -123,6 +125,7 @@ function App() {
           <Route path='notifications' element={<Notifications />} />
           <Route path='wallet' element={<UserWallet />} />
           <Route path='addresses' element={<Addresses />} />
+          <Route path='support' element={<Support />} />
 
           {/* Change Password Route (Protected) */}
           <Route path='change-password' element={<ForgotPassword />} />
@@ -142,6 +145,7 @@ function App() {
           <Route path='reports' element={<Reports />} />
           <Route path='offers' element={<OffersManager />} />
           <Route path='bookings' element={<BookingMng />} />
+          <Route path='tickets' element={<AdminTickets />} />
         </Route>
 
         {/* Provider Routes */}
@@ -160,6 +164,7 @@ function App() {
           <Route path='bio' element={<Bio />} />
           <Route path='history' element={<History />} />
           <Route path='wallet' element={<ProviderWallet />} />
+          <Route path='support' element={<Support />} />
         </Route>
 
         {/* 404 Fallback */}

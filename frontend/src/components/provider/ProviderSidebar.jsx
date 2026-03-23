@@ -19,6 +19,7 @@ import {
   Menu,
   ChevronLeft,
   Home as HomeIcon,
+  SupportAgent,
 } from "@mui/icons-material";
 
 export default function ProviderSidebar({ open, setOpen }) {
@@ -32,6 +33,7 @@ export default function ProviderSidebar({ open, setOpen }) {
     { text: "Bio", icon: <Person />, path: "/provider/bio" },
     { text: "History", icon: <History />, path: "/provider/history" },
     { text: "Wallet", icon: <AccountBalanceWallet />, path: "/provider/wallet" },
+    { text: "Support", icon: <SupportAgent />, path: "/provider/support" },
   ];
 
   return (

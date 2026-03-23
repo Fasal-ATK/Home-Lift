@@ -184,7 +184,7 @@ const Home = () => {
         <Typography color="error">Failed to load services</Typography>
       ) : (
 
-        <Grid container spacing={2}>
+        <Grid container spacing={2} justifyContent="center">
           {services.slice(0, 9).map((srv) => (
             <Grid size={{ xs: 6, sm: 4, md: 2 }} key={srv.id}>
               <ServiceCard
@@ -213,7 +213,7 @@ const Home = () => {
       {activeOffers.length > 0 && (
         <Box sx={{ mt: 6 }}>
           <Typography variant="h5" fontWeight="bold" mb={3}>Offers & Discount</Typography>
-          <Grid container spacing={2}>
+          <Grid container spacing={2} justifyContent="center">
             {activeOffers.map((offer) => {
               // Determine if it's a category or service offer
               const name = offer.service_name || offer.category_name || offer.title;

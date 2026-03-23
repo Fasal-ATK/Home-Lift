@@ -47,6 +47,7 @@ const UserNavbar = () => {
     { label: "SERVICES", path: "/services" },
     { label: "BOOKINGS", path: "/bookings" },
     { label: "WALLET", path: "/wallet" },
+    { label: "SUPPORT", path: "/support" },
   ];
 
   return (

@@ -109,6 +109,12 @@ const apiEndpoints = {
         stripeConnect: '/wallet/stripe-connect/',
     },
 
+    tickets: {
+        list:   '/core/tickets/',
+        detail: (id) => `/core/tickets/${id}/`,
+        adminList:  '/core/admin/tickets/',
+        adminReply: (id) => `/core/admin/tickets/${id}/reply/`,
+    },
 
 };
 

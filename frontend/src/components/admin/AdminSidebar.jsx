@@ -1,6 +1,6 @@
 // src/layouts/AdminSidebar.jsx
 import { Box, List, ListItemButton, ListItemIcon, ListItemText, Typography, Divider, Tooltip, Paper } from '@mui/material';
-import { Dashboard, Group, Category, Report, LocalOffer, BookOnline, PeopleAltOutlined, ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { Dashboard, Group, Category, Report, LocalOffer, BookOnline, PeopleAltOutlined, ChevronLeft, ChevronRight, SupportAgent } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import LogoutButton from '../common/Logout';
 
@@ -12,9 +12,10 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
     { text: 'Service & Categories', icon: <Category />, path: '/admin/services' },
     { text: 'Employees', icon: <PeopleAltOutlined />, path: '/admin/employees' },
     { text: 'Users', icon: <Group />, path: '/admin/users' },
-    { text: 'Report', icon: <Report />, path: '/admin/reports' },
+    // { text: 'Report', icon: <Report />, path: '/admin/reports' },
     { text: 'offers', icon: <LocalOffer />, path: '/admin/offers' },
     { text: 'Bookings', icon: <BookOnline />, path: '/admin/bookings' },
+    { text: 'Tickets', icon: <SupportAgent />, path: '/admin/tickets' },
   ];
 
   return (
