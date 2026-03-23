@@ -40,6 +40,7 @@ const ServiceCard = ({
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: isMore ? "center" : "flex-start", // Centered for "More" button, top for others
+
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 position: "relative",
                 overflow: "visible", // Allow content to show on hover if it overflows

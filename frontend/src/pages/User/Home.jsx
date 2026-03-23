@@ -184,7 +184,7 @@ const Home = () => {
         <Typography color="error">Failed to load services</Typography>
       ) : (
 
-        <Grid container spacing={2} justifyContent="center">
+        <Grid container spacing={2}>
           {services.slice(0, 9).map((srv) => (
             <Grid size={{ xs: 6, sm: 4, md: 2 }} key={srv.id}>
               <ServiceCard
