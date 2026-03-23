@@ -85,8 +85,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.shortcuts import get_object_or_404
-from .models import Address
-from .serializers import AddressSerializer
+from .models import Address, Ticket
+from .serializers import AddressSerializer, TicketSerializer
+from .permissions import IsAdminUserCustom
 
 
 class AddressListCreateView(APIView):
@@ -140,3 +141,71 @@ class AddressDetailView(APIView):
         address.delete()
         return Response({"message": "Address deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
+
+# ─── Ticket Views ────────────────────────────────────────────────────────────
+
+class TicketListCreateView(APIView):
+    """
+    GET  /core/tickets/        → User's own tickets
+    POST /core/tickets/        → Submit a new ticket (user or provider)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        tickets = Ticket.objects.filter(user=request.user).order_by('-created_at')
+        return Response(TicketSerializer(tickets, many=True).data)
+
+    def post(self, request):
+        serializer = TicketSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TicketDetailView(APIView):
+    """
+    GET /core/tickets/<pk>/  → View a single ticket (owner only)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        ticket = get_object_or_404(Ticket, pk=pk, user=request.user)
+        return Response(TicketSerializer(ticket).data)
+
+
+class AdminTicketListView(APIView):
+    """
+    GET  /core/admin/tickets/          → All tickets
+    """
+    permission_classes = [IsAdminUserCustom]
+
+    def get(self, request):
+        status_filter = request.query_params.get('status')
+        type_filter   = request.query_params.get('ticket_type')
+        qs = Ticket.objects.all().order_by('-created_at')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if type_filter:
+            qs = qs.filter(ticket_type=type_filter)
+        return Response(TicketSerializer(qs, many=True).data)
+
+
+class AdminTicketReplyView(APIView):
+    """
+    PATCH /core/admin/tickets/<pk>/reply/  → Admin replies & updates status
+    """
+    permission_classes = [IsAdminUserCustom]
+
+    def patch(self, request, pk):
+        ticket = get_object_or_404(Ticket, pk=pk)
+        reply  = request.data.get('admin_reply', '').strip()
+        new_status = request.data.get('status', ticket.status)
+
+        if new_status not in dict(Ticket.STATUS_CHOICES):
+            return Response({"error": "Invalid status."}, status=status.HTTP_400_BAD_REQUEST)
+
+        ticket.admin_reply = reply
+        ticket.status = new_status
+        ticket.save(update_fields=['admin_reply', 'status', 'updated_at'])
+        return Response(TicketSerializer(ticket).data)

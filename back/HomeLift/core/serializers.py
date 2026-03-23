@@ -1,6 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
-from .models import Address
+from .models import Address, Ticket
 
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -80,3 +80,16 @@ class AddressSerializer(serializers.ModelSerializer):
             if address.is_default:
                 Address.objects.filter(user=address.user).exclude(id=address.id).update(is_default=False)
         return address
+
+class TicketSerializer(serializers.ModelSerializer):
+    user_name = serializers.ReadOnlyField(source='user.username')
+    user_email = serializers.ReadOnlyField(source='user.email')
+
+    class Meta:
+        model = Ticket
+        fields = [
+            'id', 'user', 'user_name', 'user_email', 'subject', 
+            'description', 'ticket_type', 'status', 'admin_reply', 
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'user_name', 'user_email', 'admin_reply', 'status', 'created_at', 'updated_at']
