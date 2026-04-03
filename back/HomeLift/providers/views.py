@@ -7,9 +7,15 @@ from .serializers import (
     ProviderApplicationSerializer,
     ProviderDetailsSerializer,
     ProviderServiceSerializer,
+    ProviderServiceSerializer,
     ProviderServiceRequestSerializer,
 )
 from core.permissions import IsNormalUser, IsAdminUserCustom, IsProviderUser
+from bookings.models import Booking
+from services.models import Service
+from django.db.models import Sum, Count, Q
+from django.db.models.functions import TruncMonth
+from decimal import Decimal
 import logging
 import json
 
@@ -421,3 +427,125 @@ class AdminServiceRequestActionView(APIView):
 
         serializer = ProviderServiceRequestSerializer(sr)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ProviderDashboardView(APIView):
+    """
+    GET /provider/dashboard/stats/  → Stats for the provider dashboard
+    """
+    permission_classes = [IsProviderUser]
+
+    def get(self, request):
+        provider_user = request.user
+        
+        now = timezone.now()
+        time_range = request.query_params.get('time_range', 'all_time')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        date_filter = None
+        end_date_filter = None
+
+        if start_date and end_date:
+            from datetime import datetime, timedelta
+            date_filter = timezone.make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+            end_date_filter = timezone.make_aware(datetime.strptime(end_date, '%Y-%m-%d')).replace(hour=23, minute=59, second=59)
+        elif time_range == 'this_week':
+            from datetime import timedelta
+            date_filter = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        elif time_range == 'this_month':
+            date_filter = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        elif time_range == '6_months':
+            from datetime import timedelta
+            date_filter = now - timedelta(days=180)
+        elif time_range == '1_year':
+            from datetime import timedelta
+            date_filter = now - timedelta(days=365)
+
+        bookings_qs = Booking.objects.filter(provider=provider_user)
+        
+        if date_filter:
+            bookings_qs = bookings_qs.filter(created_at__gte=date_filter)
+        if end_date_filter:
+            bookings_qs = bookings_qs.filter(created_at__lte=end_date_filter)
+        
+        # 📊 Overall Counts
+        total_bookings = bookings_qs.count()
+        completed_qs = bookings_qs.filter(status='completed')
+        
+        total_revenue = completed_qs.aggregate(Sum('price'))['price__sum'] or Decimal('0')
+        # Platform takes 7% (History logic: your earnings = price * 0.93)
+        your_earnings = total_revenue * Decimal('0.93')
+        
+        active_customers = bookings_qs.values('user').distinct().count()
+        
+        # 📈 Monthly Data (Last 6 Months)
+        monthly_stats = bookings_qs.annotate(month=TruncMonth('created_at')).values('month').annotate(
+            bookings=Count('id'),
+            revenue=Sum('price')
+        ).order_by('month')[:6]
+        
+        formatted_monthly = []
+        for s in monthly_stats:
+            month_str = s['month'].strftime('%b') if s['month'] else 'Unknown'
+            formatted_monthly.append({
+                "month": month_str,
+                "bookings": s['bookings'],
+                "revenue": float(s['revenue'] or 0) * 0.93 # your share
+            })
+
+        # 🥧 Booking Status Breakdown
+        status_counts = bookings_qs.values('status').annotate(count=Count('status'))
+        role_data = []
+        for s in status_counts:
+            role_data.append({
+                "name": s['status'].replace('_', ' ').capitalize(),
+                "value": s['count']
+            })
+
+        data = {
+            "stats": {
+                "total_bookings": total_bookings,
+                "total_revenue": float(your_earnings),
+                "active_customers": active_customers,
+            },
+            "monthly_data": formatted_monthly,
+            "status_data": role_data,
+        }
+        return Response(data)
+
+
+class ProvidersByServiceView(APIView):
+    """
+    GET /provider/available-providers/?service_id=X
+    Returns a list of active providers that offer the given service.
+    """
+    permission_classes = [IsAdminUserCustom]
+
+    def get(self, request):
+        service_id = request.query_params.get('service_id')
+        if not service_id:
+            return Response({"detail": "service_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            service = Service.objects.get(id=service_id)
+        except Service.DoesNotExist:
+            return Response({"detail": "Service not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Find ProviderDetails who have this service in their approved 'ProviderService' list
+        # And are active.
+        provider_services = ProviderService.objects.filter(
+            service=service,
+            provider__is_active=True
+        ).select_related('provider__user')
+
+        results = []
+        for ps in provider_services:
+            user = ps.provider.user
+            results.append({
+                "id": user.id,
+                "full_name": f"{user.first_name} {user.last_name}" if user.first_name else user.username,
+                "email": user.email,
+                "phone": user.phone_number
+            })
+        
+        return Response(results)
