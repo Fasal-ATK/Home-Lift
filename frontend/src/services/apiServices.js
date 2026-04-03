@@ -142,6 +142,11 @@ export const providerJobService = {
         const response = await api.patch(apiEndpoints.provider.jobs.updateStatus(id), { status });
         return response.data;
     },
+
+    getAvailableProviders: async (serviceId) => {
+        const response = await api.get(apiEndpoints.provider.availableProviders(serviceId));
+        return response.data;
+    },
 };
 
 
@@ -346,8 +351,10 @@ export const adminBookingManagementService = {
         const response = await api.get(apiEndpoints.adminBookingManagement.list, { params });
         return response.data;
     },
-    updateStatus: async (id, status) => {
-        const response = await api.patch(apiEndpoints.adminBookingManagement.updateStatus(id), { status });
+    updateStatus: async (id, status, providerId = null) => {
+        const payload = { status };
+        if (providerId) payload.provider_id = providerId;
+        const response = await api.patch(apiEndpoints.adminBookingManagement.updateStatus(id), payload);
         return response.data;
     },
 };

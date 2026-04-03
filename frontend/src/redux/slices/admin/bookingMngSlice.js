@@ -16,11 +16,9 @@ export const fetchAdminBookings = createAsyncThunk(
 
 export const updateBookingStatusAdmin = createAsyncThunk(
     'adminBookings/updateBookingStatusAdmin',
-    async ({ id, status }, { rejectWithValue }) => {
+    async ({ id, status, providerId }, { rejectWithValue }) => {
         try {
-            // Reusing providerJobService.updateBookingStatus as it points to the same logic
-            // Or we could move it to a more generic service
-            const data = await adminBookingManagementService.updateStatus(id, status);
+            const data = await adminBookingManagementService.updateStatus(id, status, providerId);
             return data;
         } catch (err) {
             return rejectWithValue(err.response?.data || 'Failed to update status');

@@ -8,7 +8,8 @@ import Chip from "@mui/material/Chip";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { toast } from "react-toastify";
 import ConfirmModal from "../../components/common/Confirm";
-import { bookingService } from "../../services/apiServices";
+import { bookingService, providerService } from "../../services/apiServices";
+import AssignProviderModal from "../../components/admin/modal/AssignProviderModal";
 
 // Status Colors
 const getStatusColor = (status) => {
@@ -39,6 +40,12 @@ export default function BookingMng() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [targetStatus, setTargetStatus] = useState("");
 
+  // Provider Assignment State
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [availableProviders, setAvailableProviders] = useState([]);
+  const [providersLoading, setProvidersLoading] = useState(false);
+  const [selectedProviderId, setSelectedProviderId] = useState("");
+
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "desc" });
 
   useEffect(() => {
@@ -57,22 +64,46 @@ export default function BookingMng() {
     }));
   };
 
-  const handleStatusClick = (booking, newStatus) => {
+  const handleStatusClick = async (booking, newStatus) => {
     setSelectedBooking(booking);
     setTargetStatus(newStatus);
-    setConfirmOpen(true);
+
+    // If moving from pending to confirmed/in_progress AND no provider is assigned
+    const needsProvider = (newStatus === "confirmed" || newStatus === "in_progress") && !booking.provider_name;
+    
+    if (needsProvider) {
+        setAssignModalOpen(true);
+        setProvidersLoading(true);
+        try {
+            const providers = await providerService.getAvailableProviders(booking.service);
+            setAvailableProviders(providers);
+        } catch (err) {
+            toast.error("Failed to load providers");
+            setAssignModalOpen(false);
+        } finally {
+            setProvidersLoading(false);
+        }
+    } else {
+        setConfirmOpen(true);
+    }
   };
 
-  const handleConfirmStatusChange = async () => {
+  const handleConfirmStatusChange = async (providerId = null) => {
     if (selectedBooking && targetStatus) {
       try {
-        await dispatch(updateBookingStatusAdmin({ id: selectedBooking.id, status: targetStatus })).unwrap();
+        await dispatch(updateBookingStatusAdmin({ 
+            id: selectedBooking.id, 
+            status: targetStatus,
+            providerId: providerId || undefined
+        })).unwrap();
         toast.success(`Booking #${selectedBooking.id} updated to ${targetStatus}`);
       } catch (err) {
         toast.error(typeof err === 'string' ? err : "Failed to update status");
       } finally {
         setConfirmOpen(false);
+        setAssignModalOpen(false);
         setSelectedBooking(null);
+        setSelectedProviderId("");
       }
     }
   };
@@ -225,11 +256,21 @@ export default function BookingMng() {
       <ConfirmModal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        onConfirm={handleConfirmStatusChange}
+        onConfirm={() => handleConfirmStatusChange()}
         title="Update Booking Status"
         message={`Are you sure you want to change status of Booking #${selectedBooking?.id} to ${targetStatus.toUpperCase()}?`}
         confirmLabel="Update Status"
         color="info"
+      />
+
+      <AssignProviderModal
+        open={assignModalOpen}
+        onClose={() => setAssignModalOpen(false)}
+        onConfirm={() => handleConfirmStatusChange(selectedProviderId)}
+        providers={availableProviders}
+        loading={providersLoading}
+        selectedProviderId={selectedProviderId}
+        setSelectedProviderId={setSelectedProviderId}
       />
     </Box>
   );

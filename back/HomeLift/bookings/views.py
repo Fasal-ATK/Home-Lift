@@ -364,6 +364,7 @@ class BookingStatusUpdateView(APIView):
             return Response({"error": "Not allowed."}, status=status.HTTP_403_FORBIDDEN)
 
         new_status = (request.data.get("status") or "").strip()
+        provider_id = request.data.get("provider_id")
         allowed = {"pending", "confirmed", "in_progress", "completed", "cancelled"}
 
         if new_status not in allowed:
@@ -397,9 +398,20 @@ class BookingStatusUpdateView(APIView):
                 
                 booking.is_provider_paid = True
                 # Note: we save below with update_fields, including status
+                # but we'll use save() if we have provider changed
 
         booking.status = new_status
         save_fields = ["status", "updated_at"]
+        
+        if provider_id and (user.is_staff or user.is_superuser):
+            from users.models import CustomUser
+            try:
+                new_provider = CustomUser.objects.get(id=provider_id, is_provider=True)
+                booking.provider = new_provider
+                save_fields.append("provider")
+            except CustomUser.DoesNotExist:
+                return Response({"error": "Selected provider not found or not a provider."}, status=status.HTTP_400_BAD_REQUEST)
+
         if hasattr(booking, 'is_provider_paid') and booking.is_provider_paid:
             save_fields.append("is_provider_paid")
             

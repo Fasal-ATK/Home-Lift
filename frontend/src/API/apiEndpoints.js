@@ -40,7 +40,9 @@ const apiEndpoints = {
         detail: (id) => `user/notifications/${id}/`,
     },
 
-    adminDashboard: {},
+    adminDashboard: {
+        stats: '/core/admin/dashboard/',
+    },
 
     adminCustomerManagement: {
         list: '/admin/customers/manage/',
@@ -86,6 +88,8 @@ const apiEndpoints = {
         apply: '/provider/apply/',
         applicationStatus: '/provider/status/',
         me: '/provider/me/',
+        dashboardStats: '/provider/dashboard/stats/',
+        availableProviders: (serviceId) => `/provider/available-providers/?service_id=${serviceId}`,
         myServices: '/provider/my-services/',
         myServiceDetail: (id) => `/provider/my-services/${id}/`,
         myServiceRequests: '/provider/my-service-requests/',
@@ -107,6 +111,9 @@ const apiEndpoints = {
         detail: (type = 'user') => `/wallet/?type=${type}`,
         withdraw: '/wallet/withdraw/',
         stripeConnect: '/wallet/stripe-connect/',
+        // Admin
+        adminWithdrawals: '/wallet/admin/withdrawals/',
+        adminWithdrawalAction: (id) => `/wallet/admin/withdrawals/${id}/action/`,
     },
 
     tickets: {

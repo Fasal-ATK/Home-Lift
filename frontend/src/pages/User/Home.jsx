@@ -213,7 +213,7 @@ const Home = () => {
       {activeOffers.length > 0 && (
         <Box sx={{ mt: 6 }}>
           <Typography variant="h5" fontWeight="bold" mb={3}>Offers & Discount</Typography>
-          <Grid container spacing={2} justifyContent="center">
+          <Grid container spacing={2} justifyContent="flex-start">
             {activeOffers.map((offer) => {
               // Determine if it's a category or service offer
               const name = offer.service_name || offer.category_name || offer.title;

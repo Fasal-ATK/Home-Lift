@@ -19,12 +19,16 @@ from .views import (
     ProviderMyServiceDetailView,
     AdminServiceRequestListView,
     AdminServiceRequestActionView,
+    ProviderDashboardView,
+    ProvidersByServiceView,
 )
 
 urlpatterns = [
     path('apply/', ProviderApplicationCreateAPIView.as_view()),
     path('status/', ProviderApplicationStatusView.as_view()),
     path('me/', ProviderMeView.as_view()),
+    path('dashboard/stats/', ProviderDashboardView.as_view()),
+    path('available-providers/', ProvidersByServiceView.as_view()),
 
     # Provider self-manage services
     path('my-services/<int:pk>/', ProviderMyServiceDetailView.as_view()),

@@ -42,7 +42,7 @@ function ServiceTable() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  // const [page, setPage] = useState(1); // REMOVED
+  const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
   const [openModal, setOpenModal] = useState(false);
@@ -54,6 +54,7 @@ function ServiceTable() {
   // ---------------- Fetch ----------------
   useEffect(() => {
     const params = {
+      page,
       search: searchQuery,
       status: statusFilter === 'all' ? undefined : statusFilter,
       category: categoryFilter === 'all' ? undefined : categoryFilter
@@ -64,7 +65,7 @@ function ServiceTable() {
     if (!categories.length) {
       dispatch(fetchCategories());
     }
-  }, [dispatch, searchQuery, statusFilter, categoryFilter, categories.length]);
+  }, [dispatch, searchQuery, statusFilter, categoryFilter, categories.length, page]);
 
   // ---------------- CRUD ----------------
   const handleCreateService = async (values) => {
@@ -78,7 +79,7 @@ function ServiceTable() {
 
     await dispatch(createService(formData));
     setOpenModal(false);
-    dispatch(fetchServices()); // REMOVED page param
+    dispatch(fetchServices({ page }));
   };
 
   const handleUpdateService = async (values) => {
@@ -255,15 +256,15 @@ function ServiceTable() {
       <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
         <SearchBarWithFilter
           placeholder="Search services..."
-          onSearch={(val) => { setSearchQuery(val); }} // REMOVED setPage
-          onFilterChange={(val) => { setStatusFilter(val); }} // REMOVED setPage
+          onSearch={(val) => { setSearchQuery(val); setPage(1); }}
+          onFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
         />
 
         <FormControl size="small" sx={{ minWidth: 180 }}>
           <InputLabel>Category</InputLabel>
           <Select
             value={categoryFilter}
-            onChange={(e) => { setCategoryFilter(e.target.value); }} // REMOVED setPage
+            onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
             label="Category"
           >
             <MenuItem value="all">All Categories</MenuItem>
@@ -283,6 +284,12 @@ function ServiceTable() {
         sortConfig={sortConfig}
         onSort={handleSort}
         loading={loading}
+        // Pagination
+        count={Math.ceil(totalCount / rowsPerPage)}
+        page={page}
+        onPageChange={(_, p) => setPage(p)}
+        totalItems={totalCount}
+        rowsPerPage={rowsPerPage}
       />
 
       {/* Create Service Modal */}

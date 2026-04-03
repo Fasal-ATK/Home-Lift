@@ -24,13 +24,19 @@ export default function ServiceRequests() {
   const [rejectReason, setRejectReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const rowsPerPage = 10;
+
   // Fetch pending requests
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const data = await adminProviderManagementService.getServiceRequests();
-      // Assume paginated structure is returned (data.results) or plain array
-      setRequests(data?.results || data || []);
+      const data = await adminProviderManagementService.getServiceRequests({ page });
+      // Backend uses DRF pagination response structure: { count, next, previous, results }
+      setRequests(data?.results || []);
+      setTotalCount(data?.count || data?.length || 0);
     } catch (err) {
       toast.error("Failed to load service requests.");
     } finally {
@@ -40,7 +46,7 @@ export default function ServiceRequests() {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [page]);
 
   // ── Actions ────────────────────────────────────────────────────────
 
@@ -193,6 +199,12 @@ export default function ServiceRequests() {
         rows={requests}
         loading={loading}
         emptyMessage="No pending service requests right now."
+        // Pagination
+        count={Math.ceil(totalCount / rowsPerPage)}
+        page={page}
+        onPageChange={(_, p) => setPage(p)}
+        totalItems={totalCount}
+        rowsPerPage={rowsPerPage}
       />
 
       {/* Reject Dialog */}

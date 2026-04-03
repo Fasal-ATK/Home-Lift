@@ -34,7 +34,7 @@ function CategoryTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // const [page, setPage] = useState(1); // REMOVED
+  const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
   const [openModal, setOpenModal] = useState(false);
@@ -46,11 +46,12 @@ function CategoryTable() {
   // ---------------- Redux Fetch ----------------
   useEffect(() => {
     const params = {
+      page,
       search: searchQuery,
       status: statusFilter === 'all' ? undefined : statusFilter
     };
     dispatch(fetchCategories(params));
-  }, [dispatch, searchQuery, statusFilter]);
+  }, [dispatch, searchQuery, statusFilter, page]);
 
   const handleCreateCategory = async (values) => {
     const formData = new FormData();
@@ -60,7 +61,7 @@ function CategoryTable() {
 
     await dispatch(createCategory(formData));
     setOpenModal(false);
-    dispatch(fetchCategories()); // REMOVED page param
+    dispatch(fetchCategories({ page }));
   };
 
   const handleUpdateCategory = async (values) => {
@@ -223,8 +224,8 @@ function CategoryTable() {
 
       <SearchBarWithFilter
         placeholder="Search categories..."
-        onSearch={(val) => { setSearchQuery(val); }} // REMOVED setPage
-        onFilterChange={(val) => { setStatusFilter(val); }} // REMOVED setPage
+        onSearch={(val) => { setSearchQuery(val); setPage(1); }}
+        onFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
       />
 
       <DataTable
@@ -234,6 +235,12 @@ function CategoryTable() {
         sortConfig={sortConfig}
         onSort={handleSort}
         loading={loading}
+        // Pagination
+        count={Math.ceil(totalCount / rowsPerPage)}
+        page={page}
+        onPageChange={(_, p) => setPage(p)}
+        totalItems={totalCount}
+        rowsPerPage={rowsPerPage}
       />
 
       {/* Create Category Modal */}

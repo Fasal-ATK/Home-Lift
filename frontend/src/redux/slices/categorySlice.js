@@ -49,9 +49,14 @@ const categorySlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.loading = false;
-        // Reverted to simple array
-        state.list = action.payload || [];
-        state.totalCount = state.list.length;
+        // Handle paginated response: { results, count } OR raw array
+        if (action.payload && action.payload.results) {
+          state.list = action.payload.results;
+          state.totalCount = action.payload.count;
+        } else {
+          state.list = action.payload || [];
+          state.totalCount = state.list.length;
+        }
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.loading = false;

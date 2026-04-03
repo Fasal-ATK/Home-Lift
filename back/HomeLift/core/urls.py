@@ -6,6 +6,7 @@ from .views import (
     AddressListCreateView, AddressDetailView,
     TicketListCreateView, TicketDetailView,
     AdminTicketListView, AdminTicketReplyView,
+    AdminDashboardView,
 )
 
 urlpatterns = [
@@ -16,4 +17,6 @@ urlpatterns = [
     path('tickets/<int:pk>/', TicketDetailView.as_view(), name='ticket-detail'),
     path('admin/tickets/', AdminTicketListView.as_view(), name='admin-ticket-list'),
     path('admin/tickets/<int:pk>/reply/', AdminTicketReplyView.as_view(), name='admin-ticket-reply'),
+    # Dashboard
+    path('admin/dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
 ]
