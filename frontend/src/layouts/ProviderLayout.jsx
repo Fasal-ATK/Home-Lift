@@ -7,20 +7,24 @@ import ProviderSidebar from "../components/provider/ProviderSidebar";
 const ProviderLayout = () => {
   const [open, setOpen] = useState(true);
 
+  const sidebarWidth = open ? 190 : 70;
+
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "#f5f5f5" }}>
       {/* Fixed Sidebar */}
       <ProviderSidebar open={open} setOpen={setOpen} />
 
-      {/* Main Content */}
+      {/* Main Content — shifted right by sidebar width, limited to remaining width */}
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
-          p: 0,
+          ml: `${sidebarWidth}px`,
+          width: `calc(100% - ${sidebarWidth}px)`,
+          minHeight: "100vh",
           bgcolor: "#f5f5f5",
-          ml: `${open ? 190 : 70}px`, // matches sidebar width
-          transition: "margin-left 0.3s ease",
+          transition: "margin-left 0.3s ease, width 0.3s ease",
+          boxSizing: "border-box",
+          overflowX: "hidden",
         }}
       >
         <Outlet />

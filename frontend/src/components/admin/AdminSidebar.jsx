@@ -23,6 +23,8 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
       sx={{
         width: collapsed ? '80px' : '230px',
         position: "fixed",
+        top: 0,
+        left: 0,
         height: '100vh',
         backgroundColor: '#fff',
         borderRight: '1px solid #ddd',
@@ -31,6 +33,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
         flexDirection: 'column',
         justifyContent: 'space-between',
         transition: 'width 0.3s ease-in-out',
+        zIndex: 1200,
       }}
     >
       <Box>
