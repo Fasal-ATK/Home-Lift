@@ -50,8 +50,10 @@ const Home = () => {
   const { isProvider, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (!categories.length) dispatch(fetchCategories());
-    if (!services.length) dispatch(fetchServices());
+    // We want the full catalog for browsing if it's small, otherwise use pagination.
+    // For now, let's fetch all to avoid complexity in transitions.
+    if (!categories.length) dispatch(fetchCategories({ no_pagination: true }));
+    if (!services.length) dispatch(fetchServices({ no_pagination: true }));
     if (!providerApplicationStatus) dispatch(fetchProviderApplicationStatus());
     dispatch(fetchPublicOffers());
   }, [dispatch, categories.length, services.length, providerApplicationStatus]);

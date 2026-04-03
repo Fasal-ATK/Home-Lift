@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'notifications',
     'wallet',
     'offers',
+    'chat',
     
     'rest_framework',
     'corsheaders',

@@ -14,5 +14,5 @@ urlpatterns = [
     # path('review/', include('reviews.urls')),
     path('payment/', include('payments.urls')),
     path('notification/', include('notifications.urls')),
-
+    path('chat/', include('chat.urls')),
 ]

@@ -20,8 +20,9 @@ function Services() {
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
-    if (!categories.length) dispatch(fetchCategories());
-    if (!services.length) dispatch(fetchServices());
+    // Request a full list for the catalog page to allow simple local filtering
+    if (!categories.length) dispatch(fetchCategories({ no_pagination: true }));
+    if (!services.length) dispatch(fetchServices({ no_pagination: true }));
   }, [dispatch, categories.length, services.length]);
 
   const filteredServices =
