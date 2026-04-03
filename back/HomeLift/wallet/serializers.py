@@ -2,10 +2,12 @@ from rest_framework import serializers
 from .models import Wallet, WalletTransaction, WithdrawalRequest
 
 class WithdrawalRequestSerializer(serializers.ModelSerializer):
+    provider_email = serializers.EmailField(source='provider.email', read_only=True)
+
     class Meta:
         model = WithdrawalRequest
-        fields = ['id', 'amount', 'status', 'stripe_transfer_id', 'created_at', 'updated_at']
-        read_only_fields = ['status', 'stripe_transfer_id', 'created_at', 'updated_at']
+        fields = ['id', 'provider', 'provider_email', 'amount', 'status', 'stripe_transfer_id', 'created_at', 'updated_at']
+        read_only_fields = ['provider', 'status', 'stripe_transfer_id', 'created_at', 'updated_at']
 
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:

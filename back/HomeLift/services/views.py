@@ -29,8 +29,10 @@ class CategoryListCreateView(APIView):
         elif status_filter == 'inactive':
             categories = categories.filter(is_active=False)
 
-        serializer = CategorySerializer(categories, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = StandardResultsSetPagination()
+        result_page = paginator.paginate_queryset(categories, request)
+        serializer = CategorySerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = CategorySerializer(data=request.data)
@@ -105,8 +107,10 @@ class ServiceListCreateView(APIView):
         if category_filter and category_filter != 'all':
             services = services.filter(category__id=category_filter)
 
-        serializer = ServiceSerializer(services, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = StandardResultsSetPagination()
+        result_page = paginator.paginate_queryset(services, request)
+        serializer = ServiceSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = ServiceSerializer(data=request.data)
