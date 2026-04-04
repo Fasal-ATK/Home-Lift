@@ -7,20 +7,29 @@ import {
   Box,
   Button,
 } from '@mui/material';
-import { Notifications, LocationOn, AccountCircle } from '@mui/icons-material';
+import { Notifications, LocationOn, AccountCircle, Chat } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import LogoutButton from '../common/Logout';
 import { ShowToast } from '../common/Toast';
 import { userService } from '../../services/apiServices';
 import { setUser } from '../../redux/slices/authSlice';
+import { fetchBookings } from '../../redux/slices/bookingSlice';
+import { useEffect } from 'react';
 
 const UserNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const { isProvider, user } = useSelector((state) => state.auth);
+  const { bookings } = useSelector((state) => state.bookings);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (user) {
+      dispatch(fetchBookings());
+    }
+  }, [dispatch, user]);
 
   const handleProviderRedirect = async () => {
     try {
@@ -49,6 +58,9 @@ const UserNavbar = () => {
     { label: "WALLET", path: "/wallet" },
     { label: "SUPPORT", path: "/support" },
   ];
+
+  // Only show the CHAT option if there's at least one booking with an assigned provider
+  const hasAssignedProvider = bookings.some(b => b.provider !== null);
 
   return (
     <AppBar position="sticky" color="inherit" elevation={3} sx={{ borderRadius: '14px' }}>
@@ -113,6 +125,18 @@ const UserNavbar = () => {
           >
             <Notifications />
           </IconButton>
+
+          {hasAssignedProvider && (
+            <IconButton
+              component={Link}
+              to="/chat"
+              sx={{
+                color: location.pathname === "/chat" ? '#0066CC' : '#555'
+              }}
+            >
+              <Chat />
+            </IconButton>
+          )}
 
           <IconButton
             component={Link}

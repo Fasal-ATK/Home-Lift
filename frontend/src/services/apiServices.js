@@ -99,6 +99,14 @@ export const bookingService = {
         return response.data;
     },
 
+    initiateChat: async (providerId, bookingId) => {
+        const response = await api.post(apiEndpoints.chat.rooms, { 
+            provider_id: providerId, 
+            booking_id: bookingId 
+        });
+        return response.data;
+    },
+
     reviewBooking: async (id, data) => {
         const response = await api.post(apiEndpoints.user.reviewBooking(id), data);
         return response.data;

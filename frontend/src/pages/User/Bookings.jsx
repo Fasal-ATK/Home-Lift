@@ -122,7 +122,7 @@ const stringifyError = (err) => {
 };
 
 /* ---- OrderCard (uses services list & shows city/state only in header) ---- */
-function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, services }) {
+function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, onChat, services }) {
   const addr = booking.address_details;
   const thumb = resolveThumb(booking, services);
   const svcName =
@@ -159,6 +159,11 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, s
             <Button size="small" variant="text" onClick={() => onView(booking.id)} sx={{ textTransform: "none" }}>
               View order details
             </Button>
+            {['confirmed', 'ongoing', 'in_progress', 'completed'].includes(booking.status) && (
+              <Button size="small" variant="text" onClick={() => onChat(booking)} sx={{ textTransform: "none", color: 'primary.main', fontWeight: 'bold' }}>
+                Chat with Provider
+              </Button>
+            )}
             <Button
               size="small"
               variant="text"
@@ -512,6 +517,20 @@ export default function Bookings() {
     }
   };
 
+  const handleChat = async (booking) => {
+    if (!booking.provider) {
+      ShowToast("No provider assigned to this booking yet.", "info");
+      return;
+    }
+    try {
+      const response = await bookingService.initiateChat(booking.provider, booking.id);
+      navigate('/chat', { state: { roomId: response.id } });
+    } catch (err) {
+      console.error("Chat initiation error:", err.response?.data || err);
+      ShowToast(err.response?.data?.detail || err.message || "Failed to start chat.", "error");
+    }
+  };
+
   const paginated = bookings;
 
   return (
@@ -659,6 +678,7 @@ export default function Bookings() {
             onInvoice={handleDownloadInvoice}
             onPayRemaining={handlePayRemaining}
             onPayAdvance={handlePayAdvance}
+            onChat={handleChat}
             services={services}
           />
         ))

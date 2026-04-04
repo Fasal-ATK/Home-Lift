@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { bookingService } from "../../services/apiServices";
 import { fetchMyAppointments } from "../../redux/slices/provider/providerJobSlice";
 import {
   Box,
@@ -69,6 +71,7 @@ const formatTime = (t) => {
 
 // ---------- Detail Dialog ----------
 const JobDetailDialog = ({ job, open, onClose }) => {
+  const navigate = useNavigate();
   if (!job) return null;
   const earnings = calcEarnings(job.price);
   const commission = (Number(job.price) - Number(earnings)).toFixed(2);
@@ -208,7 +211,23 @@ const JobDetailDialog = ({ job, open, onClose }) => {
           </Paper>
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
+      <DialogActions sx={{ px: 3, pb: 2, flexDirection: 'column', gap: 1 }}>
+        <Button 
+          onClick={async () => {
+            try {
+              const res = await bookingService.initiateChat(job.user, job.id);
+              navigate('/provider/chat', { state: { roomId: res.id } });
+            } catch (err) {
+              console.error("Chat initiation error:", err.response?.data || err);
+              alert(err.response?.data?.detail || err.message || "Failed to start chat.");
+            }
+          }} 
+          variant="contained" 
+          fullWidth
+          sx={{ fontWeight: 'bold' }}
+        >
+          Chat with Customer
+        </Button>
         <Button onClick={onClose} variant="outlined" fullWidth>Close</Button>
       </DialogActions>
     </Dialog>

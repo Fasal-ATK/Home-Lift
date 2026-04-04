@@ -54,10 +54,10 @@ import PrivateRoute from './routes/PrivateRoute';
 import ScrollToTop from './components/common/ScrollToTop';
 import ServiceDetails from './components/user/booking/ServiceDetails';
 import ServiceBooking from './components/user/booking/ServiceBooking';
-
+import ChatPage from './pages/Chat/ChatPage';
 
 // Socket Component
-import NotificationSocket from './components/NotificationSocket';
+import AppSocket from './components/AppSocket';
 import { useSelector } from 'react-redux';
 
 function App() {
@@ -69,8 +69,8 @@ function App() {
       <LoadingOverlay />
       <ScrollToTop />
 
-      {/* Initialize Socket for logged-in user */}
-      {user && <NotificationSocket userId={user.id} />}
+      {/* Initialize Unified Socket for logged-in user */}
+      {user && <AppSocket userId={user.id} />}
 
       <Routes>
         {/* Public Pages */}
@@ -127,6 +127,7 @@ function App() {
           <Route path='wallet' element={<UserWallet />} />
           <Route path='addresses' element={<Addresses />} />
           <Route path='support' element={<Support />} />
+          <Route path='chat' element={<ChatPage />} />
 
           {/* Change Password Route (Protected) */}
           <Route path='change-password' element={<ForgotPassword />} />
@@ -167,6 +168,7 @@ function App() {
           <Route path='history' element={<History />} />
           <Route path='wallet' element={<ProviderWallet />} />
           <Route path='support' element={<Support />} />
+          <Route path='chat' element={<ChatPage />} />
         </Route>
 
         {/* 404 Fallback */}

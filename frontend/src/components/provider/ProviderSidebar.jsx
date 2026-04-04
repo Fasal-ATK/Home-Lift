@@ -20,6 +20,8 @@ import {
   ChevronLeft,
   Home as HomeIcon,
   SupportAgent,
+  Chat,
+  ArrowBack,
 } from "@mui/icons-material";
 
 export default function ProviderSidebar({ open, setOpen }) {
@@ -34,6 +36,7 @@ export default function ProviderSidebar({ open, setOpen }) {
     { text: "History", icon: <History />, path: "/provider/history" },
     { text: "Wallet", icon: <AccountBalanceWallet />, path: "/provider/wallet" },
     { text: "Support", icon: <SupportAgent />, path: "/provider/support" },
+    { text: "Chat", icon: <Chat />, path: "/provider/chat" },
   ];
 
   return (
@@ -58,11 +61,26 @@ export default function ProviderSidebar({ open, setOpen }) {
         sx={{
           p: 2,
           borderBottom: "1px solid #eee",
-          textAlign: "center",
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          justifyContent: open ? "flex-start" : "center",
         }}
       >
+        <IconButton
+          size="small"
+          onClick={() => navigate("/home")}
+          sx={{
+            color: "primary.main",
+            "&:hover": { bgcolor: "primary.light" },
+          }}
+          title="Back to User Side"
+        >
+          <ArrowBack fontSize="small" />
+        </IconButton>
+        
         {open && (
-          <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
             <span style={{ color: "#cddc39" }}>Home</span> Lift
           </Typography>
         )}
@@ -121,32 +139,6 @@ export default function ProviderSidebar({ open, setOpen }) {
             </ListItemButton>
           );
         })}
-
-        {/* ➤ Back to Home Button */}
-        <ListItemButton
-          onClick={() => navigate("/home")}
-          sx={{
-            borderRadius: "12px",
-            mb: 1,
-            py: 1.5,
-            justifyContent: open ? "initial" : "center",
-            px: open ? 1.5 : 1.5,
-            "&:hover": { backgroundColor: "#e8f5e9" },
-            transition: "all 0.3s",
-          }}
-        >
-          <ListItemIcon
-            sx={{
-              minWidth: "unset",
-              mr: open ? 1.5 : 0,
-              justifyContent: "center",
-              color: "#2e7d32",
-            }}
-          >
-            <HomeIcon />
-          </ListItemIcon>
-          {open && <ListItemText primary="Back to Home" />}
-        </ListItemButton>
       </List>
 
       <Divider />

@@ -15,6 +15,7 @@ import adminBookingReducer from '../slices/admin/bookingMngSlice';
 import walletReducer from '../slices/walletSlice';
 import offersReducer from '../slices/admin/offersSlice';
 import loadingReducer from '../slices/loadingSlice';
+import chatReducer from '../slices/chatSlice';
 
 // store.js
 const appReducer = combineReducers({
@@ -32,6 +33,7 @@ const appReducer = combineReducers({
   wallet: walletReducer,
   offers: offersReducer,
   loading: loadingReducer,
+  chat: chatReducer,
 });
 
 const rootReducer = (state, action) => {

@@ -123,6 +123,10 @@ const apiEndpoints = {
         adminReply: (id) => `/core/admin/tickets/${id}/reply/`,
     },
 
+    chat: {
+        rooms: '/chat/rooms/',
+        messages: (roomId) => `/chat/rooms/${roomId}/messages/`,
+    },
 };
 
 export default apiEndpoints;
