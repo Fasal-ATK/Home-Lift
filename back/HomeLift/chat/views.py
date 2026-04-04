@@ -43,15 +43,6 @@ class ChatRoomListView(APIView):
         except User.DoesNotExist:
             return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Determine who is user vs provider
-        # If request.user is a provider, swap roles
-        if request.user.is_provider:
-            user_in_room = other_user
-            provider_in_room = request.user
-        else:
-            user_in_room = request.user
-            provider_in_room = other_user
-
         booking = None
         if booking_id:
             try:
@@ -59,10 +50,23 @@ class ChatRoomListView(APIView):
             except Booking.DoesNotExist:
                 pass
 
+        # Determine who is user vs provider
+        if booking:
+            user_in_room = booking.user
+            provider_in_room = booking.provider
+        else:
+            # Fallback if no booking provided
+            if getattr(request.user, 'is_provider', False):
+                user_in_room = other_user
+                provider_in_room = request.user
+            else:
+                user_in_room = request.user
+                provider_in_room = other_user
+
         room, created = ChatRoom.objects.get_or_create(
             user=user_in_room,
             provider=provider_in_room,
-            booking=booking,
+            defaults={'booking': booking}
         )
         serializer = ChatRoomSerializer(room, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
@@ -87,6 +91,64 @@ class ChatMessageListView(APIView):
         # Mark messages from the other user as read
         room.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
 
+        # Broadcast read receipt to other participant
+        other_user = room.provider if room.user == request.user else room.user
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"user_{other_user.id}",
+            {
+                "type": "read_receipt",
+                "payload": {
+                    "room_id": room.id,
+                    "reader_id": request.user.id
+                }
+            }
+        )
+
         messages = room.messages.select_related('sender').all()
         serializer = ChatMessageSerializer(messages, many=True)
         return Response(serializer.data)
+
+    def post(self, request, room_id):
+        try:
+            room = ChatRoom.objects.get(id=room_id)
+        except ChatRoom.DoesNotExist:
+            return Response({'detail': 'Room not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if room.user != request.user and room.provider != request.user:
+            return Response({'detail': 'Not authorized.'}, status=status.HTTP_403_FORBIDDEN)
+
+        content = request.data.get('content')
+        if not content:
+            return Response({'detail': 'Content is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        message = ChatMessage.objects.create(room=room, sender=request.user, content=content)
+        serializer = ChatMessageSerializer(message)
+
+        # Broadcast message via Channels
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+
+        payload = {
+            'id': message.id,
+            'room_id': room.id,
+            'sender_id': request.user.id,
+            'sender_name': request.user.get_full_name() or request.user.username,
+            'content': message.content,
+            'created_at': message.created_at.isoformat(),
+        }
+
+        participants = [room.user_id, room.provider_id]
+        for pid in participants:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{pid}",
+                {
+                    "type": "chat_message",
+                    "payload": payload
+                }
+            )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

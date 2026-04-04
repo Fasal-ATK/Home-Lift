@@ -11,9 +11,9 @@ from .serializers import (
     ProviderServiceRequestSerializer,
 )
 from core.permissions import IsNormalUser, IsAdminUserCustom, IsProviderUser
-from bookings.models import Booking
+from bookings.models import Booking, Review
 from services.models import Service
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, Avg
 from django.db.models.functions import TruncMonth
 from decimal import Decimal
 import logging
@@ -477,6 +477,10 @@ class ProviderDashboardView(APIView):
         your_earnings = total_revenue * Decimal('0.93')
         
         active_customers = bookings_qs.values('user').distinct().count()
+
+        # ⭐ Average Rating
+        avg_rating = Review.objects.filter(provider=provider_user).aggregate(Avg('rating'))['rating__avg'] or 0.0
+        avg_rating = round(float(avg_rating), 1)
         
         # 📈 Monthly Data (Last 6 Months)
         monthly_stats = bookings_qs.annotate(month=TruncMonth('created_at')).values('month').annotate(
@@ -507,6 +511,7 @@ class ProviderDashboardView(APIView):
                 "total_bookings": total_bookings,
                 "total_revenue": float(your_earnings),
                 "active_customers": active_customers,
+                "avg_rating": avg_rating,
             },
             "monthly_data": formatted_monthly,
             "status_data": role_data,

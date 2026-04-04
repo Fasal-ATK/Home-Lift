@@ -26,8 +26,8 @@ class ChatRoom(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # A user and provider pair should only have one chat room per booking (or one global)
-        unique_together = ('user', 'provider', 'booking')
+        # A user and provider pair should only have one chat room globally
+        unique_together = ('user', 'provider')
         ordering = ['-created_at']
 
     def __str__(self):
