@@ -104,7 +104,7 @@ const FileUpload = ({ file, onChange, label, uniqueId, maxSizeMB = 10 }) => {
 const ServiceField = ({
   index, field, categories, services,
   handleCategoryChange, handleServiceChange,
-  handleServiceDocChange, handlePriceChange, handleExperienceChange,
+  handleServiceDocChange, handleExperienceChange,
   removeField, canRemove,
   selectedServiceIds
 }) => {
@@ -143,16 +143,6 @@ const ServiceField = ({
         </FormControl>
 
         <TextField
-          label="Price"
-          type="number"
-          size="small"
-          value={field.price}
-          onChange={(e) => handlePriceChange(index, e.target.value)}
-          sx={{ width: 140 }}
-          InputProps={{ inputProps: { min: 0 } }}
-        />
-
-        <TextField
           label="Exp (Years)"
           type="number"
           size="small"
@@ -189,13 +179,13 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
   const { loading, error, providerApplicationStatus } = useSelector((state) => state.user);
 
   const [personalDoc, setPersonalDoc] = useState(null);
-  const [serviceFields, setServiceFields] = useState([{ category: '', service: '', doc: null, price: '', experience_years: 0 }]);
+  const [serviceFields, setServiceFields] = useState([{ category: '', service: '', doc: null, experience_years: 0 }]);
 
-  const addField = () => serviceFields.length < 4 && setServiceFields([...serviceFields, { category: '', service: '', doc: null, price: '', experience_years: 0 }]);
+  const addField = () => serviceFields.length < 4 && setServiceFields([...serviceFields, { category: '', service: '', doc: null, experience_years: 0 }]);
   const removeField = (i) => setServiceFields(serviceFields.filter((_, idx) => idx !== i));
   const handleCategoryChange = (i, value) => {
     const updated = [...serviceFields];
-    updated[i] = { category: value, service: '', doc: null, price: '', experience_years: 0 };
+    updated[i] = { category: value, service: '', doc: null, experience_years: 0 };
     setServiceFields(updated);
   };
   const handleServiceChange = (i, value) => {
@@ -206,12 +196,6 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
   const handleServiceDocChange = (i, file) => {
     const updated = [...serviceFields];
     updated[i].doc = file;
-    setServiceFields(updated);
-  };
-
-  const handlePriceChange = (i, value) => {
-    const updated = [...serviceFields];
-    updated[i].price = value;
     setServiceFields(updated);
   };
 
@@ -231,10 +215,9 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
 
     const applicationData = {
       id_doc: personalDoc,
-      services: serviceFields.map((s) => ({ 
-        service_id: s.service, 
+      services: serviceFields.map((s) => ({
+        service_id: s.service,
         doc: s.doc,
-        price: s.price || null,
         experience_years: s.experience_years || 0
       })),
     };
@@ -258,7 +241,7 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
 
   const handleClose = () => {
     setPersonalDoc(null);
-    setServiceFields([{ category: '', service: '', doc: null }]);
+    setServiceFields([{ category: '', service: '', doc: null, experience_years: 0 }]);
     onClose?.();
   };
 
@@ -295,7 +278,6 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
               handleCategoryChange={handleCategoryChange}
               handleServiceChange={handleServiceChange}
               handleServiceDocChange={handleServiceDocChange}
-              handlePriceChange={handlePriceChange}
               handleExperienceChange={handleExperienceChange}
               removeField={removeField}
               canRemove={serviceFields.length > 1}

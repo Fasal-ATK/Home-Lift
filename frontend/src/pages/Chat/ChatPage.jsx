@@ -34,6 +34,7 @@ export default function ChatPage() {
 
   const [messageInput, setMessageInput] = useState("");
   const messagesEndRef = useRef(null);
+  const containerRef = useRef(null);
 
   // Focus effect for initial navigation from other pages
   useEffect(() => {
@@ -46,7 +47,12 @@ export default function ChatPage() {
 
   // Scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   }, [messages, activeRoomId]);
 
   const handleRoomClick = (roomId) => {
@@ -150,7 +156,10 @@ export default function ChatPage() {
             </Box>
 
             {/* Messages Box */}
-            <Box sx={{ flexGrow: 1, overflowY: "auto", p: { xs: 2, md: 3 }, bgcolor: "#f8f9fa" }}>
+            <Box 
+              ref={containerRef}
+              sx={{ flexGrow: 1, overflowY: "auto", p: { xs: 2, md: 3 }, bgcolor: "#f8f9fa" }}
+            >
               {messages[activeRoomId] ? (
                 messages[activeRoomId].map((msg, index) => {
                   const senderId = msg?.sender?.id || msg?.sender || msg?.sender_id;

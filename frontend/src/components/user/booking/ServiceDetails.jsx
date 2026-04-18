@@ -50,8 +50,8 @@ const ServiceDetails = () => {
       </Box>
 
       <Typography variant="body2" mb={2}>
-        {service.location || "Your City"} | ⭐ {service.rating || 4.5} (
-        {service.reviews || 12345} Reviews)
+        {service.location || "Your City"}
+        {service.rating ? ` | ⭐ ${service.rating}${service.reviews ? ` (${service.reviews} Reviews)` : ""}` : ""}
       </Typography>
 
       <Accordion>

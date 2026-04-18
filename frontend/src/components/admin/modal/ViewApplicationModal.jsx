@@ -143,7 +143,6 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
                   ) : (
                     <Typography variant="body2">No document uploaded</Typography>
                   )}
-                  {s.price && <Typography>Price: {s.price}</Typography>}
                   {s.experience_years !== undefined && <Typography>Experience: {s.experience_years} years</Typography>}
                 </Box>
               ))}

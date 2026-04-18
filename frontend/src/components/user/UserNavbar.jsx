@@ -126,17 +126,15 @@ const UserNavbar = () => {
             <Notifications />
           </IconButton>
 
-          {hasAssignedProvider && (
-            <IconButton
-              component={Link}
-              to="/chat"
-              sx={{
-                color: location.pathname === "/chat" ? '#0066CC' : '#555'
-              }}
-            >
-              <Chat />
-            </IconButton>
-          )}
+          <IconButton
+            component={Link}
+            to="/chat"
+            sx={{
+              color: location.pathname === "/chat" ? '#0066CC' : '#555'
+            }}
+          >
+            <Chat />
+          </IconButton>
 
           <IconButton
             component={Link}
