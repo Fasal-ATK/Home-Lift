@@ -13,17 +13,15 @@ export default function ProviderManager() {
   const { list: providers, loading } = useSelector((state) => state.providers);
   const totalCount = useSelector(selectTotalProvidersCount);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [sortConfig, setSortConfig] = useState({ key: 'user_name', direction: 'asc' });
-
-  // Pagination
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
   // confirm modal state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState('all');
 
   // Fetch with server-side params
   useEffect(() => {
@@ -37,13 +35,6 @@ export default function ProviderManager() {
     dispatch(fetchProviders(params));
   }, [dispatch, page, searchTerm, filter]);
 
-  const handleSort = (key) => {
-    setSortConfig((prev) => ({
-      key,
-      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
-    }));
-  };
-
   const handleToggleActive = () => {
     if (selectedRow) {
       dispatch(
@@ -56,29 +47,6 @@ export default function ProviderManager() {
       setSelectedRow(null);
     }
   };
-
-  // Client-side sorting of the CURRENT PAGE data (optional, or just rely on server order)
-  // Backend default order is -created_at.
-  // User might want to sort by name.
-  // If we want FULL server sorting, we need 'ordering' param in backend.
-  // I didn't verify backend ordering param support for Providers.
-  // Let's keep client-side sort for the current page for now. 
-  // It's acceptable for small pages.
-  const sortedProviders = [...(providers || [])].sort((a, b) => {
-    let valA = a[sortConfig.key];
-    let valB = b[sortConfig.key];
-
-    if (sortConfig.key === 'services') {
-      valA = a.services?.map((s) => s.service_name).join(', ') || '';
-      valB = b.services?.map((s) => s.service_name).join(', ') || '';
-    }
-    if (typeof valA === 'string') {
-      return sortConfig.direction === 'asc'
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
-    }
-    return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
-  });
 
   const columns = [
     { key: 'id', label: 'ID', sortable: true },
@@ -138,9 +106,7 @@ export default function ProviderManager() {
 
       <DataTable
         columns={columns}
-        rows={sortedProviders}
-        sortConfig={sortConfig}
-        onSort={handleSort}
+        rows={providers || []}
         loading={loading}
         // Pagination
         count={Math.ceil(totalCount / rowsPerPage)}

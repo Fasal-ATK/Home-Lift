@@ -5,15 +5,93 @@ import {
   Typography,
   Stack,
   IconButton,
-  Link,
   Divider,
   Button,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import DescriptionIcon from "@mui/icons-material/Description";
+import ImageIcon from "@mui/icons-material/Image";
+import DownloadIcon from "@mui/icons-material/Download";
 import { useState, useEffect } from "react";
 import ConfirmModal from "../../common/Confirm";
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/** Return the raw URL without query-string (for extension detection) */
+const stripQuery = (url) => (url ? url.split("?")[0] : "");
+
+/** True if the URL points at an image file */
+const isImage = (url) => {
+  const ext = stripQuery(url).split(".").pop().toLowerCase();
+  return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(ext);
+};
+
+/** True if the URL points at a PDF */
+const isPDF = (url) => stripQuery(url).split(".").pop().toLowerCase() === "pdf";
+
+/**
+ * DocLink — renders an appropriate action button for a document URL:
+ *  • image  → opens in a new tab (browser handles it)
+ *  • PDF    → opens in a new tab (browser PDF viewer)
+ *  • other  → download link
+ */
+const DocLink = ({ url, label = "View Document" }) => {
+  if (!url) return <Typography variant="body2">No document uploaded</Typography>;
+
+  // Force HTTPS
+  const secureUrl = url.replace(/^http:\/\//i, "https://");
+
+  if (isImage(secureUrl)) {
+    return (
+      <Button
+        variant="text"
+        size="small"
+        startIcon={<ImageIcon />}
+        href={secureUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        sx={{ textTransform: "none" }}
+      >
+        {label}
+      </Button>
+    );
+  }
+
+  if (isPDF(secureUrl)) {
+    return (
+      <Button
+        variant="text"
+        size="small"
+        startIcon={<DescriptionIcon />}
+        href={secureUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        sx={{ textTransform: "none" }}
+      >
+        {label} (PDF)
+      </Button>
+    );
+  }
+
+  // Fallback: offer download
+  return (
+    <Button
+      variant="text"
+      size="small"
+      startIcon={<DownloadIcon />}
+      href={secureUrl}
+      download
+      rel="noopener noreferrer"
+      sx={{ textTransform: "none" }}
+    >
+      Download Document
+    </Button>
+  );
+};
+
+// ─── Modal ───────────────────────────────────────────────────────────────────
 
 const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject }) => {
   const [actionLoading, setActionLoading] = useState(false);
@@ -50,24 +128,6 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
     }
   };
 
-  // Helper: check if file is likely viewable directly (image or PDF)
-  const isDirectView = (url) => {
-    if (!url) return false;
-    const cleanUrl = url.split("?")[0];
-    const extension = cleanUrl.split(".").pop().toLowerCase();
-    return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "pdf"].includes(extension);
-  };
-
-  // Helper: get view URL (Google Docs Viewer for docs, direct for images/PDFs)
-  const getViewUrl = (url) => {
-    if (!url) return "";
-    // Force HTTPS to avoid mixed content / 401 errors
-    const secureUrl = url.replace(/^http:\/\//i, 'https://');
-    return isDirectView(secureUrl)
-      ? secureUrl
-      : `https://docs.google.com/viewer?url=${encodeURIComponent(secureUrl)}&embedded=true`;
-  };
-
   return (
     <>
       <Modal open={open} onClose={onClose}>
@@ -77,7 +137,7 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: 500,
+            width: 520,
             maxHeight: "90vh",
             overflowY: "auto",
             bgcolor: "background.paper",
@@ -103,25 +163,29 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
             {application.rejection_reason && (
               <Typography><strong>Rejection Reason:</strong> {application.rejection_reason}</Typography>
             )}
-            <Typography><strong>Applied Date:</strong> {new Date(application.created_at).toLocaleDateString()}</Typography>
+            <Typography>
+              <strong>Applied Date:</strong>{" "}
+              {new Date(application.created_at).toLocaleDateString()}
+            </Typography>
             {application.replied_at && (
-              <Typography><strong>Replied Date:</strong> {new Date(application.replied_at).toLocaleDateString()}</Typography>
+              <Typography>
+                <strong>Replied Date:</strong>{" "}
+                {new Date(application.replied_at).toLocaleDateString()}
+              </Typography>
             )}
-            <Typography><strong>Expiration Date:</strong> {new Date(application.expiration_date).toLocaleDateString()}</Typography>
+            <Typography>
+              <strong>Expiration Date:</strong>{" "}
+              {new Date(application.expiration_date).toLocaleDateString()}
+            </Typography>
           </Stack>
 
           <Divider sx={{ my: 1 }} />
 
           {/* ID Document */}
           {application.id_doc_url && (
-            <Link
-              href={getViewUrl(application.id_doc_url)}
-              target="_blank"
-              underline="hover"
-              sx={{ display: "flex", alignItems: "center", mb: 2 }}
-            >
-              <DescriptionIcon sx={{ mr: 1 }} /> View ID Document
-            </Link>
+            <Box mb={2}>
+              <DocLink url={application.id_doc_url} label="View ID Document" />
+            </Box>
           )}
 
           {/* Services */}
@@ -129,21 +193,17 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
             <>
               <Typography variant="subtitle1" mb={1}><strong>Services:</strong></Typography>
               {application.services.map((s) => (
-                <Box key={s.id} sx={{ ml: 2, mb: 1 }}>
+                <Box key={s.id} sx={{ ml: 2, mb: 1.5 }}>
                   <Typography><strong>{s.service_name}</strong></Typography>
-                  {s.id_doc_url ? (
-                    <Link
-                      href={getViewUrl(s.id_doc_url)}
-                      target="_blank"
-                      underline="hover"
-                      sx={{ display: "flex", alignItems: "center" }}
-                    >
-                      <DescriptionIcon sx={{ mr: 1 }} /> View Service Document
-                    </Link>
-                  ) : (
-                    <Typography variant="body2">No document uploaded</Typography>
+                  <DocLink
+                    url={s.id_doc_url}
+                    label="View Service Document"
+                  />
+                  {s.experience_years !== undefined && (
+                    <Typography variant="body2">
+                      Experience: {s.experience_years} years
+                    </Typography>
                   )}
-                  {s.experience_years !== undefined && <Typography>Experience: {s.experience_years} years</Typography>}
                 </Box>
               ))}
             </>
@@ -153,7 +213,9 @@ const ViewApplicationModal = ({ open, onClose, application, onApprove, onReject 
 
           {/* Rejection Reason Input */}
           <Box sx={{ mt: 2 }}>
-            <Typography variant="subtitle2" mb={1}><strong>Rejection Reason:</strong> (Required for rejection)</Typography>
+            <Typography variant="subtitle2" mb={1}>
+              <strong>Rejection Reason:</strong> (Required for rejection)
+            </Typography>
             <TextField
               fullWidth
               multiline

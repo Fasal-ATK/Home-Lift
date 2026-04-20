@@ -769,16 +769,21 @@ export default function Bookings() {
       </Modal>
 
       {/* pagination */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-        <Pagination
-          count={Math.ceil((totalCount || 0) / 20)} // Assuming backend page size is 20
-          page={page}
-          onChange={(_, p) => setPage(p)}
-          color="primary"
-          showFirstButton
-          showLastButton
-        />
-      </Box>
+      {totalCount > perPage && (
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, totalCount)} of {totalCount} bookings
+          </Typography>
+          <Pagination
+            count={Math.ceil((totalCount || 0) / perPage)}
+            page={page}
+            onChange={(_, p) => setPage(p)}
+            color="primary"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
     </Box>
   );
 }

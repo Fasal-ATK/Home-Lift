@@ -46,8 +46,7 @@ export default function BookingMng() {
   const [providersLoading, setProvidersLoading] = useState(false);
   const [selectedProviderId, setSelectedProviderId] = useState("");
 
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "desc" });
-
+  // Refetch when page, search, or status filter changes
   useEffect(() => {
     const params = {
       page,
@@ -57,12 +56,6 @@ export default function BookingMng() {
     dispatch(fetchAdminBookings(params));
   }, [dispatch, page, searchTerm, statusFilter]);
 
-  const handleSort = (key) => {
-    setSortConfig((prev) => ({
-      key,
-      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
-    }));
-  };
 
   const handleStatusClick = async (booking, newStatus) => {
     setSelectedBooking(booking);
@@ -218,16 +211,6 @@ export default function BookingMng() {
     },
   ];
 
-  // Client-side sort
-  const sortedRows = [...bookings].sort((a, b) => {
-    let valA = a[sortConfig.key];
-    let valB = b[sortConfig.key];
-    if (typeof valA === "string") {
-      return sortConfig.direction === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
-    }
-    return sortConfig.direction === "asc" ? valA - valB : valB - valA;
-  });
-
   return (
     <Box p={3}>
       <Typography variant="h4" fontFamily="monospace" fontWeight="bold" mb={2}>
@@ -242,10 +225,8 @@ export default function BookingMng() {
 
       <DataTable
         columns={columns}
-        rows={sortedRows}
+        rows={bookings}
         loading={loading}
-        sortConfig={sortConfig}
-        onSort={handleSort}
         count={Math.ceil(totalCount / rowsPerPage)}
         page={page}
         onPageChange={(_, p) => setPage(p)}

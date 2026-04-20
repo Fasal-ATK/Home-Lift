@@ -262,3 +262,68 @@ STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
 
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default=None)
+
+# ─── Logging ───────────────────────────────────────────────────────────────────
+# Logs directory: <project_root>/logs/  (created automatically if absent)
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name} {module}:{lineno} — {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '{levelname} {name} — {message}',
+            'style': '{',
+        },
+    },
+
+    'handlers': {
+        # Console: INFO+ during development; swap to WARNING in production
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'level': 'DEBUG' if DEBUG else 'WARNING',
+        },
+        # Rotating file: WARNING+ always written to disk
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOGS_DIR / 'homelift.log'),
+            'maxBytes': 5 * 1024 * 1024,   # 5 MB per file
+            'backupCount': 5,               # keep 5 rotated files
+            'formatter': 'verbose',
+            'level': 'WARNING',
+            'encoding': 'utf-8',
+        },
+    },
+
+    'loggers': {
+        # Our project apps — DEBUG+ to console, WARNING+ to file
+        'users':         {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        'providers':     {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        'bookings':      {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        'chat':          {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        'notifications': {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        'services':      {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        'payments':      {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        'wallet':        {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        'admins':        {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        'offers':        {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        'core':          {'handlers': ['console', 'file'], 'level': 'DEBUG', 'propagate': False},
+        # Django internals — WARNING+ only to avoid noise
+        'django':        {'handlers': ['console', 'file'], 'level': 'WARNING', 'propagate': False},
+        'django.request':{'handlers': ['console', 'file'], 'level': 'ERROR',   'propagate': False},
+    },
+
+    # Catch-all root logger
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'WARNING',
+    },
+}

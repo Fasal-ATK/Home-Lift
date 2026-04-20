@@ -1,6 +1,6 @@
 // src/pages/admin/ProviderApplications.jsx
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Button, Stack, Chip } from "@mui/material";
+import { Box, Typography, Button, Chip } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import DataTable from "../DataTable";
 import {
@@ -19,43 +19,16 @@ export default function ProviderApplications() {
   );
   const totalCount = useSelector(selectApplicationTotalCount);
 
-  const [sortConfig, setSortConfig] = useState({
-    key: "created_at",
-    direction: "desc", // Default to newest
-  });
-  const [viewOpen, setViewOpen] = useState(false);
-  const [selectedApplication, setSelectedApplication] = useState(null);
-
-  // Pagination
+  // Pagination — backend handles filtering/ordering; page change triggers new fetch
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
+
+  const [viewOpen, setViewOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState(null);
 
   useEffect(() => {
     dispatch(fetchApplications({ page }));
   }, [dispatch, page]);
-
-  const handlePageChange = (event, value) => {
-    setPage(value);
-  };
-
-  const handleSort = (key) => {
-    setSortConfig((prev) => ({
-      key,
-      direction:
-        prev.key === key && prev.direction === "asc" ? "desc" : "asc",
-    }));
-  };
-
-  const sortedApplications = [...(applications || [])].sort((a, b) => {
-    let valA = a[sortConfig.key];
-    let valB = b[sortConfig.key];
-
-    if (typeof valA === "string")
-      return sortConfig.direction === "asc"
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
-    return sortConfig.direction === "asc" ? valA - valB : valB - valA;
-  });
 
   const handleView = (app) => {
     setSelectedApplication(app);
@@ -72,33 +45,37 @@ export default function ProviderApplications() {
         toast.success("Application rejected.");
       }
       setViewOpen(false);
-      // Refresh list
+      // Refresh current page
       dispatch(fetchApplications({ page }));
     } catch (err) {
-      toast.error(typeof err === 'string' ? err : "Action failed");
+      toast.error(typeof err === "string" ? err : "Action failed");
     }
   };
 
   const columns = [
-    { key: "id", label: "ID", sortable: true },
-    { key: "user_name", label: "Applicant Name", sortable: true },
-    { key: "user_email", label: "Email", sortable: true },
-    { key: "user_phone", label: "Phone", sortable: true },
+    { key: "id", label: "ID" },
+    { key: "user_name", label: "Applicant Name" },
+    { key: "user_email", label: "Email" },
+    { key: "user_phone", label: "Phone" },
     {
       key: "created_at",
       label: "Applied Date",
-      sortable: true,
       render: (row) => new Date(row.created_at).toLocaleDateString(),
     },
     {
       key: "status",
       label: "Status",
-      sortable: true,
       render: (row) => (
         <Chip
           label={row.status}
           size="small"
-          color={row.status === "pending" ? "warning" : row.status === "approved" ? "success" : "error"}
+          color={
+            row.status === "pending"
+              ? "warning"
+              : row.status === "approved"
+              ? "success"
+              : "error"
+          }
         />
       ),
     },
@@ -127,15 +104,12 @@ export default function ProviderApplications() {
 
       <DataTable
         columns={columns}
-        rows={sortedApplications}
-        sortConfig={sortConfig}
-        onSort={handleSort}
+        rows={applications || []}
         loading={loading}
         emptyMessage="No pending applications"
-        // Pagination
         count={Math.ceil(totalCount / rowsPerPage)}
         page={page}
-        onPageChange={handlePageChange}
+        onPageChange={(_, p) => setPage(p)}
         totalItems={totalCount}
         rowsPerPage={rowsPerPage}
       />
@@ -146,7 +120,9 @@ export default function ProviderApplications() {
           onClose={() => setViewOpen(false)}
           application={selectedApplication}
           onApprove={() => handleAction(selectedApplication.id, "approve")}
-          onReject={(reason) => handleAction(selectedApplication.id, "reject", reason)}
+          onReject={(reason) =>
+            handleAction(selectedApplication.id, "reject", reason)
+          }
           actionLoading={actionLoading}
         />
       )}

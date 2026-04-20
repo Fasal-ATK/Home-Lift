@@ -167,7 +167,7 @@ class SendOtpView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        print(f'Request data: {request.data}')
+        logger.debug('SendOtpView: request data: %s', request.data)
         email = request.data.get("email")
         purpose = request.data.get("purpose", "signup") 
 
@@ -183,7 +183,7 @@ class SendOtpView(APIView):
                 return Response({"error": "No account found with this email"}, status=400)
 
         otp = str(random.randint(100000, 999999))
-        print(otp)
+        logger.debug('SendOtpView: OTP generated for %s (purpose=%s)', email, purpose)
 
         expiry_timestamp = time.time() + 300
         cache.set(
@@ -220,7 +220,7 @@ class VerifyOtpView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        print('Request data for OTP verification:', request.data)
+        logger.debug('VerifyOtpView: request data for OTP verification: %s', request.data)
         email = request.data.get("email")
         otp = request.data.get("otp")
         purpose = request.data.get("purpose", "signup")
@@ -228,8 +228,7 @@ class VerifyOtpView(APIView):
         key = f"otp_{purpose}_{email}"
         cached_otp = cache.get(key)
 
-        print("CACHED OTP:", cached_otp)
-        print("RECEIVED OTP:", otp)
+        logger.debug('VerifyOtpView: cached=%s received=%s', bool(cached_otp), bool(otp))
 
         if not cached_otp or str(cached_otp) != str(otp):
             return Response({"error": "Invalid or expired OTP"}, status=400)
@@ -409,13 +408,12 @@ class ProfileUpdateView(APIView):
         """Full update of profile"""
         try:
             user = request.user
-            print(f"DEBUG: Profile Update PUT request for user {user.id}")
-            print(f"DEBUG: Request Data: {request.data}")
-            print(f"DEBUG: Request Files: {request.FILES}")
+            logger.debug("Profile Update PUT request for user %s", user.id)
+            logger.debug("Request Data: %s", request.data)
             
             serializer = UserSerializer(user, data=request.data, partial=False)
             if serializer.is_valid():
-                print("DEBUG: Serializer is valid. Saving...")
+                logger.debug('ProfileUpdateView: PUT serializer valid, saving for user %s', user.id)
                 serializer.save()
                 return Response(
                     {"message": "Profile updated successfully", "user": serializer.data},
@@ -434,13 +432,12 @@ class ProfileUpdateView(APIView):
         """Partial update (e.g. only phone)"""
         try:
             user = request.user
-            print(f"DEBUG: Profile Update PATCH request for user {user.id}")
-            print(f"DEBUG: Request Data: {request.data}")
-            print(f"DEBUG: Request Files: {request.FILES}")
+            logger.debug("Profile Update PATCH request for user %s", user.id)
+            logger.debug("Request Data: %s", request.data)
             
             serializer = UserSerializer(user, data=request.data, partial=True)
             if serializer.is_valid():
-                print("DEBUG: Serializer is valid. Saving...")
+                logger.debug('ProfileUpdateView: PATCH serializer valid, saving for user %s', user.id)
                 serializer.save()
                 return Response(
                     {"message": "Profile updated successfully", "user": serializer.data},
