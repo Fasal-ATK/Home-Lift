@@ -82,7 +82,7 @@ const ServiceDetails = () => {
         </Typography>
         <Typography variant="body2">
           {service.description ||
-            "We provide top-notch services to make your car shine and stay protected."}
+            `We provide top-notch services to make your ${service.name} shine and stay protected.`}
         </Typography>
 
         {/* <Typography variant="subtitle2" fontWeight="bold" mt={2}>

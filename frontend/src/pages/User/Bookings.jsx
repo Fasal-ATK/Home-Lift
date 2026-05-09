@@ -33,6 +33,7 @@ import ClearIcon from "@mui/icons-material/Clear";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import MapIcon from "@mui/icons-material/Map";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchBookings, clearError, selectTotalBookingCount } from "../../redux/slices/bookingSlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
@@ -211,15 +212,52 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
             </Typography>
 
             {addr ? (
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <strong>Address:</strong> {addr.title} — {addr.address_line}
-                <br />
-                <Typography component="span" variant="body2" color="text.secondary">
-                  {addr.city}{addr.district ? `, ${addr.district}` : ""}, {addr.state} {addr.postal_code}
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="body2">
+                  <strong>Address:</strong> {addr.title} — {addr.address_line}
+                  <br />
+                  <Typography component="span" variant="body2" color="text.secondary">
+                    {addr.city}{addr.district ? `, ${addr.district}` : ""}, {addr.state} {addr.postal_code}
+                  </Typography>
                 </Typography>
-              </Typography>
+                <Button
+                  id={`map-btn-booking-${booking.id}`}
+                  size="small"
+                  variant="outlined"
+                  startIcon={<MapIcon fontSize="small" />}
+                  sx={{ mt: 0.75, textTransform: "none", fontSize: "0.75rem", py: 0.25, px: 1, borderRadius: 5 }}
+                  onClick={() => {
+                    const lat = addr.latitude;
+                    const lng = addr.longitude;
+                    const url =
+                      lat && lng
+                        ? `https://www.google.com/maps?q=${lat},${lng}`
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            `${addr.address_line}, ${addr.city}, ${addr.state} ${addr.postal_code}`
+                          )}`;
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  {addr.latitude && addr.longitude ? "View on Map" : "Search on Map"}
+                </Button>
+              </Box>
             ) : booking.address ? (
-              <Typography variant="body2" sx={{ mb: 1 }}><strong>Address:</strong> {booking.address}</Typography>
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="body2"><strong>Address:</strong> {booking.address}</Typography>
+                <Button
+                  id={`map-btn-booking-text-${booking.id}`}
+                  size="small"
+                  variant="outlined"
+                  startIcon={<MapIcon fontSize="small" />}
+                  sx={{ mt: 0.75, textTransform: "none", fontSize: "0.75rem", py: 0.25, px: 1, borderRadius: 5 }}
+                  onClick={() => {
+                    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.address)}`;
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  Search on Map
+                </Button>
+              </Box>
             ) : null}
 
             {booking.notes && (

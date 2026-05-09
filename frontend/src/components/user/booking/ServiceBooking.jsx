@@ -133,6 +133,26 @@ const BookingPage = () => {
   }, [selectedDate, availableTimeSlots, setValue, watch]);
 
   const onSubmit = (data) => {
+    // Frontend Date Validation
+    const selectedDateObj = new Date(data.booking_date);
+    const todayObj = new Date();
+    todayObj.setHours(0, 0, 0, 0);
+
+    if (selectedDateObj < todayObj) {
+      ShowToast("Booking date cannot be in the past.", "error");
+      return;
+    }
+
+    if (data.booking_date === today && data.booking_time) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const startHour = parseInt(data.booking_time.split(':')[0]);
+      if (startHour <= currentHour) {
+        ShowToast("Booking time cannot be in the past.", "error");
+        return;
+      }
+    }
+
     // Ensure service is included
     if (!data.service && selectedService) {
       data.service = selectedService.id;
@@ -502,7 +522,7 @@ const BookingPage = () => {
               <Typography color="error" mt={2}>
                 {typeof error === 'string'
                   ? error
-                  : error.message || error.error || JSON.stringify(error)}
+                  : error.message || error.error || (typeof error === 'object' ? Object.values(error).flat().join(', ') : JSON.stringify(error))}
               </Typography>
             )}
           </Paper>

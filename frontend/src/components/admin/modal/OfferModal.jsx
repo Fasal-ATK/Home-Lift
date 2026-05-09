@@ -92,6 +92,39 @@ export default function OfferModal({ open, handleClose, offer = null }) {
             return;
         }
 
+        if (Number(formData.discount_value) < 0) {
+            toast.error("Discount value cannot be negative");
+            return;
+        }
+
+        if (formData.discount_type === "percentage" && Number(formData.discount_value) > 100) {
+            toast.error("Percentage discount cannot exceed 100");
+            return;
+        }
+
+        if (formData.discount_type === "fixed" && formData.service) {
+            const selectedService = services.find(s => s.id === formData.service);
+            if (selectedService && Number(formData.discount_value) > Number(selectedService.price)) {
+                toast.error(`Fixed discount cannot exceed the service price (₹${selectedService.price})`);
+                return;
+            }
+        }
+
+        if (new Date(formData.end_date) < new Date(formData.start_date)) {
+            toast.error("End date cannot be earlier than start date");
+            return;
+        }
+
+        if (!offer) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const startDate = new Date(formData.start_date);
+            if (startDate < today) {
+                toast.error("Start date cannot be in the past");
+                return;
+            }
+        }
+
         const data = { ...formData };
         if (!data.service) delete data.service;
         if (!data.max_discount) delete data.max_discount;
@@ -106,9 +139,19 @@ export default function OfferModal({ open, handleClose, offer = null }) {
             }
             handleClose();
         } catch (err) {
-            toast.error(typeof err === "string" ? err : "Failed to save offer");
+            // Check if the error object has specific validation errors from the backend
+            if (err && typeof err === 'object') {
+                const firstKey = Object.keys(err)[0];
+                const msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : err[firstKey];
+                toast.error(msg || "Failed to save offer");
+            } else {
+                toast.error(typeof err === "string" ? err : "Failed to save offer");
+            }
         }
     };
+
+    const minDate = offer ? undefined : new Date().toISOString().split('T')[0];
+    const minEndDate = formData.start_date || minDate;
 
     return (
         <Dialog
@@ -191,6 +234,7 @@ export default function OfferModal({ open, handleClose, offer = null }) {
                                         required
                                         size="small"
                                         InputProps={{
+                                            inputProps: { min: 1, ...(formData.discount_type === 'percentage' && { max: 100 }) },
                                             startAdornment: (
                                                 <InputAdornment position="start">
                                                     {formData.discount_type === 'percentage' ? <PercentIcon fontSize="small" /> : <RupeeIcon fontSize="small" />}
@@ -270,6 +314,7 @@ export default function OfferModal({ open, handleClose, offer = null }) {
                                         required
                                         size="small"
                                         InputProps={{
+                                            inputProps: { min: minDate },
                                             startAdornment: <InputAdornment position="start"><DateIcon fontSize="small" /></InputAdornment>
                                         }}
                                     />
@@ -286,6 +331,7 @@ export default function OfferModal({ open, handleClose, offer = null }) {
                                         required
                                         size="small"
                                         InputProps={{
+                                            inputProps: { min: minEndDate },
                                             startAdornment: <InputAdornment position="start"><DateIcon fontSize="small" /></InputAdornment>
                                         }}
                                     />
