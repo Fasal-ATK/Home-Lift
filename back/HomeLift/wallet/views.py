@@ -11,6 +11,9 @@ from .serializers import WalletSerializer, WithdrawalRequestSerializer, Transact
 from providers.models import ProviderDetails
 from notifications.utils import send_user_notification
 from core.permissions import IsAdminUserCustom
+import logging
+
+logger = logging.getLogger(__name__)
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class WalletView(APIView):
@@ -143,8 +146,10 @@ class StripeConnectLinkView(APIView):
                 provider_details.stripe_account_id = account.id
                 provider_details.save()
             except stripe.error.StripeError as e:
+                logger.error(f"Stripe account creation failed for user {request.user.id}: {e}")
                 return Response({"detail": f"Stripe Account Error: {e.user_message or str(e)}"}, status=400)
             except Exception as e:
+                logger.exception(f"Unexpected error creating Stripe account for user {request.user.id}: {e}")
                 return Response({"detail": f"Failed to create Stripe account: {str(e)}"}, status=400)
 
         # 2. Create an Account Link (onboarding URL)

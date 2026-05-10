@@ -6,8 +6,10 @@ from rest_framework.permissions import IsAuthenticated, BasePermission
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Q
-
+import logging
 from .models import Booking
+
+logger = logging.getLogger(__name__)
 from .serializers import BookingSerializer
 from core.permissions import IsProviderUser, IsAdminUserCustom
 from datetime import datetime, timedelta, date
@@ -497,7 +499,7 @@ class BookingReviewCreateView(APIView):
                 from notifications.utils import send_user_notification
                 send_user_notification(booking.provider.id, f"You received a new {serializer.validated_data.get('rating')}-star review from {request.user.username}.")
             except Exception as e:
-                print(f"Failed to send review notification: {e}")
+                logger.error(f"Failed to send review notification: {e}")
 
             return Response({"message": "Review submitted successfully.", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

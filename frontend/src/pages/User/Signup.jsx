@@ -123,6 +123,7 @@ function Signup() {
         phone: `+91${phone}`,
         email,
         password: pass1,
+        otp: otp,
       };
 
       const registerResponse = await authService.signup({ userData });

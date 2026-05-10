@@ -1,10 +1,12 @@
 # payments/webhooks.py
 import stripe
 import json
+import logging
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from bookings.models import Booking
+logger = logging.getLogger(__name__)
 
 @csrf_exempt
 def stripe_webhook(request):
@@ -21,7 +23,7 @@ def stripe_webhook(request):
             data = json.loads(payload)
             event = data
     except (ValueError, stripe.error.SignatureVerificationError) as e:
-        print(f"⚠️ Webhook error: {e}")
+        logger.error(f"⚠️ Webhook signature verification failed: {e}")
         return HttpResponse(status=400)
 
     if event["type"] == "payment_intent.succeeded":
@@ -55,18 +57,44 @@ def stripe_webhook(request):
                     }
                 )
                 
-                print(f"✅ Booking #{booking_id} marked as paid.")
+                logger.info(f"✅ Booking #{booking_id} marked as paid.")
                 if user_id:
                     send_user_notification(user_id, f"Payment of ₹{intent['amount']/100.0} was successful!")
 
             except Booking.DoesNotExist:
-                print(f"❌ Webhook error: Booking #{booking_id} not found.")
+                logger.error(f"❌ Webhook error: Booking #{booking_id} not found.")
+
+    elif event["type"] == "payment_intent.payment_failed":
+        intent = event["data"]["object"]
+        error_message = intent.get("last_payment_error", {}).get("message", "Unknown error")
+        logger.error(f"❌ Payment failed for intent {intent['id']}: {error_message}")
+        
+        metadata = intent.get("metadata", {})
+        booking_id = metadata.get("booking_id")
+        
+        from payments.models import Payment
+        
+        if booking_id:
+            try:
+                booking = Booking.objects.get(id=booking_id)
+                Payment.objects.update_or_create(
+                    stripe_payment_intent_id=intent["id"],
+                    defaults={
+                        "booking": booking,
+                        "status": "failed",
+                        "metadata": metadata
+                    }
+                )
+            except Booking.DoesNotExist:
+                logger.error(f"❌ Webhook error on failure: Booking #{booking_id} not found.")
+        else:
+            logger.error(f"❌ Webhook error on failure: No booking_id in metadata for intent {intent['id']}")
 
     elif event["type"] == "transfer.created":
         # This handles the withdrawal to provider
         transfer = event["data"]["object"]
         metadata = transfer.get("metadata", {})
         # Note: We don't always have user_id in transfer metadata unless we pass it specifically
-        print(f"💰 Transfer Created: {transfer['id']} for {transfer['amount']/100.0}")
+        logger.info(f"💰 Transfer Created: {transfer['id']} for {transfer['amount']/100.0}")
 
     return HttpResponse(status=200)

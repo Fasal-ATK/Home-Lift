@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from users.models import CustomUser
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -32,7 +35,7 @@ class AdminLoginSerializer(serializers.Serializer):
             })
 
         if not user.is_staff:
-            print("User is not an admin")
+            logger.warning(f"Unauthorized admin login attempt for user: {email}")
             raise serializers.ValidationError({
                 "error": "not-admin",
                 "message": "You are not authorized to access admin login."

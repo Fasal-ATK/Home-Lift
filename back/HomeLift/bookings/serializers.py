@@ -57,6 +57,24 @@ class BookingSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ('advance', 'created_at', 'updated_at', 'is_owner', 'is_assigned_to_user', 'is_refunded', 'remaining_payment', 'review')
 
+    def validate(self, attrs):
+        from django.utils import timezone
+        
+        booking_date = attrs.get('booking_date', getattr(self.instance, 'booking_date', None))
+        booking_time = attrs.get('booking_time', getattr(self.instance, 'booking_time', None))
+        
+        if booking_date:
+            now_date = timezone.localtime(timezone.now()).date()
+            if booking_date < now_date:
+                raise serializers.ValidationError({"booking_date": "Booking date cannot be in the past."})
+            
+            if booking_date == now_date and booking_time:
+                now_time = timezone.localtime(timezone.now()).time()
+                if booking_time < now_time:
+                    raise serializers.ValidationError({"booking_time": "Booking time cannot be in the past."})
+                    
+        return attrs
+
     def get_remaining_payment(self, obj):
         if obj.price and obj.advance:
             return obj.price - obj.advance

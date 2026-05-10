@@ -34,10 +34,11 @@ class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
     email = serializers.EmailField(required=True)
     phone = serializers.CharField(required=True)
+    otp = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'username', 'email', 'phone', 'password']
+        fields = ['first_name', 'last_name', 'username', 'email', 'phone', 'password', 'otp']
 
     def validate_username(self, value):
         if CustomUser.objects.filter(username=value).exists():
@@ -68,8 +69,34 @@ class SignupSerializer(serializers.ModelSerializer):
             })
         return value
 
+    def validate_password(self, value):
+        if not re.search(r'[A-Za-z]', value) or not re.search(r'\d', value):
+            raise serializers.ValidationError({
+                "error": "password-weak",
+                "message": "Password must contain letters and numbers."
+            })
+        if len(value) < 8:
+            raise serializers.ValidationError({
+                "error": "password-short",
+                "message": "Password must be at least 8 characters long."
+            })
+        return value
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        otp = attrs.get("otp")
+        
+        cached_otp = cache.get(f"otp_signup_{email}")
+        if not cached_otp or str(cached_otp) != str(otp):
+            raise serializers.ValidationError({
+                "error": "invalid-otp",
+                "message": "Invalid or expired OTP. Please request a new one."
+            })
+            
+        return attrs
+
     def create(self, validated_data):
-        return CustomUser.objects.create_user(
+        user = CustomUser.objects.create_user(
             username=validated_data['username'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
@@ -77,6 +104,9 @@ class SignupSerializer(serializers.ModelSerializer):
             phone=validated_data['phone'],
             password=validated_data['password']
         )
+        cache.delete(f"otp_signup_{validated_data['email']}")
+        cache.delete(f"otp_verified_signup_{validated_data['email']}")
+        return user
 
 
 # ---------------------------

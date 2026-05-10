@@ -238,7 +238,7 @@ class VerifyOtpView(APIView):
             True,
             timeout=300
         )
-        cache.delete(key)
+        # cache.delete(key) # Do not delete here, needed for final signup request
 
         return Response({"message": "OTP verified"}, status=200)
 
