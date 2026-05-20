@@ -188,7 +188,7 @@ function Login() {
               fullWidth
               sx={{ mt: 2 }}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value.trim())}
             />
 
             <TextField
@@ -197,7 +197,7 @@ function Login() {
               fullWidth
               sx={{ mt: 2 }}
               value={pass}
-              onChange={(e) => setPass(e.target.value)}
+              onChange={(e) => setPass(e.target.value.replace(/\s/g, ''))}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">

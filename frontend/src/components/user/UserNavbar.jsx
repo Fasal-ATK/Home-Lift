@@ -6,8 +6,11 @@ import {
   IconButton,
   Box,
   Button,
+  Menu,
+  MenuItem,
+  Tooltip,
 } from '@mui/material';
-import { Notifications, LocationOn, AccountCircle, Chat } from '@mui/icons-material';
+import { Notifications, LocationOn, AccountCircle, Chat, Menu as MenuIcon } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import LogoutButton from '../common/Logout';
@@ -24,6 +27,10 @@ const UserNavbar = () => {
   const { isProvider, user } = useSelector((state) => state.auth);
   const { bookings } = useSelector((state) => state.bookings);
   const dispatch = useDispatch();
+
+  const [mobileMenuAnchorEl, setMobileMenuAnchorEl] = React.useState(null);
+  const handleMobileMenuOpen = (event) => setMobileMenuAnchorEl(event.currentTarget);
+  const handleMobileMenuClose = () => setMobileMenuAnchorEl(null);
 
   useEffect(() => {
     if (user) {
@@ -72,88 +79,163 @@ const UserNavbar = () => {
             variant="h6"
             fontWeight="bold"
             color={location.pathname === "/home" ? "primary" : "inherit"}
+            sx={{ display: { xs: 'flex', sm: 'block' } }}
           >
             HOME LIFT
           </Typography>
         </Box>
 
-        {/* Provider Page Button */}
-        {isProvider && (
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: '#0066CC',
-              textTransform: "none",
-              borderRadius: "10px",
-              "&:hover": { backgroundColor: "#0052a3" }
+        {/* Right side container */}
+        <Box display="flex" alignItems="center" gap={{ xs: 1, sm: 2 }}>
+          {/* Desktop Nav links */}
+          <Box display={{ xs: 'none', md: 'flex' }} gap={2} alignItems="center">
+            {navLinks.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Typography
+                  key={item.label}
+                  component={Link}
+                  to={item.path}
+                  variant="body1"
+                  fontWeight="bold"
+                  sx={{
+                    cursor: "pointer",
+                    textDecoration: "none",
+                    color: isActive ? "#0066CC" : "inherit",
+                    "&:hover": { color: "#0066CC" },
+                  }}
+                >
+                  {item.label}
+                </Typography>
+              );
+            })}
+          </Box>
+
+          {/* Icons (Always visible) */}
+          <Box display="flex" gap={1} alignItems="center">
+            <Tooltip title="Notifications">
+              <IconButton
+                component={Link}
+                to="/notifications"
+                sx={{ color: location.pathname === "/notifications" ? '#0066CC' : '#555' }}
+              >
+                <Notifications />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Chat">
+              <IconButton
+                component={Link}
+                to="/chat"
+                sx={{ color: location.pathname === "/chat" ? '#0066CC' : '#555' }}
+              >
+                <Chat />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Profile">
+              <IconButton
+                component={Link}
+                to="/profile"
+                sx={{ color: location.pathname === "/profile" ? '#0066CC' : '#555' }}
+              >
+                <AccountCircle />
+              </IconButton>
+            </Tooltip>
+          </Box>
+
+          {/* Provider Page Button (Desktop only) */}
+          {isProvider && (
+            <Tooltip title="Switch to Provider Dashboard">
+              <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: '#0066CC',
+                    textTransform: "none",
+                    borderRadius: "10px",
+                    "&:hover": { backgroundColor: "#0052a3" },
+                    px: 2,
+                    minWidth: '120px'
+                  }}
+                  onClick={handleProviderRedirect}
+                >
+                  Provider Page
+                </Button>
+              </Box>
+            </Tooltip>
+          )}
+
+          {/* Mobile Menu Icon */}
+          <Tooltip title="Navigation Menu">
+            <IconButton 
+              onClick={handleMobileMenuOpen} 
+              color="inherit"
+              sx={{ display: { xs: 'flex', md: 'none' } }}
+            >
+              <MenuIcon />
+            </IconButton>
+          </Tooltip>
+
+          {/* Logout (Desktop only) */}
+          <Tooltip title="Logout">
+            <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+              <LogoutButton
+                collapsed={false}
+                sx={{
+                  "&:hover": { backgroundColor: "red", color: "white" }
+                }}
+              />
+            </Box>
+          </Tooltip>
+        </Box>
+      </Toolbar>
+
+      {/* Mobile Menu */}
+      <Menu
+        anchorEl={mobileMenuAnchorEl}
+        open={Boolean(mobileMenuAnchorEl)}
+        onClose={handleMobileMenuClose}
+        sx={{ display: { xs: 'block', md: 'none' } }}
+      >
+        {navLinks.map((item) => (
+          <MenuItem 
+            key={item.label} 
+            component={Link} 
+            to={item.path}
+            onClick={handleMobileMenuClose}
+            sx={{ 
+              color: location.pathname === item.path ? '#0066CC' : 'inherit', 
+              fontWeight: location.pathname === item.path ? 'bold' : 'normal' 
             }}
-            onClick={handleProviderRedirect}
+          >
+            {item.label}
+          </MenuItem>
+        ))}
+        {/* Add Provider Button to mobile menu */}
+        {isProvider && (
+          <MenuItem 
+            onClick={() => {
+              handleMobileMenuClose();
+              handleProviderRedirect();
+            }}
+            sx={{ fontWeight: 'bold', color: '#0066CC' }}
           >
             Provider Page
-          </Button>
+          </MenuItem>
         )}
-
-        {/* Right: Nav links, icons, logout */}
-        <Box display="flex" alignItems="center" gap={2}>
-          {navLinks.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Typography
-                key={item.label}
-                component={Link}
-                to={item.path}
-                variant="body1"
-                fontWeight="bold"
-                sx={{
-                  cursor: "pointer",
-                  textDecoration: "none",
-                  color: isActive ? "#0066CC" : "inherit",
-                  "&:hover": { color: "#0066CC" },
-                }}
-              >
-                {item.label}
-              </Typography>
-            );
-          })}
-
-          <IconButton
-            component={Link}
-            to="/notifications"
-            sx={{
-              color: location.pathname === "/notifications" ? '#0066CC' : '#555'
-            }}
-          >
-            <Notifications />
-          </IconButton>
-
-          <IconButton
-            component={Link}
-            to="/chat"
-            sx={{
-              color: location.pathname === "/chat" ? '#0066CC' : '#555'
-            }}
-          >
-            <Chat />
-          </IconButton>
-
-          <IconButton
-            component={Link}
-            to="/profile"
-            sx={{
-              color: location.pathname === "/profile" ? '#0066CC' : '#555'
-            }}
-          >
-            <AccountCircle />
-          </IconButton>
-
+        
+        {/* Add Logout Button to mobile menu */}
+        <Box sx={{ px: 2, py: 1 }}>
           <LogoutButton
             collapsed={false}
             sx={{
+              width: '100%',
               "&:hover": { backgroundColor: "red", color: "white" }
             }}
           />
         </Box>
-      </Toolbar>
+      </Menu>
     </AppBar>
   );
 };

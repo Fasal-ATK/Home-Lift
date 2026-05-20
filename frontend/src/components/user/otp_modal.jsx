@@ -58,7 +58,6 @@ export default function OtpModal({
       setError('OTP must be at least 4 digits');
       return;
     }
-    console.log('Submitting OTP:', cleanOtp);
     try {
       await onVerify(cleanOtp);
     } catch (err) {

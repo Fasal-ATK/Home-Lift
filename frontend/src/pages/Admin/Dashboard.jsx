@@ -148,7 +148,7 @@ const Dashboard = () => {
     <Box sx={{ p: { xs: 2, md: 3 }, width: '100%', boxSizing: 'border-box' }}>
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2} mb={4}>
         <Box>
-          <Typography variant="h4" fontWeight="bold">
+          <Typography variant="h4" fontFamily="monospace" fontWeight="bold">
             Admin Dashboard
           </Typography>
           <Typography variant="body2" color="text.secondary">

@@ -16,6 +16,27 @@ from datetime import datetime, timedelta, date
 
 # Provider models
 from providers.models import ProviderService
+from django.utils import timezone
+
+
+def cancel_expired_pending_bookings():
+    """
+    Lazy evaluation: find all 'pending' bookings whose booking_date + booking_time
+    is in the past, and cancel them. The post_save signal handles the refund.
+    """
+    now = timezone.now()
+    pending_bookings = Booking.objects.filter(status='pending')
+    for booking in pending_bookings:
+        if booking.booking_date and booking.booking_time:
+            booking_dt_naive = datetime.combine(booking.booking_date, booking.booking_time)
+            try:
+                booking_dt_aware = timezone.make_aware(booking_dt_naive)
+                if booking_dt_aware < now:
+                    booking.status = 'cancelled'
+                    booking.save(update_fields=['status', 'updated_at'])
+            except Exception as e:
+                logger.error(f"Error checking expiration for booking {booking.id}: {e}")
+
 
 
 # ---------------------------------------------------------------------------
@@ -42,6 +63,7 @@ class BookingListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        cancel_expired_pending_bookings()
         from core.pagination import LargeResultsSetPagination
         user = request.user
         qs = Booking.objects.filter(user=user).select_related("service", "provider", "address", "user")
@@ -124,6 +146,7 @@ class ProviderBookingsView(APIView):
     permission_classes = [IsProviderUser]
 
     def get(self, request):
+        cancel_expired_pending_bookings()
         provider = request.user
 
         # ensure provider profile exists
@@ -268,6 +291,7 @@ class AdminBookingsView(APIView):
     permission_classes = [IsAdminUserCustom]
 
     def get(self, request):
+        cancel_expired_pending_bookings()
         from core.pagination import LargeResultsSetPagination
         from django.db.models import Q
         

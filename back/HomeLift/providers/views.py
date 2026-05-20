@@ -126,9 +126,24 @@ class ProviderApplicationListAPIView(APIView):
     def get(self, request, *args, **kwargs):
         try:
             from core.pagination import StandardResultsSetPagination
-            applications = ProviderApplication.objects.filter(
-                status__in=['pending']
-            ).order_by('-created_at')
+            applications = ProviderApplication.objects.all().order_by('-created_at')
+
+            # Status filter (default: all statuses)
+            status_param = request.query_params.get('status')
+            if status_param in ('pending', 'approved', 'rejected'):
+                applications = applications.filter(status=status_param)
+
+            # Search by name / email / phone
+            search = request.query_params.get('search')
+            if search:
+                applications = applications.filter(
+                    Q(user__username__icontains=search) |
+                    Q(user__email__icontains=search) |
+                    Q(user__first_name__icontains=search) |
+                    Q(user__last_name__icontains=search) |
+                    Q(user__phone_number__icontains=search)
+                )
+
             paginator = StandardResultsSetPagination()
             result_page = paginator.paginate_queryset(applications, request)
             serializer = ProviderApplicationSerializer(result_page, many=True)
@@ -428,15 +443,31 @@ class ProviderMyServiceDetailView(APIView):
 # Admin — Review Service Requests
 # ──────────────────────────────────────────────────────────────────────────────
 class AdminServiceRequestListView(APIView):
-    """GET → list all pending service requests (admin only)."""
+    """GET → list all service requests with optional status/search filters (admin only)."""
     permission_classes = [IsAdminUserCustom]
 
     def get(self, request, *args, **kwargs):
         try:
             from core.pagination import StandardResultsSetPagination
-            qs = ProviderServiceRequest.objects.filter(status='pending') \
+            qs = ProviderServiceRequest.objects \
                 .select_related('provider__user', 'service', 'service__category') \
                 .order_by('-created_at')
+
+            # Status filter (default: all statuses)
+            status_param = request.query_params.get('status')
+            if status_param in ('pending', 'approved', 'rejected'):
+                qs = qs.filter(status=status_param)
+
+            # Search by provider name / email
+            search = request.query_params.get('search')
+            if search:
+                qs = qs.filter(
+                    Q(provider__user__username__icontains=search) |
+                    Q(provider__user__email__icontains=search) |
+                    Q(provider__user__first_name__icontains=search) |
+                    Q(service__name__icontains=search)
+                )
+
             paginator = StandardResultsSetPagination()
             page = paginator.paginate_queryset(qs, request)
             serializer = ProviderServiceRequestSerializer(page, many=True)

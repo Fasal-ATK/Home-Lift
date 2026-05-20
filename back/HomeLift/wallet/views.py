@@ -174,12 +174,26 @@ class AdminWithdrawalListView(APIView):
     permission_classes = [IsAdminUserCustom]
 
     def get(self, request):
+        from core.pagination import StandardResultsSetPagination
+        from django.db.models import Q
         withdrawals = WithdrawalRequest.objects.all().order_by('-created_at')
+
         status_param = request.query_params.get('status')
         if status_param:
             withdrawals = withdrawals.filter(status=status_param)
-        serializer = WithdrawalRequestSerializer(withdrawals, many=True)
-        return Response(serializer.data)
+
+        search = request.query_params.get('search')
+        if search:
+            withdrawals = withdrawals.filter(
+                Q(provider__email__icontains=search) |
+                Q(provider__username__icontains=search) |
+                Q(provider__first_name__icontains=search)
+            )
+
+        paginator = StandardResultsSetPagination()
+        result_page = paginator.paginate_queryset(withdrawals, request)
+        serializer = WithdrawalRequestSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class AdminWithdrawalActionView(APIView):

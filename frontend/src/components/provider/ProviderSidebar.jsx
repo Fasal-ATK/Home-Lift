@@ -60,7 +60,7 @@ export default function ProviderSidebar({ open, setOpen }) {
       <Box
         sx={{
           p: 2,
-          borderBottom: "1px solid #eee",
+          borderBottom: "2px solid #eee",
           display: "flex",
           alignItems: "center",
           gap: 1,
@@ -97,7 +97,7 @@ export default function ProviderSidebar({ open, setOpen }) {
           transform: "translateY(-50%)",
           bgcolor: "#fff",
           border: "1px solid #ddd",
-          boxShadow: 2,
+          boxShadow: 12,
           "&:hover": { bgcolor: "#f4f4f4" },
           zIndex: 1500,
         }}
@@ -106,7 +106,14 @@ export default function ProviderSidebar({ open, setOpen }) {
       </IconButton>
 
       {/* Navigation */}
-      <List sx={{ flex: 1, mt: 2 }}>
+      <List sx={{ 
+        flex: 1, 
+        mt: 2, 
+        overflowY: "auto", 
+        overflowX: "hidden",
+        "&::-webkit-scrollbar": { width: "4px" },
+        "&::-webkit-scrollbar-thumb": { backgroundColor: "#ccc", borderRadius: "4px" }
+      }}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -120,7 +127,7 @@ export default function ProviderSidebar({ open, setOpen }) {
                 mb: 1,
                 py: 1.4,
                 justifyContent: open ? "initial" : "center",
-                px: open ? 2 : 1.5,
+                px: open ? 1 : 1.5,
                 "&:hover": { backgroundColor: "#fff9c4" },
                 transition: "all 0.3s",
               }}

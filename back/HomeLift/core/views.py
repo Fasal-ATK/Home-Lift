@@ -188,14 +188,31 @@ class AdminTicketListView(APIView):
     permission_classes = [IsAdminUserCustom]
 
     def get(self, request):
+        from core.pagination import StandardResultsSetPagination
+        from django.db.models import Q
+        
         status_filter = request.query_params.get('status')
         type_filter   = request.query_params.get('ticket_type')
+        search        = request.query_params.get('search')
+        
         qs = Ticket.objects.all().order_by('-created_at')
+        
         if status_filter:
             qs = qs.filter(status=status_filter)
         if type_filter:
             qs = qs.filter(ticket_type=type_filter)
-        return Response(TicketSerializer(qs, many=True).data)
+        if search:
+            qs = qs.filter(
+                Q(subject__icontains=search) |
+                Q(description__icontains=search) |
+                Q(user__username__icontains=search) |
+                Q(user__email__icontains=search)
+            )
+            
+        paginator = StandardResultsSetPagination()
+        result_page = paginator.paginate_queryset(qs, request)
+        serializer = TicketSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class AdminTicketReplyView(APIView):

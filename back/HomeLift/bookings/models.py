@@ -54,12 +54,20 @@ class Booking(models.Model):
     booking_time = models.TimeField(help_text="Time when the service should start")
 
     # 💰 Price fields
-    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Base service price")
+    original_price = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Base service price before any discounts"
+    )
+    discount_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00,
+        help_text="Amount deducted from original price via offers"
+    )
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Final price after discount")
     advance = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0.00,
-        help_text="Advance amount (2% of price, capped at ₹200)"
+        help_text="Advance amount (2% of price, capped at ₹200, min ₹50)"
     )
 
     status = models.CharField(
@@ -80,8 +88,8 @@ class Booking(models.Model):
         if self.price:
             calculated_advance = self.price * Decimal('0.02')
             capped_advance = min(calculated_advance, Decimal('200.00'))
-            # Stripe minimum is ₹50
-            self.advance = max(capped_advance, Decimal('50.00'))
+            # Stripe minimum is ₹50, but advance cannot exceed the total price
+            self.advance = min(max(capped_advance, Decimal('50.00')), self.price)
         super().save(*args, **kwargs)
 
     def __str__(self):

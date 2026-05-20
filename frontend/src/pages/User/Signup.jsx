@@ -7,26 +7,38 @@ import {
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { authService, otpService } from '../../services/apiServices';
+import { useForm } from 'react-hook-form';
 
 import OtpModal from '../../components/user/otp_modal';
-import { validateSignupForm } from '../../utils/signupVal';
 import { ShowToast } from '../../components/common/Toast';
 import { useDispatch } from 'react-redux';
-import { startLoading, stopLoading } from '../../redux/slices/loadingSlice';
 import GoogleLoginButton from '../../components/user/GoogleLoginButton';
 
 function Signup() {
-  const [fname, setFname] = useState('');
-  const [lname, setLname] = useState('');
-  const [uname, setUname] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [pass1, setPass1] = useState('');
-  const [pass2, setPass2] = useState('');
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setError,
+    formState: { errors: formErrors },
+    getValues
+  } = useForm({
+    mode: 'onTouched',
+    defaultValues: {
+      fname: '',
+      lname: '',
+      uname: '',
+      phone: '',
+      email: '',
+      pass1: '',
+      pass2: '',
+    }
+  });
+
   const [showPass1, setShowPass1] = useState(false);
   const [showPass2, setShowPass2] = useState(false);
 
-  const [error, setErrorState] = useState('');
+  const [backendError, setBackendError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -35,112 +47,143 @@ function Signup() {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  
+  const watchedEmail = watch('email');
 
   const extractErrorMessage = (data) => {
     if (!data) return "Something went wrong";
-
     if (typeof data === "string") return data;
     if (data.message) return data.message;
     if (data.error) return data.error;
 
     if (typeof data === "object") {
-      for (let key in data) {
-        const val = data[key];
-        if (Array.isArray(val) && val.length > 0) {
-          const first = val[0];
-          if (typeof first === "string") return first;
-          if (first.message) return first.message;
-          if (first.error) return first.error;
-          if (typeof first === "object") return extractErrorMessage(first);
-        } else if (typeof val === "object") {
-          return extractErrorMessage(val);
-        }
+      // If it's a nested object (DRF field errors)
+      const firstKey = Object.keys(data)[0];
+      const val = data[firstKey];
+      
+      if (Array.isArray(val) && val.length > 0) {
+        return extractErrorMessage(val[0]);
       }
+      if (typeof val === "object") {
+        return extractErrorMessage(val);
+      }
+      if (typeof val === "string") return val;
     }
 
     return "An unknown error occurred";
   };
 
+  const getPasswordStrength = (pass) => {
+    if (!pass) return 0;
+    let strength = 0;
+    if (pass.length >= 8) strength += 25;
+    if (/[a-z]/.test(pass)) strength += 25;
+    if (/[A-Z]/.test(pass)) strength += 25;
+    if (/\d/.test(pass)) strength += 25;
+    return strength;
+  };
+
+  const passwordStrength = getPasswordStrength(watch('pass1'));
+
   // Form submit: send OTP
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorState('');
+  const onSignupSubmit = async (data) => {
+    setBackendError('');
     setSuccess('');
-
-    const validationError = validateSignupForm({
-      fname, lname, uname, email, phone, pass1, pass2,
-    });
-
-    if (validationError) {
-      setErrorState(validationError);
-      return;
-    }
-
     setLoading(true);
+
     try {
-      const response = await otpService.sendOtp({ email });
-      console.log('OTP response:', response.message);
+      const response = await otpService.sendOtp({ email: data.email });
+
       if (response.expiry_timestamp) {
         setExpiryTimestamp(response.expiry_timestamp);
       }
       setShowOtpModal(true);
     } catch (err) {
       console.error("Send OTP error:", err.response?.data || err.message);
-      setErrorState(extractErrorMessage(err.response?.data) || "Failed to send OTP");
+      setBackendError(extractErrorMessage(err.response?.data) || "Failed to send OTP");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    // dispatch(stopLoading());
   };
 
   // Resend OTP
   const handleResendOtp = async () => {
     setResending(true);
+    const email = getValues('email');
     try {
       const response = await otpService.sendOtp({ email });
-      console.log('Resent OTP:', response.message);
+
       if (response.expiry_timestamp) {
         setExpiryTimestamp(response.expiry_timestamp);
       }
     } catch (err) {
       console.error("Resend OTP error:", err.response?.data || err.message);
-      setErrorState(extractErrorMessage(err.response?.data) || "Failed to resend OTP");
+      setBackendError(extractErrorMessage(err.response?.data) || "Failed to resend OTP");
+    } finally {
+      setResending(false);
     }
-    setResending(false);
   };
 
   // Verify OTP and register user
   const handleOtpVerify = async (otp) => {
-    setErrorState('');
+    setBackendError('');
     try {
-      console.log('Verifying OTP:', { email, otp });
-      const otpResponse = await otpService.verifyOtp({ email, otp });
-      console.log('OTP verified:', otpResponse.message);
+      const data = getValues();
+      const otpResponse = await otpService.verifyOtp({ email: data.email, otp });
 
       const userData = {
-        first_name: fname,
-        last_name: lname,
-        username: uname,
-        phone: `+91${phone}`,
-        email,
-        password: pass1,
+        first_name: data.fname,
+        last_name: data.lname,
+        username: data.uname,
+        phone: `+91${data.phone}`,
+        email: data.email,
+        password: data.pass1,
         otp: otp,
       };
 
       const registerResponse = await authService.signup({ userData });
-      console.log('Registration response:', registerResponse.message);
 
       setSuccess('Registration successful!');
       setShowOtpModal(false);
       ShowToast('Registration successful! Please log in.');
       setTimeout(() => navigate('/login'), 1500);
     } catch (error) {
-      console.error('Error during OTP verification or registration:', error.response?.data || error.message);
-      // Don't close modal on error, allow retry
-      // setShowOtpModal(false); 
-      const msg = extractErrorMessage(error.response?.data) || 'Invalid OTP or Registration failed';
+      console.error('Error during registration:', error.response?.data || error.message);
+      
+      const backendData = error.response?.data;
+      if (backendData && typeof backendData === 'object') {
+        // Map backend field errors to react-hook-form
+        // Backend keys are username, first_name, last_name, email, phone, password
+        // Frontend keys are uname, fname, lname, email, phone, pass1
+        const fieldMapping = {
+          username: 'uname',
+          first_name: 'fname',
+          last_name: 'lname',
+          email: 'email',
+          phone: 'phone',
+          password: 'pass1'
+        };
+
+        let hasFieldErrors = false;
+        Object.keys(backendData).forEach(key => {
+          const formField = fieldMapping[key];
+          if (formField) {
+            hasFieldErrors = true;
+            const errorObj = backendData[key];
+            const message = typeof errorObj === 'string' ? errorObj : (errorObj.message || errorObj[0] || 'Invalid value');
+            setError(formField, { type: 'manual', message });
+          }
+        });
+
+        if (hasFieldErrors) {
+          setShowOtpModal(false); // Close modal so user can fix fields
+          setBackendError('Please correct the highlighted errors.');
+          return;
+        }
+      }
+
+      const msg = extractErrorMessage(backendData) || 'Invalid OTP or Registration failed';
       throw new Error(msg);
-    } finally {
-      // dispatch(stopLoading());
     }
   };
 
@@ -163,23 +206,41 @@ function Signup() {
             User Registration
           </Typography>
 
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {backendError && <Alert severity="error" sx={{ mb: 2 }}>{backendError}</Alert>}
           {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={4}>
+          <form onSubmit={handleSubmit(onSignupSubmit)}>
+            <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="First name"
                   fullWidth
-                  onChange={e => setFname(e.target.value)}
+                  {...register('fname', { 
+                    required: 'First name is required',
+                    pattern: {
+                      value: /^[A-Za-z]+(?: [A-Za-z]+)?$/,
+                      message: 'Only letters and at most one space allowed'
+                    }
+                  })}
+                  error={!!formErrors.fname}
+                  helperText={formErrors.fname?.message}
+                  onInput={(e) => { e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, ''); }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="Last name"
                   fullWidth
-                  onChange={e => setLname(e.target.value)}
+                  {...register('lname', { 
+                    required: 'Last name is required',
+                    pattern: {
+                      value: /^[A-Za-z]+(?: [A-Za-z]+)?$/,
+                      message: 'Only letters and at most one space allowed'
+                    }
+                  })}
+                  error={!!formErrors.lname}
+                  helperText={formErrors.lname?.message}
+                  onInput={(e) => { e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, ''); }}
                 />
               </Grid>
             </Grid>
@@ -188,22 +249,49 @@ function Signup() {
               label="Username"
               fullWidth
               sx={{ mt: 2 }}
-              onChange={e => setUname(e.target.value)}
+              {...register('uname', { 
+                required: 'Username is required',
+                pattern: {
+                  value: /^[a-zA-Z0-9_]{3,20}$/,
+                  message: '3–20 characters (letters, numbers, underscores only)'
+                }
+              })}
+              error={!!formErrors.uname}
+              helperText={formErrors.uname?.message}
+              onInput={(e) => { e.target.value = e.target.value.replace(/[^A-Za-z0-9_]/g, ''); }}
             />
             <TextField
               label="Email"
               type="email"
               fullWidth
               sx={{ mt: 2 }}
-              onChange={e => setEmail(e.target.value)}
+              {...register('email', { 
+                required: 'Email is required',
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: 'Invalid email format'
+                }
+              })}
+              error={!!formErrors.email}
+              helperText={formErrors.email?.message}
+              disabled={showOtpModal}
+              onInput={(e) => { e.target.value = e.target.value.replace(/\s/g, ''); }}
             />
             <TextField
               label="Phone"
               type="tel"
               fullWidth
               sx={{ mt: 2 }}
-              onChange={e => setPhone(e.target.value)}
-              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
+              {...register('phone', { 
+                required: 'Phone number is required',
+                pattern: {
+                  value: /^\d{10}$/,
+                  message: 'Enter 10 digits only'
+                }
+              })}
+              error={!!formErrors.phone}
+              helperText={formErrors.phone?.message}
+              onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, ''); }}
             />
 
             <TextField
@@ -211,7 +299,17 @@ function Signup() {
               type={showPass1 ? 'text' : 'password'}
               fullWidth
               sx={{ mt: 2 }}
-              onChange={e => setPass1(e.target.value)}
+              {...register('pass1', { 
+                required: 'Password is required',
+                minLength: { value: 8, message: 'At least 8 characters' },
+                validate: {
+                  hasLetter: v => /[a-zA-Z]/.test(v) || 'Must include at least one letter',
+                  hasNumber: v => /\d/.test(v) || 'Must include at least one number',
+                  noSpaces: v => !/\s/.test(v) || 'Cannot contain spaces'
+                }
+              })}
+              error={!!formErrors.pass1}
+              helperText={formErrors.pass1?.message}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -221,14 +319,36 @@ function Signup() {
                   </InputAdornment>
                 )
               }}
+              onInput={(e) => { e.target.value = e.target.value.replace(/\s/g, ''); }}
             />
+            {watchedEmail && getValues('pass1') && (
+              <Box sx={{ mt: 1, textAlign: 'left' }}>
+                <Box sx={{ height: 4, width: '100%', bgcolor: '#eee', borderRadius: 1 }}>
+                  <Box sx={{ 
+                    height: '100%', 
+                    width: `${passwordStrength}%`, 
+                    bgcolor: passwordStrength <= 25 ? '#f44336' : passwordStrength <= 75 ? '#ff9800' : '#4caf50',
+                    transition: 'width 0.3s ease',
+                    borderRadius: 1
+                  }} />
+                </Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Password strength: {passwordStrength <= 25 ? 'Weak' : passwordStrength <= 75 ? 'Fair' : 'Strong'}
+                </Typography>
+              </Box>
+            )}
 
             <TextField
               label="Confirm Password"
               type={showPass2 ? 'text' : 'password'}
               fullWidth
               sx={{ mt: 2 }}
-              onChange={e => setPass2(e.target.value)}
+              {...register('pass2', { 
+                required: 'Confirm your password',
+                validate: v => v === watch('pass1') || 'Passwords do not match'
+              })}
+              error={!!formErrors.pass2}
+              helperText={formErrors.pass2?.message}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -238,6 +358,7 @@ function Signup() {
                   </InputAdornment>
                 )
               }}
+              onInput={(e) => { e.target.value = e.target.value.replace(/\s/g, ''); }}
             />
 
             <Button
@@ -273,7 +394,7 @@ function Signup() {
           open={showOtpModal}
           onClose={() => setShowOtpModal(false)}
           onVerify={handleOtpVerify}
-          email={email}
+          email={watchedEmail}
           onResend={handleResendOtp}
           resending={resending}
           purpose="signup"

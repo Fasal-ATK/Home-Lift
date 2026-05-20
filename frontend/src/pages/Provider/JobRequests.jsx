@@ -20,6 +20,7 @@ import {
   ListItemText,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import MapIcon from "@mui/icons-material/Map";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/common/Loader";
 import { useDispatch, useSelector } from "react-redux";
@@ -291,6 +292,33 @@ export default function ProviderRequestsWithServices() {
                           {(r.city || r.address?.city) || "—"} • {r.booking_date} {r.booking_time && `• ${r.booking_time}`} • ₹{r.price}
                         </Typography>
 
+                        {(r.address || r.city) && (
+                          <Box sx={{ mt: 1 }}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<MapIcon fontSize="small" />}
+                              sx={{ textTransform: "none", fontSize: "0.75rem", py: 0.25, px: 1, borderRadius: 5 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const lat = r.address?.latitude;
+                                const lng = r.address?.longitude;
+                                const url =
+                                  lat && lng
+                                    ? `https://www.google.com/maps?q=${lat},${lng}`
+                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                        r.address?.address_line 
+                                          ? `${r.address.address_line}, ${r.address.city}, ${r.address.state || ''} ${r.address.postal_code || ''}`
+                                          : (typeof r.address === 'string' ? r.address : r.city)
+                                      )}`;
+                                window.open(url, "_blank", "noopener,noreferrer");
+                              }}
+                            >
+                              {r.address?.latitude && r.address?.longitude ? "View on Map" : "Search on Map"}
+                            </Button>
+                          </Box>
+                        )}
+
                         {r.notes && (
                           <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
                             Summary: {r.notes}
@@ -368,3 +396,4 @@ export default function ProviderRequestsWithServices() {
     </Box>
   );
 }
+

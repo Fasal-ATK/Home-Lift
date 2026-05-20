@@ -144,7 +144,18 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
 
         <Box sx={{ minWidth: 120 }}>
           <Typography variant="caption" color="text.secondary">TOTAL</Typography>
-          <Typography variant="body2" fontWeight={700}>₹{booking.price}</Typography>
+          {parseFloat(booking.discount_amount || 0) > 0 ? (
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ textDecoration: 'line-through', display: 'block' }}>
+                ₹{booking.original_price}
+              </Typography>
+              <Typography variant="body2" fontWeight={700} color="success.main">
+                ₹{booking.price}
+              </Typography>
+            </Box>
+          ) : (
+            <Typography variant="body2" fontWeight={700}>₹{booking.price}</Typography>
+          )}
         </Box>
 
         <Box sx={{ minWidth: 220, flex: 1 }}>
@@ -220,43 +231,10 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
                     {addr.city}{addr.district ? `, ${addr.district}` : ""}, {addr.state} {addr.postal_code}
                   </Typography>
                 </Typography>
-                <Button
-                  id={`map-btn-booking-${booking.id}`}
-                  size="small"
-                  variant="outlined"
-                  startIcon={<MapIcon fontSize="small" />}
-                  sx={{ mt: 0.75, textTransform: "none", fontSize: "0.75rem", py: 0.25, px: 1, borderRadius: 5 }}
-                  onClick={() => {
-                    const lat = addr.latitude;
-                    const lng = addr.longitude;
-                    const url =
-                      lat && lng
-                        ? `https://www.google.com/maps?q=${lat},${lng}`
-                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                            `${addr.address_line}, ${addr.city}, ${addr.state} ${addr.postal_code}`
-                          )}`;
-                    window.open(url, "_blank", "noopener,noreferrer");
-                  }}
-                >
-                  {addr.latitude && addr.longitude ? "View on Map" : "Search on Map"}
-                </Button>
               </Box>
             ) : booking.address ? (
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2"><strong>Address:</strong> {booking.address}</Typography>
-                <Button
-                  id={`map-btn-booking-text-${booking.id}`}
-                  size="small"
-                  variant="outlined"
-                  startIcon={<MapIcon fontSize="small" />}
-                  sx={{ mt: 0.75, textTransform: "none", fontSize: "0.75rem", py: 0.25, px: 1, borderRadius: 5 }}
-                  onClick={() => {
-                    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.address)}`;
-                    window.open(url, "_blank", "noopener,noreferrer");
-                  }}
-                >
-                  Search on Map
-                </Button>
               </Box>
             ) : null}
 

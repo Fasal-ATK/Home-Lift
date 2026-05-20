@@ -14,13 +14,20 @@ class AdminOfferListCreateView(APIView):
 
     def get(self, request):
         from core.pagination import StandardResultsSetPagination
-        offers = Offer.objects.all()
-        
-        # Simple search
+        offers = Offer.objects.all().order_by('-id')
+
+        # Search by title
         search = request.query_params.get('search')
         if search:
             offers = offers.filter(title__icontains=search)
-            
+
+        # Filter by active status
+        is_active_param = request.query_params.get('is_active')
+        if is_active_param == 'true':
+            offers = offers.filter(is_active=True)
+        elif is_active_param == 'false':
+            offers = offers.filter(is_active=False)
+
         paginator = StandardResultsSetPagination()
         result_page = paginator.paginate_queryset(offers, request)
         serializer = OfferSerializer(result_page, many=True)

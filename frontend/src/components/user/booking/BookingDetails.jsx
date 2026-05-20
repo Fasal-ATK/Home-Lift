@@ -283,7 +283,19 @@ export default function BookingDetails() {
 
             <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2">Total Price: <strong>₹{booking.price}</strong></Typography>
+                {parseFloat(booking.discount_amount || 0) > 0 ? (
+                  <>
+                    <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
+                      Original Price: ₹{booking.original_price}
+                    </Typography>
+                    <Typography variant="body2" color="success.main" fontWeight="bold">
+                      Discount Applied: -₹{booking.discount_amount}
+                    </Typography>
+                    <Typography variant="body1" mt={0.5}>Final Total: <strong>₹{booking.price}</strong></Typography>
+                  </>
+                ) : (
+                  <Typography variant="body2">Total Price: <strong>₹{booking.price}</strong></Typography>
+                )}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 0.5 }}>
                   <Typography variant="body2">Advance Amount: <strong>₹{booking.advance}</strong></Typography>
                   <Chip

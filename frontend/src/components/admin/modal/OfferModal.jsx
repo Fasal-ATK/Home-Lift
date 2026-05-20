@@ -13,6 +13,7 @@ import {
     CircularProgress,
     Divider,
     InputAdornment,
+    Paper,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { createOffer, updateOffer, fetchOffers } from "../../../redux/slices/admin/offersSlice";
@@ -25,9 +26,10 @@ import {
     Build as ServiceIcon,
     Event as DateIcon,
     CurrencyRupee as RupeeIcon,
-    Percent as PercentIcon
+    Percent as PercentIcon,
+    Close as CloseIcon
 } from "@mui/icons-material";
-import { Stack } from "@mui/material";
+import { Stack, IconButton } from "@mui/material";
 
 export default function OfferModal({ open, handleClose, offer = null }) {
     const dispatch = useDispatch();
@@ -58,7 +60,7 @@ export default function OfferModal({ open, handleClose, offer = null }) {
             setFormData({
                 title: offer.title || "",
                 description: offer.description || "",
-                discount_type: offer.discount_type || "percentage",
+                discount_type: "percentage", // Always percentage
                 discount_value: offer.discount_value || "",
                 max_discount: offer.max_discount || "",
                 service: offer.service || "",
@@ -69,7 +71,7 @@ export default function OfferModal({ open, handleClose, offer = null }) {
             setFormData({
                 title: "",
                 description: "",
-                discount_type: "percentage",
+                discount_type: "percentage", // Always percentage
                 discount_value: "",
                 max_discount: "",
                 service: "",
@@ -97,17 +99,9 @@ export default function OfferModal({ open, handleClose, offer = null }) {
             return;
         }
 
-        if (formData.discount_type === "percentage" && Number(formData.discount_value) > 100) {
-            toast.error("Percentage discount cannot exceed 100");
+        if (Number(formData.discount_value) > 100) {
+            toast.error("Percentage discount cannot exceed 100%");
             return;
-        }
-
-        if (formData.discount_type === "fixed" && formData.service) {
-            const selectedService = services.find(s => s.id === formData.service);
-            if (selectedService && Number(formData.discount_value) > Number(selectedService.price)) {
-                toast.error(`Fixed discount cannot exceed the service price (₹${selectedService.price})`);
-                return;
-            }
         }
 
         if (new Date(formData.end_date) < new Date(formData.start_date)) {
@@ -163,11 +157,23 @@ export default function OfferModal({ open, handleClose, offer = null }) {
                 sx: { borderRadius: 3, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }
             }}
         >
-            <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <OfferIcon color="primary" />
-                <Typography variant="h6" fontWeight="bold">
-                    {offer ? "Edit Promotion Offer" : "Configure New Promotion"}
-                </Typography>
+            <DialogTitle sx={{ pb: 1, pt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ bgcolor: 'primary.50', p: 1, borderRadius: 2, display: 'flex' }}>
+                        <OfferIcon color="primary" />
+                    </Box>
+                    <Box>
+                        <Typography variant="h6" fontWeight="bold" lineHeight={1.2}>
+                            {offer ? "Edit Promotion Offer" : "Configure New Promotion"}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            {offer ? "Modify the details of your existing offer." : "Create a new percentage-based discount."}
+                        </Typography>
+                    </Box>
+                </Box>
+                <IconButton onClick={handleClose} size="small" sx={{ bgcolor: 'grey.100' }}>
+                    <CloseIcon fontSize="small" />
+                </IconButton>
             </DialogTitle>
             <Divider />
             <form onSubmit={handleSubmit}>
@@ -175,95 +181,86 @@ export default function OfferModal({ open, handleClose, offer = null }) {
                     <Grid container spacing={4}>
                         {/* Section 1: Basic Info */}
                         <Grid item xs={12} md={6}>
-                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary">
-                                GENERAL INFORMATION
-                            </Typography>
-                            <Stack spacing={2.5}>
-                                <TextField
-                                    fullWidth
-                                    label="Promotion Title"
-                                    name="title"
-                                    placeholder="e.g. Festival Special Discount"
-                                    value={formData.title}
-                                    onChange={handleChange}
-                                    required
-                                    size="small"
-                                />
-                                <TextField
-                                    fullWidth
-                                    label="Short Description"
-                                    name="description"
-                                    placeholder="Briefly explain the offer..."
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    multiline
-                                    rows={3}
-                                    size="small"
-                                />
-                            </Stack>
+                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%', borderColor: 'grey.200' }}>
+                                <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary" sx={{ mb: 2 }}>
+                                    GENERAL INFORMATION
+                                </Typography>
+                                <Stack spacing={2.5}>
+                                    <TextField
+                                        fullWidth
+                                        label="Promotion Title"
+                                        name="title"
+                                        placeholder="e.g. Festival Special Discount"
+                                        value={formData.title}
+                                        onChange={handleChange}
+                                        required
+                                        size="small"
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        label="Short Description"
+                                        name="description"
+                                        placeholder="Briefly explain the offer..."
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        multiline
+                                        rows={3}
+                                        size="small"
+                                    />
+                                </Stack>
+                            </Paper>
                         </Grid>
 
                         {/* Section 2: Discount Profile */}
                         <Grid item xs={12} md={6}>
-                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary">
-                                DISCOUNT PROFILE
-                            </Typography>
-                            <Grid container spacing={2}>
-                                <Grid item xs={6}>
-                                    <TextField
-                                        fullWidth
-                                        select
-                                        label="Type"
-                                        name="discount_type"
-                                        value={formData.discount_type}
-                                        onChange={handleChange}
-                                        size="small"
-                                    >
-                                        <MenuItem value="percentage">Percentage (%)</MenuItem>
-                                        <MenuItem value="fixed">Fixed Amount (₹)</MenuItem>
-                                    </TextField>
+                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%', borderColor: 'grey.200' }}>
+                                <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary" sx={{ mb: 2 }}>
+                                    DISCOUNT PROFILE
+                                </Typography>
+                                <Grid container spacing={2.5}>
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            fullWidth
+                                            label="Percentage Value (%)"
+                                            name="discount_value"
+                                            type="number"
+                                            value={formData.discount_value}
+                                            onChange={handleChange}
+                                            required
+                                            size="small"
+                                            helperText="Discount percentage (1 - 100)"
+                                            InputProps={{
+                                                inputProps: { min: 1, max: 100 },
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <PercentIcon fontSize="small" />
+                                                    </InputAdornment>
+                                                ),
+                                            }}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            fullWidth
+                                            label="Maximum Discount Cap (₹)"
+                                            name="max_discount"
+                                            type="number"
+                                            placeholder="e.g. 200"
+                                            value={formData.max_discount}
+                                            onChange={handleChange}
+                                            size="small"
+                                            helperText="Maximum amount to deduct. Leave empty for unlimited."
+                                            InputProps={{
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <RupeeIcon fontSize="small" />
+                                                    </InputAdornment>
+                                                ),
+                                            }}
+                                        />
+                                    </Grid>
                                 </Grid>
-                                <Grid item xs={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Value"
-                                        name="discount_value"
-                                        type="number"
-                                        value={formData.discount_value}
-                                        onChange={handleChange}
-                                        required
-                                        size="small"
-                                        InputProps={{
-                                            inputProps: { min: 1, ...(formData.discount_type === 'percentage' && { max: 100 }) },
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    {formData.discount_type === 'percentage' ? <PercentIcon fontSize="small" /> : <RupeeIcon fontSize="small" />}
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                    />
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField
-                                        fullWidth
-                                        label="Maximum Discount Cap"
-                                        name="max_discount"
-                                        type="number"
-                                        placeholder="Allow unlimited if empty"
-                                        value={formData.max_discount}
-                                        onChange={handleChange}
-                                        size="small"
-                                        helperText="Sets a ceiling for percentage-based discounts."
-                                        InputProps={{
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <RupeeIcon fontSize="small" />
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                    />
-                                </Grid>
-                            </Grid>
+                            </Paper>
                         </Grid>
 
                         <Grid item xs={12}>
@@ -272,71 +269,70 @@ export default function OfferModal({ open, handleClose, offer = null }) {
 
                         {/* Section 3: Targeting */}
                         <Grid item xs={12} md={6}>
-                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary">
-                                TARGET AUDIENCE
-                            </Typography>
-                            <Stack spacing={2}>
-                                <TextField
-                                    fullWidth
-                                    select
-                                    label="Target Specific Service"
-                                    name="service"
-                                    value={formData.service}
-                                    onChange={handleChange}
-                                    size="small"
-                                    InputProps={{
-                                        startAdornment: <InputAdornment position="start"><ServiceIcon fontSize="small" /></InputAdornment>
-                                    }}
-                                >
-                                    <MenuItem value=""><em>Global Offer (All Services)</em></MenuItem>
-                                    {services.map((ser) => (
-                                        <MenuItem key={ser.id} value={ser.id}>{ser.name}</MenuItem>
-                                    ))}
-                                </TextField>
-                            </Stack>
+                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%', borderColor: 'grey.200' }}>
+                                <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary" sx={{ mb: 2 }}>
+                                    TARGET AUDIENCE
+                                </Typography>
+                                <Stack spacing={2}>
+                                    <TextField
+                                        fullWidth
+                                        select
+                                        label="Target Specific Service"
+                                        name="service"
+                                        value={formData.service}
+                                        onChange={handleChange}
+                                        size="small"
+                                        helperText="Select a service or apply globally to all services."
+                                        InputProps={{
+                                            startAdornment: <InputAdornment position="start"><ServiceIcon fontSize="small" /></InputAdornment>
+                                        }}
+                                    >
+                                        <MenuItem value=""><em>Global Offer (All Services)</em></MenuItem>
+                                        {services.map((ser) => (
+                                            <MenuItem key={ser.id} value={ser.id}>{ser.name}</MenuItem>
+                                        ))}
+                                    </TextField>
+                                </Stack>
+                            </Paper>
                         </Grid>
 
                         {/* Section 4: Period */}
                         <Grid item xs={12} md={6}>
-                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary">
-                                VALIDITY PERIOD
-                            </Typography>
-                            <Grid container spacing={2}>
-                                <Grid item xs={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Starts From"
-                                        name="start_date"
-                                        type="date"
-                                        InputLabelProps={{ shrink: true }}
-                                        value={formData.start_date}
-                                        onChange={handleChange}
-                                        required
-                                        size="small"
-                                        InputProps={{
-                                            inputProps: { min: minDate },
-                                            startAdornment: <InputAdornment position="start"><DateIcon fontSize="small" /></InputAdornment>
-                                        }}
-                                    />
+                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%', borderColor: 'grey.200' }}>
+                                <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary" sx={{ mb: 2 }}>
+                                    VALIDITY PERIOD
+                                </Typography>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Starts From"
+                                            name="start_date"
+                                            type="date"
+                                            InputLabelProps={{ shrink: true }}
+                                            value={formData.start_date}
+                                            onChange={handleChange}
+                                            required
+                                            size="small"
+                                            inputProps={{ min: minDate }}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Ends At"
+                                            name="end_date"
+                                            type="date"
+                                            InputLabelProps={{ shrink: true }}
+                                            value={formData.end_date}
+                                            onChange={handleChange}
+                                            required
+                                            size="small"
+                                            inputProps={{ min: minEndDate }}
+                                        />
+                                    </Grid>
                                 </Grid>
-                                <Grid item xs={6}>
-                                    <TextField
-                                        fullWidth
-                                        label="Ends At"
-                                        name="end_date"
-                                        type="date"
-                                        InputLabelProps={{ shrink: true }}
-                                        value={formData.end_date}
-                                        onChange={handleChange}
-                                        required
-                                        size="small"
-                                        InputProps={{
-                                            inputProps: { min: minEndDate },
-                                            startAdornment: <InputAdornment position="start"><DateIcon fontSize="small" /></InputAdornment>
-                                        }}
-                                    />
-                                </Grid>
-                            </Grid>
+                            </Paper>
                         </Grid>
                     </Grid>
                 </DialogContent>

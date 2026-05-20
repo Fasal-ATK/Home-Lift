@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchCategories,
@@ -9,13 +9,13 @@ import {
 } from "../../../redux/slices/categorySlice";
 
 import {
-  Typography,
-  Box,
-  IconButton,
-  Tooltip,
-  Button, Chip,
+  Typography, Box, IconButton, Tooltip, Button, Chip, Stack, Paper,
+  Dialog, DialogTitle, DialogContent, DialogActions, Divider,
 } from "@mui/material";
-import { Edit, Delete, Add } from "@mui/icons-material";
+import {
+  Edit, Delete, Add, Category as CategoryIcon,
+  InfoOutlined as InfoIcon,
+} from "@mui/icons-material";
 
 import DataTable from "../DataTable";
 import SearchBarWithFilter from "../SearchBar";
@@ -23,35 +23,118 @@ import CreationForm from "../modal/CreationForm";
 import EditForm from "../modal/EditForm";
 import ConfirmModal from "../../common/Confirm";
 
+// ── Constants ──────────────────────────────────────────────────────────────
+const CAT_FILTER_OPTIONS = [
+  { value: "all",      label: "All Categories" },
+  { value: "active",   label: "Active"         },
+  { value: "inactive", label: "Inactive"        },
+];
+
+const SAFE_COLORS = {
+  success: { border: "#c8e6c9", bg: "#f1f8e9", text: "success.main" },
+  warning: { border: "#ffe0b2", bg: "#fff8e1", text: "warning.main" },
+  error:   { border: "#ffcdd2", bg: "#fff5f5", text: "error.main"   },
+  grey:    { border: "#e0e0e0", bg: "#fafafa", text: "text.primary"  },
+};
+
+function StatCard({ label, value, color = "grey" }) {
+  const c = SAFE_COLORS[color] || SAFE_COLORS.grey;
+  return (
+    <Paper elevation={0} sx={{
+      p: 2, flex: 1, borderRadius: 3, textAlign: "center",
+      border: `1.5px solid ${c.border}`, bgcolor: c.bg, minWidth: 120,
+    }}>
+      <Typography variant="h5" fontWeight="bold" color={c.text}>{value ?? "—"}</Typography>
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+    </Paper>
+  );
+}
+
+// ── Category Detail Modal ──────────────────────────────────────────────────
+function CategoryDetailModal({ open, onClose, category }) {
+  if (!category) return null;
+  const rows = [
+    ["Category ID",  category.id],
+    ["Name",         category.name],
+    ["Description",  category.description || "—"],
+    ["Status",       category.is_active ? "Active" : "Inactive"],
+  ];
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs"
+      PaperProps={{ sx: { borderRadius: 3 } }}>
+      <DialogTitle sx={{ pb: 0 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          {category.icon
+            ? <Box component="img" src={category.icon} alt={category.name}
+                sx={{ width: 40, height: 40, borderRadius: 1.5, objectFit: "cover",
+                  border: "1px solid", borderColor: "divider" }} />
+            : <CategoryIcon color="primary" sx={{ fontSize: 36 }} />}
+          <Box>
+            <Typography fontWeight="bold">{category.name}</Typography>
+            <Typography variant="caption" color="text.secondary">Category Details</Typography>
+          </Box>
+        </Stack>
+      </DialogTitle>
+      <Divider sx={{ mt: 1.5 }} />
+      <DialogContent>
+        <Stack spacing={1} mt={1}>
+          {rows.map(([label, val]) => (
+            <Box key={label} display="flex" justifyContent="space-between" py={0.5}
+              sx={{ borderBottom: "1px solid #f0f0f0" }}>
+              <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                {label}
+              </Typography>
+              <Typography variant="body2" fontWeight="medium" textAlign="right">
+                {label === "Status"
+                  ? <Chip size="small" label={val} color={val === "Active" ? "success" : "default"} variant="outlined" />
+                  : val}
+              </Typography>
+            </Box>
+          ))}
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose} variant="outlined" sx={{ textTransform: "none", borderRadius: 2 }}>
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 function CategoryTable() {
   const dispatch = useDispatch();
 
-  // ✅ Use Redux state
-  const { list: rows, loading } = useSelector((state) => state.categories);
+  const { list: rows, loading } = useSelector((s) => s.categories);
   const totalCount = useSelector(selectTotalCategoriesCount);
 
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
-  const [openModal, setOpenModal] = useState(false);
-  const [isEditOpen, setEditOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [openModal, setOpenModal]                 = useState(false);
+  const [isEditOpen, setEditOpen]                 = useState(false);
+  const [confirmOpen, setConfirmOpen]             = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [selectedRow, setSelectedRow] = useState(null);
+  const [selectedRow, setSelectedRow]             = useState(null);
 
-  // ---------------- Redux Fetch ----------------
+  // Detail modal
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailRow, setDetailRow]   = useState(null);
+
   useEffect(() => {
-    const params = {
+    dispatch(fetchCategories({
       page,
-      search: searchQuery,
-      status: statusFilter === 'all' ? undefined : statusFilter
-    };
-    dispatch(fetchCategories(params));
+      search: searchQuery || undefined,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+    }));
   }, [dispatch, searchQuery, statusFilter, page]);
+
+  // ── Derived Stats ────────────────────────────────────────────────────────
+  const activeCount   = useMemo(() => (rows || []).filter((r) =>  r.is_active).length, [rows]);
+  const inactiveCount = useMemo(() => (rows || []).filter((r) => !r.is_active).length, [rows]);
 
   const handleCreateCategory = async (values) => {
     const formData = new FormData();
@@ -146,17 +229,10 @@ function CategoryTable() {
       render: (row) => (
         <Chip
           label={row.is_active ? "Active" : "Inactive"}
-          onClick={() => {
-            setSelectedRow(row);
-            setConfirmOpen(true);
-          }}
-          sx={{
-            cursor: "pointer",
-            backgroundColor: row.is_active ? "green" : "red",
-            color: "white",
-            fontWeight: "bold",
-            "&:hover": { opacity: 0.8 },
-          }}
+          color={row.is_active ? "success" : "default"}
+          variant="outlined"
+          onClick={() => { setSelectedRow(row); setConfirmOpen(true); }}
+          sx={{ cursor: "pointer", fontWeight: "bold" }}
           size="small"
         />
       ),
@@ -165,27 +241,24 @@ function CategoryTable() {
       key: "actions",
       label: "Actions",
       render: (row) => (
-        <Box sx={{ display: "flex", gap: 1 }}>
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="View Details">
+            <IconButton size="small" color="info"
+              onClick={() => { setDetailRow(row); setDetailOpen(true); }}>
+              <InfoIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Edit">
-            <IconButton
-              color="primary"
-              size="small"
-              onClick={() => handleEdit(row)}
-            >
-              <Edit fontSize="medium" />
+            <IconButton size="small" color="primary" onClick={() => handleEdit(row)}>
+              <Edit fontSize="small" />
             </IconButton>
           </Tooltip>
-
           <Tooltip title="Delete">
-            <IconButton
-              color="error"
-              size="small"
-              onClick={() => handleDelete(row)}
-            >
-              <Delete fontSize="medium" />
+            <IconButton size="small" color="error" onClick={() => handleDelete(row)}>
+              <Delete fontSize="small" />
             </IconButton>
           </Tooltip>
-        </Box>
+        </Stack>
       ),
     },
   ];
@@ -201,31 +274,41 @@ function CategoryTable() {
 
   return (
     <Box>
-      <Box
-        sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}
-      >
-        <Typography
-          variant="h4"
-          fontFamily="monospace"
-          fontWeight="bold"
-          color="black"
-        >
-          Category Management
-        </Typography>
-
+      {/* Header */}
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <CategoryIcon color="primary" sx={{ fontSize: 32 }} />
+          <Box>
+            <Typography variant="h4" fontFamily="monospace" fontWeight="bold">
+              Category Management
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Manage service categories — activate, edit, or remove
+            </Typography>
+          </Box>
+        </Stack>
         <Button
           variant="contained"
           startIcon={<Add />}
           onClick={() => setOpenModal(true)}
+          sx={{ textTransform: "none", fontWeight: "bold", borderRadius: 2 }}
         >
           Add Category
         </Button>
-      </Box>
+      </Stack>
+
+      {/* Stats */}
+      <Stack direction="row" spacing={2} mb={3}>
+        <StatCard label="Total (page)" value={rows?.length} color="grey"    />
+        <StatCard label="Active"       value={activeCount}  color="success" />
+        <StatCard label="Inactive"     value={inactiveCount} color="warning" />
+      </Stack>
 
       <SearchBarWithFilter
         placeholder="Search categories..."
         onSearch={(val) => { setSearchQuery(val); setPage(1); }}
         onFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
+        filterOptions={CAT_FILTER_OPTIONS}
       />
 
       <DataTable
@@ -272,28 +355,34 @@ function CategoryTable() {
         submitLabel="Update"
       />
 
-      {/* Confirm Toggle Status Modal */}
       <ConfirmModal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleToggleActive}
-        message={`Are you sure you want to ${selectedRow?.is_active ? "deactivate" : "activate"
-          } "${selectedRow?.name}"?`}
-        confirmLabel="Yes"
-        cancelLabel="No"
+        title={selectedRow?.is_active ? "Deactivate Category" : "Activate Category"}
+        message={`Are you sure you want to ${selectedRow?.is_active ? "deactivate" : "activate"} "${selectedRow?.name}"?`}
+        confirmLabel={selectedRow?.is_active ? "Deactivate" : "Activate"}
+        color={selectedRow?.is_active ? "warning" : "success"}
       />
 
-      {/* Confirm Delete Modal */}
       <ConfirmModal
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={confirmDelete}
-        message={`Are you sure you want to delete "${selectedRow?.name}"?`}
+        title="Delete Category"
+        message={`Are you sure you want to permanently delete "${selectedRow?.name}"?`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
-        color="danger"
+        color="error"
       />
-    </Box >
+
+      {/* Detail Modal */}
+      <CategoryDetailModal
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        category={detailRow}
+      />
+    </Box>
   );
 }
 

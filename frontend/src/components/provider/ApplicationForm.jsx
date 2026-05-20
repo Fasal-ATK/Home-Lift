@@ -147,7 +147,7 @@ const ServiceField = ({
           type="number"
           size="small"
           value={field.experience_years}
-          onChange={(e) => handleExperienceChange(index, e.target.value)}
+          onChange={(e) => handleExperienceChange(index, e.target.value.replace(/[^0-9]/g, ''))}
           sx={{ width: 140 }}
           InputProps={{ inputProps: { min: 0 } }}
         />
@@ -221,7 +221,7 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
         experience_years: s.experience_years || 0
       })),
     };
-    console.log('🚀 Submitting application with data:', applicationData);
+
 
     dispatch(applyProvider(applicationData))
       .unwrap()

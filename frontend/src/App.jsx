@@ -26,7 +26,6 @@ import ServiceCategroies from './pages/Admin/ServiceCategroies';
 import Reports from './pages/Admin/Reports';
 import OffersManager from './pages/Admin/OffersManager';
 import BookingMng from './pages/Admin/BookingMng';
-import AdminTickets from './pages/Admin/Tickets';
 import AdminWithdrawals from './pages/Admin/Withdrawals';
 import Support from './pages/User/Support';
 
@@ -147,7 +146,6 @@ function App() {
           <Route path='reports' element={<Reports />} />
           <Route path='offers' element={<OffersManager />} />
           <Route path='bookings' element={<BookingMng />} />
-          <Route path='tickets' element={<AdminTickets />} />
           <Route path='withdrawals' element={<AdminWithdrawals />} />
         </Route>
 

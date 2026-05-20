@@ -5,6 +5,7 @@ export const fetchOffers = createAsyncThunk(
     'offers/fetchOffers',
     async (params = {}, { rejectWithValue }) => {
         try {
+            // params can include: page, search, is_active ('true'|'false')
             return await offersService.getOffers(params);
         } catch (err) {
             return rejectWithValue(err.response?.data || 'Failed to fetch offers');

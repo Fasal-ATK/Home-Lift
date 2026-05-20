@@ -65,9 +65,20 @@ export default function ReusableFormModal({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let filteredValue = value;
+
+    // Aggressive filtering to instantly reject invalid characters like space or #
+    if (name === "username") {
+      filteredValue = value.replace(/[^A-Za-z0-9_]/g, '');
+    } else if (name === "phone") {
+      filteredValue = value.replace(/[^0-9+]/g, '');
+    } else if (name === "first_name" || name === "last_name") {
+      filteredValue = value.replace(/[^A-Za-z\s'-]/g, '');
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: filteredValue }));
     // Clear error on change
-    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, filteredValue) }));
   };
 
   const handleBlur = (e) => {

@@ -305,7 +305,18 @@ export default function ProviderJobDetail() {
                 <MonetizationOnIcon fontSize="small" />
                 <Typography variant="caption">Price</Typography>
               </Stack>
-              <Typography>₹{booking.price ?? "—"}</Typography>
+              {parseFloat(booking.discount_amount || 0) > 0 ? (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
+                    ₹{booking.original_price}
+                  </Typography>
+                  <Typography variant="body1" fontWeight="bold" color="success.main">
+                    ₹{booking.price}
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography>₹{booking.price ?? "—"}</Typography>
+              )}
             </Stack>
           </Stack>
 

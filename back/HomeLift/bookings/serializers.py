@@ -45,7 +45,7 @@ class BookingSerializer(serializers.ModelSerializer):
             'full_name', 'phone',
             'address', 'address_details',
             'notes', 'booking_date', 'booking_time',
-            'status', 'price', 'advance', 'remaining_payment',
+            'status', 'original_price', 'discount_amount', 'price', 'advance', 'remaining_payment',
             'is_advance_paid', 'is_fully_paid', 'is_refunded',
             'created_at', 'updated_at',
             # UI helpers
@@ -172,18 +172,27 @@ class BookingSerializer(serializers.ModelSerializer):
         ).order_by('-discount_value').first()
         
         final_price = base_price
+        discount = Decimal('0.00')
+
         if offer:
             if offer.discount_type == 'percentage':
                 discount = (base_price * Decimal(str(offer.discount_value))) / Decimal('100')
                 if offer.max_discount:
                     discount = min(discount, offer.max_discount)
-                final_price = base_price - discount
             else:  # fixed amount
-                final_price = base_price - Decimal(str(offer.discount_value))
+                discount = Decimal(str(offer.discount_value))
             
-            final_price = max(final_price, Decimal('0'))
+            final_price = base_price - discount
             
+        # Ensure minimum total price of ₹50 for Stripe payments and logic consistency
+        final_price = max(final_price, Decimal('50.00'))
+        
+        # If forcing the price to 50 reduced our discount, recalculate actual discount applied
+        discount = base_price - final_price
+        
         validated_data['user'] = user
+        validated_data['original_price'] = base_price
+        validated_data['discount_amount'] = discount
         validated_data['price'] = final_price
         # Advance is automatically calculated in Booking.save()
         

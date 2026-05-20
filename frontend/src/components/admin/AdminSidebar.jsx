@@ -12,17 +12,16 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
     { text: 'Service & Categories', icon: <Category />, path: '/admin/services' },
     { text: 'Employees', icon: <PeopleAltOutlined />, path: '/admin/employees' },
     { text: 'Users', icon: <Group />, path: '/admin/users' },
-    // { text: 'Report', icon: <Report />, path: '/admin/reports' },
     { text: 'Offers', icon: <LocalOffer />, path: '/admin/offers' },
     { text: 'Bookings', icon: <BookOnline />, path: '/admin/bookings' },
     { text: 'Withdrawals', icon: <AccountBalanceWallet />, path: '/admin/withdrawals' },
-    { text: 'Tickets', icon: <SupportAgent />, path: '/admin/tickets' },
+    { text: 'Reports', icon: <Report />, path: '/admin/reports' },
   ];
 
   return (
     <Box
       sx={{
-        width: collapsed ? '80px' : '230px',
+        width: collapsed ? '85px' : '230px',
         position: "fixed",
         top: 0,
         left: 0,
@@ -32,13 +31,12 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
         p: 2,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
         transition: 'width 0.3s ease-in-out',
         zIndex: 1200,
       }}
     >
-      <Box>
-        {/* Brand */}
+      {/* Brand */}
         <Box
           sx={{
             textAlign: 'center',
@@ -52,20 +50,30 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
             variant="h6"
             sx={{
               fontWeight: 'bold',
-              fontSize: collapsed ? '0' : '24px',
+              fontSize: collapsed ? '28px' : '24px',
               color: 'orange',
               transition: '0.3s',
               whiteSpace: 'nowrap',
             }}
           >
-            Home<span style={{ color: 'black' }}>Lift</span>
+            {collapsed ? (
+              <>H<span style={{ color: 'black' }}>L</span></>
+            ) : (
+              <>Home<span style={{ color: 'black' }}>Lift</span></>
+            )}
           </Typography>
         </Box>
 
         <Divider />
 
         {/* Navigation Items */}
-        <List>
+        <List sx={{ 
+          flexGrow: 1, 
+          overflowY: 'auto', 
+          overflowX: 'hidden',
+          "&::-webkit-scrollbar": { width: "4px" },
+          "&::-webkit-scrollbar-thumb": { backgroundColor: "#ccc", borderRadius: "4px" }
+        }}>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -76,14 +84,20 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
                   sx={{
                     backgroundColor: isActive ? '#FFC107' : 'transparent',
                     borderRadius: '8px',
-                    mb: 1,
+                    mb: 2,
                     justifyContent: collapsed ? 'center' : 'flex-start',
                     '&:hover': { backgroundColor: '#ffe082' },
                     transition: 'all 0.3s',
                   }}
                 >
                   <ListItemIcon
-                    sx={{ color: isActive ? 'black' : '#333', minWidth: 'unset', mr: collapsed ? 0 : 2 }}
+                    sx={{ 
+                      color: isActive ? 'black' : '#333', 
+                      minWidth: 'unset', 
+                      mr: collapsed ? 0 : 2,
+                      transform: collapsed ? 'scale(1.3)' : 'scale(1.1)',
+                      transition: 'transform 0.3s ease-in-out'
+                    }}
                   >
                     {item.icon}
                   </ListItemIcon>
@@ -100,33 +114,34 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
         </List>
 
         {/* Logout Button */}
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 2, mb: 1 }}>
           <LogoutButton collapsed={collapsed} />
         </Box>
-      </Box>
 
       {/* Collapse Toggle Button */}
-      <Paper
-        elevation={4}
-        sx={{
-          position: 'absolute',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          right: -16,
-          zIndex: 10,
-          width: '32px',
-          height: '48px',
-          borderRadius: '0 8px 8px 0',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#fff',
-          cursor: 'pointer',
-        }}
-        onClick={() => setCollapsed((prev) => !prev)}
-      >
-        {collapsed ? <ChevronRight /> : <ChevronLeft />}
-      </Paper>
+      <Tooltip title={collapsed ? "Expand" : "Collapse"} placement="right">
+        <Paper
+          elevation={4}
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            right: -16,
+            zIndex: 10,
+            width: '32px',
+            height: '48px',
+            borderRadius: '0 8px 8px 0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#fff',
+            cursor: 'pointer',
+          }}
+          onClick={() => setCollapsed((prev) => !prev)}
+        >
+          {collapsed ? <ChevronRight /> : <ChevronLeft />}
+        </Paper>
+      </Tooltip>
     </Box>
   );
 };
