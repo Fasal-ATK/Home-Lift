@@ -1,13 +1,16 @@
 // src/components/provider/ApplicationForm.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  Modal, Box, Typography, Button, IconButton, MenuItem, FormControl, Select, Paper, InputLabel, TextField
+  Modal, Box, Typography, Button, IconButton, MenuItem, FormControl, Select, Paper, InputLabel, TextField, FormHelperText
 } from '@mui/material';
 import { Add, Remove, UploadFile, Close } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useDispatch, useSelector } from 'react-redux';
 import { applyProvider } from '../../redux/slices/user/userSlice';
 import { ShowToast } from '../../components/common/Toast';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 const StyledBox = styled(Paper)(({ theme }) => ({
   position: 'absolute',
@@ -36,8 +39,8 @@ const FileButton = styled(Button)(({ theme }) => ({
 }));
 
 // ================= FileUpload Component =================
-const FileUpload = ({ file, onChange, label, uniqueId, maxSizeMB = 10 }) => {
-  const [error, setError] = React.useState(null);
+const FileUpload = ({ value, onChange, label, uniqueId, maxSizeMB = 10, error }) => {
+  const [localError, setLocalError] = React.useState(null);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -50,18 +53,16 @@ const FileUpload = ({ file, onChange, label, uniqueId, maxSizeMB = 10 }) => {
   const handleFileChange = (selectedFile) => {
     if (!selectedFile) {
       onChange(null);
-      setError(null);
+      setLocalError(null);
       return;
     }
-
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     if (selectedFile.size > maxSizeBytes) {
-      setError(`File size exceeds ${maxSizeMB} MB limit. Your file is ${formatFileSize(selectedFile.size)}.`);
+      setLocalError(`File size exceeds ${maxSizeMB} MB limit.`);
       onChange(null);
       return;
     }
-
-    setError(null);
+    setLocalError(null);
     onChange(selectedFile);
   };
 
@@ -76,152 +77,82 @@ const FileUpload = ({ file, onChange, label, uniqueId, maxSizeMB = 10 }) => {
           onChange={(e) => handleFileChange(e.target.files[0])}
         />
         <label htmlFor={uniqueId}>
-          <FileButton variant="outlined" component="span" startIcon={<UploadFile />}>
-            {file ? file.name : label}
+          <FileButton variant="outlined" component="span" startIcon={<UploadFile />} color={error || localError ? "error" : "primary"}>
+            {value ? value.name : label}
           </FileButton>
         </label>
-        {file && (
+        {value && (
           <IconButton size="small" color="error" onClick={() => handleFileChange(null)}>
             <Remove />
           </IconButton>
         )}
       </Box>
-      {file && !error && (
+      {value && !localError && !error && (
         <Typography variant="caption" color="text.secondary">
-          Size: {formatFileSize(file.size)} (Max: {maxSizeMB} MB)
+          Size: {formatFileSize(value.size)} (Max: {maxSizeMB} MB)
         </Typography>
       )}
-      {error && (
+      {(error || localError) && (
         <Typography variant="caption" color="error">
-          {error}
+          {error?.message || localError}
         </Typography>
       )}
     </Box>
   );
 };
 
-// ================= ServiceField Component =================
-const ServiceField = ({
-  index, field, categories, services,
-  handleCategoryChange, handleServiceChange,
-  handleServiceDocChange, handleExperienceChange,
-  removeField, canRemove,
-  selectedServiceIds
-}) => {
-  const serviceOptions = field.category
-    ? services.filter((s) => {
-      const isInCategory = s.category === parseInt(field.category);
-      const isNotSelectedElsewhere = !selectedServiceIds.includes(s.id) || s.id === field.service;
-      return isInCategory && isNotSelectedElsewhere;
+// Validation Schema
+const schema = yup.object().shape({
+  personalDoc: yup.mixed().required('Personal Verification Document is required'),
+  services: yup.array().of(
+    yup.object().shape({
+      category: yup.string().required('Category is required'),
+      service: yup.string().required('Service is required'),
+      experience_years: yup.number()
+        .typeError('Must be a number')
+        .min(0, 'Experience cannot be negative')
+        .max(50, 'Max 50 years')
+        .required('Experience is required'),
+      doc: yup.mixed().nullable()
     })
-    : [];
-
-  return (
-    <Box mb={3} p={2} border="1px solid #e0e0e0" borderRadius={2} boxShadow={1}>
-      <Box display="flex" alignItems="flex-start" gap={1} mb={1}>
-        <FormControl fullWidth size="small">
-          <Select
-            value={field.category}
-            onChange={(e) => handleCategoryChange(index, e.target.value)}
-            displayEmpty
-          >
-            <MenuItem value="" disabled>Select Category</MenuItem>
-            {categories.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth size="small">
-          <Select
-            value={field.service}
-            onChange={(e) => handleServiceChange(index, e.target.value)}
-            displayEmpty
-            disabled={!field.category}
-          >
-            <MenuItem value="" disabled>Select Service</MenuItem>
-            {serviceOptions.map((s) => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
-          </Select>
-        </FormControl>
-
-        <TextField
-          label="Exp (Years)"
-          type="number"
-          size="small"
-          value={field.experience_years}
-          onChange={(e) => handleExperienceChange(index, e.target.value.replace(/[^0-9]/g, ''))}
-          sx={{ width: 140 }}
-          InputProps={{ inputProps: { min: 0 } }}
-        />
-
-        {canRemove && (
-          <IconButton size="small" color="error" onClick={() => removeField(index)}>
-            <Remove />
-          </IconButton>
-        )}
-      </Box>
-
-      {field.service && (
-        <Box display="flex" alignItems="center" gap={1} mt={1}>
-          <FileUpload
-            file={field.doc}
-            onChange={(file) => handleServiceDocChange(index, file)}
-            label="Upload Optional Document"
-            uniqueId={`service-doc-${index}`}
-          />
-        </Box>
-      )}
-    </Box>
-  );
-};
+  ).min(1, 'Add at least one service')
+   .max(4, 'Maximum 4 services allowed')
+   .test('unique-services', 'Each service can only be selected once', function (value) {
+      if (!value) return true;
+      const serviceIds = value.map(item => item.service).filter(Boolean);
+      return new Set(serviceIds).size === serviceIds.length;
+   })
+});
 
 // ================= ProviderApplicationModal =================
 const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
   const dispatch = useDispatch();
-  const { loading, error, providerApplicationStatus } = useSelector((state) => state.user);
+  const { loading, error: reduxError, providerApplicationStatus } = useSelector((state) => state.user);
 
-  const [personalDoc, setPersonalDoc] = useState(null);
-  const [serviceFields, setServiceFields] = useState([{ category: '', service: '', doc: null, experience_years: 0 }]);
+  const { control, handleSubmit, reset, watch, formState: { errors } } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      personalDoc: null,
+      services: [{ category: '', service: '', experience_years: 0, doc: null }]
+    }
+  });
 
-  const addField = () => serviceFields.length < 4 && setServiceFields([...serviceFields, { category: '', service: '', doc: null, experience_years: 0 }]);
-  const removeField = (i) => setServiceFields(serviceFields.filter((_, idx) => idx !== i));
-  const handleCategoryChange = (i, value) => {
-    const updated = [...serviceFields];
-    updated[i] = { category: value, service: '', doc: null, experience_years: 0 };
-    setServiceFields(updated);
-  };
-  const handleServiceChange = (i, value) => {
-    const updated = [...serviceFields];
-    updated[i].service = value;
-    setServiceFields(updated);
-  };
-  const handleServiceDocChange = (i, file) => {
-    const updated = [...serviceFields];
-    updated[i].doc = file;
-    setServiceFields(updated);
-  };
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'services'
+  });
 
-  const handleExperienceChange = (i, value) => {
-    const updated = [...serviceFields];
-    updated[i].experience_years = value;
-    setServiceFields(updated);
-  };
+  const watchServices = watch('services');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!personalDoc) return ShowToast('Please upload your personal verification document.', 'error');
-    for (let s of serviceFields) if (!s.category || !s.service) return ShowToast('Please select category and service for all fields.', 'error');
-
-    const selectedServices = serviceFields.map((s) => s.service);
-    if (new Set(selectedServices).size !== selectedServices.length) return ShowToast('Each service can only be selected once.', 'error');
-
+  const onSubmit = (data) => {
     const applicationData = {
-      id_doc: personalDoc,
-      services: serviceFields.map((s) => ({
+      id_doc: data.personalDoc,
+      services: data.services.map((s) => ({
         service_id: s.service,
         doc: s.doc,
-        experience_years: s.experience_years || 0
+        experience_years: s.experience_years
       })),
     };
-
 
     dispatch(applyProvider(applicationData))
       .unwrap()
@@ -231,17 +162,12 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
       })
       .catch((err) => {
         console.error('❌ Application submission error:', err);
-        if (typeof err === 'object') {
-          ShowToast('Failed to submit application:\n' + JSON.stringify(err, null, 2), 'error');
-        } else {
-          ShowToast('Failed to submit application: ' + err, 'error');
-        }
+        ShowToast(typeof err === 'object' ? 'Failed to submit application:\n' + JSON.stringify(err, null, 2) : 'Failed to submit application: ' + err, 'error');
       });
   };
 
   const handleClose = () => {
-    setPersonalDoc(null);
-    setServiceFields([{ category: '', service: '', doc: null, experience_years: 0 }]);
+    reset();
     onClose?.();
   };
 
@@ -254,64 +180,137 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
 
         <SectionTitle variant="h6">Apply to Become a Provider</SectionTitle>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
           {/* Personal Identity Verification */}
           <Box display="flex" alignItems="center" mb={3} gap={2}>
-            <InputLabel sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>Upload your Personal Identity Verification document/image</InputLabel>
-            <FileUpload
-              file={personalDoc}
-              onChange={setPersonalDoc}
-              label="Upload File"
-              uniqueId="personal-doc"
+            <InputLabel sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>Upload your Personal Identity Verification</InputLabel>
+            <Controller
+              name="personalDoc"
+              control={control}
+              render={({ field, fieldState }) => (
+                <FileUpload
+                  value={field.value}
+                  onChange={field.onChange}
+                  label="Upload File"
+                  uniqueId="personal-doc"
+                  error={fieldState.error}
+                />
+              )}
             />
           </Box>
 
           {/* Services Section */}
           <SectionTitle variant="subtitle2">Select Services (up to 4) & Optional Documents</SectionTitle>
-          {serviceFields.map((f, i) => (
-            <ServiceField
-              key={i}
-              index={i}
-              field={f}
-              categories={categories}
-              services={services}
-              handleCategoryChange={handleCategoryChange}
-              handleServiceChange={handleServiceChange}
-              handleServiceDocChange={handleServiceDocChange}
-              handleExperienceChange={handleExperienceChange}
-              removeField={removeField}
-              canRemove={serviceFields.length > 1}
-              selectedServiceIds={serviceFields.map(s => s.service).filter(s => s !== '')}
-            />
-          ))}
+          {errors.services?.root && (
+             <Typography color="error" variant="caption" sx={{ display: 'block', mb: 2 }}>
+               {errors.services.root.message}
+             </Typography>
+          )}
 
-          {serviceFields.length < 4 && (
+          {fields.map((item, index) => {
+            const currentCat = watchServices[index]?.category;
+            const currentSvc = watchServices[index]?.service;
+            
+            const serviceOptions = currentCat
+              ? services.filter((s) => {
+                  const isInCategory = s.category === parseInt(currentCat) || s.category?.id === parseInt(currentCat);
+                  // Ensure uniqueness
+                  const selectedIds = watchServices.map(w => w.service).filter(Boolean);
+                  return isInCategory && (!selectedIds.includes(s.id) || s.id === currentSvc);
+                })
+              : [];
+
+            return (
+              <Box key={item.id} mb={3} p={2} border="1px solid" borderColor={errors.services?.[index] ? "error.main" : "#e0e0e0"} borderRadius={2} boxShadow={1}>
+                <Box display="flex" alignItems="flex-start" gap={1} mb={1}>
+                  <Controller
+                    name={`services.${index}.category`}
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <FormControl fullWidth size="small" error={!!fieldState.error}>
+                        <Select {...field} displayEmpty>
+                          <MenuItem value="" disabled>Select Category</MenuItem>
+                          {categories.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+                        </Select>
+                        {fieldState.error && <FormHelperText>{fieldState.error.message}</FormHelperText>}
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name={`services.${index}.service`}
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <FormControl fullWidth size="small" error={!!fieldState.error}>
+                        <Select {...field} displayEmpty disabled={!currentCat}>
+                          <MenuItem value="" disabled>Select Service</MenuItem>
+                          {serviceOptions.map((s) => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+                        </Select>
+                        {fieldState.error && <FormHelperText>{fieldState.error.message}</FormHelperText>}
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name={`services.${index}.experience_years`}
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <TextField
+                        {...field}
+                        label="Exp (Years)"
+                        type="number"
+                        size="small"
+                        sx={{ width: 140 }}
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                      />
+                    )}
+                  />
+
+                  {fields.length > 1 && (
+                    <IconButton size="small" color="error" onClick={() => remove(index)}>
+                      <Remove />
+                    </IconButton>
+                  )}
+                </Box>
+
+                {currentSvc && (
+                  <Box display="flex" alignItems="center" gap={1} mt={1}>
+                    <Controller
+                      name={`services.${index}.doc`}
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <FileUpload
+                          value={field.value}
+                          onChange={field.onChange}
+                          label="Upload Optional Document"
+                          uniqueId={`service-doc-${index}`}
+                          error={fieldState.error}
+                        />
+                      )}
+                    />
+                  </Box>
+                )}
+              </Box>
+            );
+          })}
+
+          {fields.length < 4 && (
             <Box mb={3}>
-              <Button variant="outlined" startIcon={<Add />} onClick={addField}>
+              <Button variant="outlined" startIcon={<Add />} onClick={() => append({ category: '', service: '', experience_years: 0, doc: null })}>
                 Add Another Service
               </Button>
             </Box>
           )}
 
           <Box mt={4} display="flex" justifyContent="flex-end">
-            <Button
-              variant="contained"
-              color="primary"
-              type="submit"
-              disabled={
-                !personalDoc ||
-                serviceFields.some((s) => !s.category || !s.service) ||
-                loading
-              }
-            >
+            <Button variant="contained" color="primary" type="submit" disabled={loading}>
               {loading ? 'Submitting...' : 'Submit Application'}
             </Button>
           </Box>
 
-          {error && <Typography color="error" mt={2}>{error}</Typography>}
-          {providerApplicationStatus === 'pending' && (
-            <Typography color="primary" mt={2}>Your application is under review.</Typography>
-          )}
+          {reduxError && <Typography color="error" mt={2}>{reduxError}</Typography>}
+          {providerApplicationStatus === 'pending' && <Typography color="primary" mt={2}>Your application is under review.</Typography>}
         </form>
       </StyledBox>
     </Modal>
