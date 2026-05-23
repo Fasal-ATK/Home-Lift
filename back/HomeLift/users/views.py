@@ -43,11 +43,13 @@ class GoogleLoginAPIView(APIView):
 
         try:
             # Verify token with Google
+            # clock_skew_in_seconds tolerates slight clock differences
+            # between this server and Google's servers
             idinfo = id_token.verify_oauth2_token(
                 id_token_from_client,
                 requests.Request(),
-                settings.GOOGLE_CLIENT_ID,
-                clock_skew_in_seconds=10  # Correct parameter name
+                audience=settings.GOOGLE_CLIENT_ID,
+                clock_skew_in_seconds=60
             )
 
             email = idinfo.get("email")
