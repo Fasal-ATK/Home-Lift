@@ -178,8 +178,8 @@ export default function OfferModal({ open, handleClose, offer = null }) {
             <Divider />
             <form onSubmit={handleSubmit}>
                 <DialogContent sx={{ py: 3 }}>
-                    <Grid container spacing={4}>
-                        {/* Section 1: Basic Info */}
+                    <Grid container spacing={3}>
+                        {/* Column 1: Basic Info & Targeting */}
                         <Grid item xs={12} md={6}>
                             <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%', borderColor: 'grey.200' }}>
                                 <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary" sx={{ mb: 2 }}>
@@ -196,84 +196,7 @@ export default function OfferModal({ open, handleClose, offer = null }) {
                                         required
                                         size="small"
                                     />
-                                    <TextField
-                                        fullWidth
-                                        label="Short Description"
-                                        name="description"
-                                        placeholder="Briefly explain the offer..."
-                                        value={formData.description}
-                                        onChange={handleChange}
-                                        multiline
-                                        rows={3}
-                                        size="small"
-                                    />
-                                </Stack>
-                            </Paper>
-                        </Grid>
-
-                        {/* Section 2: Discount Profile */}
-                        <Grid item xs={12} md={6}>
-                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%', borderColor: 'grey.200' }}>
-                                <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary" sx={{ mb: 2 }}>
-                                    DISCOUNT PROFILE
-                                </Typography>
-                                <Grid container spacing={2.5}>
-                                    <Grid item xs={12}>
-                                        <TextField
-                                            fullWidth
-                                            label="Percentage Value (%)"
-                                            name="discount_value"
-                                            type="number"
-                                            value={formData.discount_value}
-                                            onChange={handleChange}
-                                            required
-                                            size="small"
-                                            helperText="Discount percentage (1 - 100)"
-                                            InputProps={{
-                                                inputProps: { min: 1, max: 100 },
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <PercentIcon fontSize="small" />
-                                                    </InputAdornment>
-                                                ),
-                                            }}
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <TextField
-                                            fullWidth
-                                            label="Maximum Discount Cap (₹)"
-                                            name="max_discount"
-                                            type="number"
-                                            placeholder="e.g. 200"
-                                            value={formData.max_discount}
-                                            onChange={handleChange}
-                                            size="small"
-                                            helperText="Maximum amount to deduct. Leave empty for unlimited."
-                                            InputProps={{
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <RupeeIcon fontSize="small" />
-                                                    </InputAdornment>
-                                                ),
-                                            }}
-                                        />
-                                    </Grid>
-                                </Grid>
-                            </Paper>
-                        </Grid>
-
-                        <Grid item xs={12}>
-                            <Divider sx={{ my: 1 }} />
-                        </Grid>
-
-                        {/* Section 3: Targeting */}
-                        <Grid item xs={12} md={6}>
-                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%', borderColor: 'grey.200' }}>
-                                <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary" sx={{ mb: 2 }}>
-                                    TARGET AUDIENCE
-                                </Typography>
-                                <Stack spacing={2}>
+                                    
                                     <TextField
                                         fullWidth
                                         select
@@ -292,46 +215,111 @@ export default function OfferModal({ open, handleClose, offer = null }) {
                                             <MenuItem key={ser.id} value={ser.id}>{ser.name}</MenuItem>
                                         ))}
                                     </TextField>
+
+                                    <TextField
+                                        fullWidth
+                                        label="Short Description"
+                                        name="description"
+                                        placeholder="Briefly explain the offer..."
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        multiline
+                                        rows={2}
+                                        size="small"
+                                    />
                                 </Stack>
                             </Paper>
                         </Grid>
 
-                        {/* Section 4: Period */}
+                        {/* Column 2: Discount Profile & Period */}
                         <Grid item xs={12} md={6}>
-                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%', borderColor: 'grey.200' }}>
-                                <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary" sx={{ mb: 2 }}>
-                                    VALIDITY PERIOD
-                                </Typography>
-                                <Grid container spacing={2}>
-                                    <Grid item xs={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="Starts From"
-                                            name="start_date"
-                                            type="date"
-                                            InputLabelProps={{ shrink: true }}
-                                            value={formData.start_date}
-                                            onChange={handleChange}
-                                            required
-                                            size="small"
-                                            inputProps={{ min: minDate }}
-                                        />
+                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, height: '100%', borderColor: 'grey.200', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <Box>
+                                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary" sx={{ mb: 2 }}>
+                                        DISCOUNT PROFILE
+                                    </Typography>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                fullWidth
+                                                label="Percentage (%)"
+                                                name="discount_value"
+                                                type="number"
+                                                value={formData.discount_value}
+                                                onChange={handleChange}
+                                                required
+                                                size="small"
+                                                helperText="(1 - 100)"
+                                                InputProps={{
+                                                    inputProps: { min: 1, max: 100 },
+                                                    startAdornment: (
+                                                        <InputAdornment position="start">
+                                                            <PercentIcon fontSize="small" />
+                                                        </InputAdornment>
+                                                    ),
+                                                }}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                fullWidth
+                                                label="Max Cap (₹)"
+                                                name="max_discount"
+                                                type="number"
+                                                placeholder="e.g. 200"
+                                                value={formData.max_discount}
+                                                onChange={handleChange}
+                                                size="small"
+                                                helperText="Leave empty for unlimited."
+                                                InputProps={{
+                                                    startAdornment: (
+                                                        <InputAdornment position="start">
+                                                            <RupeeIcon fontSize="small" />
+                                                        </InputAdornment>
+                                                    ),
+                                                }}
+                                            />
+                                        </Grid>
                                     </Grid>
-                                    <Grid item xs={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="Ends At"
-                                            name="end_date"
-                                            type="date"
-                                            InputLabelProps={{ shrink: true }}
-                                            value={formData.end_date}
-                                            onChange={handleChange}
-                                            required
-                                            size="small"
-                                            inputProps={{ min: minEndDate }}
-                                        />
+                                </Box>
+
+                                <Divider />
+
+                                <Box>
+                                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary" sx={{ mb: 2 }}>
+                                        VALIDITY PERIOD
+                                    </Typography>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                fullWidth
+                                                label="Starts From"
+                                                name="start_date"
+                                                type="date"
+                                                InputLabelProps={{ shrink: true }}
+                                                value={formData.start_date}
+                                                onChange={handleChange}
+                                                required
+                                                size="small"
+                                                inputProps={{ min: minDate }}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                fullWidth
+                                                label="Ends At"
+                                                name="end_date"
+                                                type="date"
+                                                InputLabelProps={{ shrink: true }}
+                                                value={formData.end_date}
+                                                onChange={handleChange}
+                                                required
+                                                size="small"
+                                                inputProps={{ min: minEndDate }}
+                                            />
+                                        </Grid>
                                     </Grid>
-                                </Grid>
+                                </Box>
                             </Paper>
                         </Grid>
                     </Grid>
