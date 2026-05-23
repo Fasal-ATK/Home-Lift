@@ -41,19 +41,27 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import { motion } from "framer-motion";
 import api from "../../API/apiConfig";
 import apiEndpoints from "../../API/apiEndpoints";
 
 const COLORS = ["#1976d2", "#cddc39", "#ff9800", "#f44336", "#9c27b0"];
 
 const StatCard = ({ title, value, icon, color, subtitle, delay=0 }) => (
-  <Fade in={true} style={{ transitionDelay: `${delay}ms` }}>
+  <motion.div 
+    initial={{ opacity: 0, y: 20 }} 
+    animate={{ opacity: 1, y: 0 }} 
+    transition={{ delay: delay / 1000, duration: 0.5, type: 'spring' }}
+    whileHover={{ y: -6 }}
+    style={{ height: '100%' }}
+  >
     <Paper
       elevation={0}
       sx={{
         p: 3,
         borderRadius: 4,
-        background: `linear-gradient(135deg, #fff 0%, ${color}05 100%)`,
+        background: `linear-gradient(135deg, rgba(255,255,255,0.9) 0%, ${color}05 100%)`,
+        backdropFilter: "blur(10px)",
         border: "1px solid #eef2f6",
         height: "100%",
         position: 'relative',
@@ -61,7 +69,6 @@ const StatCard = ({ title, value, icon, color, subtitle, delay=0 }) => (
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         boxShadow: "0 2px 12px rgba(0,0,0,0.02)",
         "&:hover": { 
-          transform: "translateY(-6px)", 
           boxShadow: "0 12px 24px rgba(0,0,0,0.08)",
           "& .bg-icon": { 
             transform: "scale(1.2) rotate(-5deg)", 
@@ -117,7 +124,7 @@ const StatCard = ({ title, value, icon, color, subtitle, delay=0 }) => (
         </Avatar>
       </Stack>
     </Paper>
-  </Fade>
+  </motion.div>
 );
 
 const SectionHead = ({ title }) => (
@@ -250,7 +257,7 @@ export default function ProviderDashboard() {
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 13, fontWeight: 500 }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 13, fontWeight: 500 }} dx={-10} />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', padding: '12px 16px' }}
+                    contentStyle={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.3)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', padding: '12px 16px', backgroundColor: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(10px)' }}
                   />
                   <Area type="monotone" dataKey="revenue" stroke="#1976d2" strokeWidth={5} fillOpacity={1} fill="url(#colorRev)" />
                 </AreaChart>
@@ -270,7 +277,7 @@ export default function ProviderDashboard() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.3)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', padding: '12px 16px', backgroundColor: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(10px)' }} />
                   <Legend verticalAlign="bottom" height={40} wrapperStyle={{ paddingTop: '20px' }} />
                 </PieChart>
               </ResponsiveContainer>

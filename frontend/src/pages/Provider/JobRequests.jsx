@@ -24,6 +24,7 @@ import MapIcon from "@mui/icons-material/Map";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/common/Loader";
 import { useDispatch, useSelector } from "react-redux";
+import { motion } from "framer-motion";
 import {
   fetchProviderJobs,
 
@@ -148,11 +149,14 @@ export default function ProviderRequestsWithServices() {
         <Paper
           elevation={0}
           sx={{
-            width: { xs: "100%", md: 240 },
-            bgcolor: "#f5f5f5",
-            p: 1,
-            borderRadius: 2,
+            width: { xs: "100%", md: 260 },
+            bgcolor: "rgba(255, 255, 255, 0.7)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid #eef2f6",
+            p: 2,
+            borderRadius: 4,
             minHeight: 420,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.02)",
           }}
         >
           <List disablePadding>
@@ -168,13 +172,14 @@ export default function ProviderRequestsWithServices() {
                     setPage(1);
                   }}
                   sx={{
-                    mb: 1,
-                    borderRadius: 1,
-                    bgcolor: active ? "#e9f500" : "#fff",
+                    mb: 1.5,
+                    borderRadius: 3,
+                    bgcolor: active ? "#101828" : "transparent",
+                    color: active ? "#cddc39" : "text.primary",
                     px: 2,
-                    py: 1,
-                    boxShadow: active ? "0 0 0 2px rgba(230,245,0,0.12)" : "none",
-                    "&:hover": { bgcolor: active ? "#e9f500" : "#fafafa" },
+                    py: 1.5,
+                    transition: "all 0.2s",
+                    "&:hover": { bgcolor: active ? "#101828" : "rgba(0,0,0,0.04)" },
                   }}
                 >
                   <ListItemText
@@ -237,8 +242,8 @@ export default function ProviderRequestsWithServices() {
               }}
               InputProps={{
                 startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
+              <InputAdornment position="start">
+                    <SearchIcon fontSize="small" sx={{ color: '#101828' }}/>
                   </InputAdornment>
                 ),
                 endAdornment: search ? (
@@ -249,11 +254,16 @@ export default function ProviderRequestsWithServices() {
                   </InputAdornment>
                 ) : null,
               }}
-              sx={{ width: 360 }}
+              sx={{ 
+                width: { xs: '100%', sm: 360 }, 
+                bgcolor: '#fff', 
+                borderRadius: 3,
+                '& .MuiOutlinedInput-root': { borderRadius: 3 }
+              }}
             />
           </Stack>
 
-          <Paper sx={{ p: 2, minHeight: 420 }}>
+          <Paper elevation={0} sx={{ p: 3, minHeight: 420, bgcolor: "transparent" }}>
             {loading ? (
               <Loader message="Fetching available join requests..." sx={{ py: 6 }} />
             ) : paginated.length === 0 ? (
@@ -261,109 +271,146 @@ export default function ProviderRequestsWithServices() {
                 <Typography>No job requests found.</Typography>
               </Box>
             ) : (
-              <Stack spacing={2}>
-                {paginated.map((r) => (
-                  <Paper
+              <Stack spacing={3}>
+                {paginated.map((r, i) => (
+                  <motion.div
                     key={r.id}
-                    sx={{
-                      p: 2,
-                      bgcolor: "#fafafa",
-                      borderRadius: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                    elevation={0}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05, duration: 0.4 }}
                   >
-                    <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
-                      <Avatar sx={{ bgcolor: "primary.light", width: 48, height: 48 }}>
-                        {(r.customer_name || (r.user && r.user.username) || "U").charAt(0)}
-                      </Avatar>
+                    <Paper
+                      sx={{
+                        p: 3,
+                        bgcolor: "#ffffff",
+                        borderRadius: 4,
+                        display: "flex",
+                        flexDirection: { xs: 'column', md: 'row' },
+                        alignItems: { xs: 'flex-start', md: "center" },
+                        justifyContent: "space-between",
+                        border: "1px solid #eef2f6",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        gap: 2,
+                        "&:hover": {
+                          transform: "translateY(-4px)",
+                          boxShadow: "0 12px 24px rgba(0,0,0,0.08)",
+                          borderColor: "primary.light"
+                        }
+                      }}
+                      elevation={0}
+                    >
+                      <Stack direction="row" spacing={2.5} alignItems="flex-start" sx={{ flex: 1 }}>
+                        <Avatar sx={{ bgcolor: "#101828", color: "#cddc39", width: 56, height: 56, fontWeight: 800, fontSize: '1.2rem', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
+                          {(r.customer_name || (r.user && r.user.username) || "U").charAt(0).toUpperCase()}
+                        </Avatar>
 
-                      <Box>
-                        <Typography fontWeight={700}>
-                          {r.customer_name || (r.user && r.user.username)} —{" "}
-                          <Typography component="span" variant="body2" color="text.secondary">
-                            {r.service_name || r.service?.name}
-                          </Typography>
-                        </Typography>
-
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                          {(r.city || r.address?.city) || "—"} • {r.booking_date} {r.booking_time && `• ${r.booking_time}`} • ₹{r.price}
-                        </Typography>
-
-                        {(r.address || r.city) && (
-                          <Box sx={{ mt: 1 }}>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<MapIcon fontSize="small" />}
-                              sx={{ textTransform: "none", fontSize: "0.75rem", py: 0.25, px: 1, borderRadius: 5 }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const lat = r.address?.latitude;
-                                const lng = r.address?.longitude;
-                                const url =
-                                  lat && lng
-                                    ? `https://www.google.com/maps?q=${lat},${lng}`
-                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                                        r.address?.address_line 
-                                          ? `${r.address.address_line}, ${r.address.city}, ${r.address.state || ''} ${r.address.postal_code || ''}`
-                                          : (typeof r.address === 'string' ? r.address : r.city)
-                                      )}`;
-                                window.open(url, "_blank", "noopener,noreferrer");
-                              }}
-                            >
-                              {r.address?.latitude && r.address?.longitude ? "View on Map" : "Search on Map"}
-                            </Button>
-                          </Box>
-                        )}
-
-                        {r.notes && (
-                          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-                            Summary: {r.notes}
-                          </Typography>
-                        )}
-
-                        {checkOverlap(r) && (
-                          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 1, color: "error.main" }}>
-                            <WarningAmberIcon sx={{ fontSize: 16 }} />
-                            <Typography variant="caption" fontWeight={700}>
-                              Conflicts with your schedule
+                        <Box>
+                          <Typography variant="h6" fontWeight={800} sx={{ color: '#101828' }}>
+                            {r.customer_name || (r.user && r.user.username)}
+                            <Typography component="span" variant="body2" sx={{ ml: 1, px: 1.5, py: 0.5, bgcolor: 'primary.50', color: 'primary.700', borderRadius: 4, fontWeight: 700 }}>
+                              {r.service_name || r.service?.name}
                             </Typography>
-                          </Stack>
-                        )}
-                      </Box>
-                    </Stack>
+                          </Typography>
 
-                    <Stack direction="row" spacing={1} sx={{ ml: 2 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                               <MapIcon fontSize="small" sx={{ opacity: 0.7 }}/> {(r.city || r.address?.city) || "—"}
+                            </Box>
+                            • 
+                            <Box component="span" sx={{ fontWeight: 600, color: '#101828' }}>
+                               {r.booking_date} {r.booking_time && `at ${r.booking_time}`}
+                            </Box>
+                            • 
+                            <Box component="span" sx={{ fontWeight: 800, color: '#2e7d32' }}>
+                               ₹{r.price}
+                            </Box>
+                          </Typography>
+
+                          {(r.address || r.city) && (
+                            <Box sx={{ mt: 1.5 }}>
+                              <Button
+                                size="small"
+                                variant="text"
+                                startIcon={<MapIcon fontSize="small" />}
+                                sx={{ textTransform: "none", fontSize: "0.85rem", fontWeight: 700, p: 0, minWidth: 'auto', "&:hover": { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const lat = r.address?.latitude;
+                                  const lng = r.address?.longitude;
+                                  const url =
+                                    lat && lng
+                                      ? `https://www.google.com/maps?q=${lat},${lng}`
+                                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                          r.address?.address_line 
+                                            ? `${r.address.address_line}, ${r.address.city}, ${r.address.state || ''} ${r.address.postal_code || ''}`
+                                            : (typeof r.address === 'string' ? r.address : r.city)
+                                        )}`;
+                                  window.open(url, "_blank", "noopener,noreferrer");
+                                }}
+                              >
+                                {r.address?.latitude && r.address?.longitude ? "Open in Maps" : "Search in Maps"}
+                              </Button>
+                            </Box>
+                          )}
+
+                          {r.notes && (
+                            <Typography variant="body2" color="text.secondary" sx={{ display: "block", mt: 1, p: 1.5, bgcolor: '#f8fafc', borderRadius: 2, fontStyle: 'italic' }}>
+                              "{r.notes}"
+                            </Typography>
+                          )}
+
+                          {checkOverlap(r) && (
+                            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 1.5, color: "error.main", bgcolor: 'error.50', px: 1, py: 0.5, borderRadius: 2, display: 'inline-flex' }}>
+                              <WarningAmberIcon sx={{ fontSize: 18 }} />
+                              <Typography variant="caption" fontWeight={700}>
+                                Schedule Conflict Detected
+                              </Typography>
+                            </Stack>
+                          )}
+                        </Box>
+                      </Stack>
+
+                      <Stack direction="row" spacing={1.5} sx={{ mt: { xs: 2, md: 0 }, width: { xs: '100%', md: 'auto' } }}>
+                        <Button
+                          variant="outlined"
+                          size="medium"
+                          onClick={() => handleView(r)}
+                          sx={{
+                            flex: { xs: 1, md: 'none' },
+                            borderColor: "#101828",
+                            color: "#101828",
+                            textTransform: "none",
+                            fontWeight: 700,
+                            borderRadius: 3,
+                            "&:hover": { bgcolor: "#f8fafc", borderColor: "#101828" },
+                          }}
+                        >
+                          Details
+                        </Button>
+
                       <Button
                         variant="contained"
-                        size="small"
-                        onClick={() => handleView(r)}
-                        sx={{
-                          bgcolor: "#eede2b",
-                          color: "#000",
-                          textTransform: "none",
-                          fontWeight: 700,
-                          "&:hover": { bgcolor: "#e6d31a" },
-                        }}
-                      >
-                        View Details
-                      </Button>
-
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        color="success"
+                        size="medium"
                         onClick={() => handleAccept(r.id)}
                         disabled={isAccepting(r.id)}
-                        sx={{ textTransform: "none" }}
+                        sx={{ 
+                          flex: { xs: 1, md: 'none' },
+                          bgcolor: "#cddc39", 
+                          color: "#101828", 
+                          fontWeight: 800,
+                          borderRadius: 3,
+                          textTransform: "none",
+                          "&:hover": { bgcolor: "#d4e157", transform: 'scale(1.05)' },
+                          transition: 'all 0.2s',
+                          boxShadow: '0 4px 14px rgba(205, 220, 57, 0.4)'
+                        }}
                       >
-                        {isAccepting(r.id) ? <CircularProgress size={18} /> : "Accept"}
+                        {isAccepting(r.id) ? <CircularProgress size={20} color="inherit" /> : "Accept Request"}
                       </Button>
                     </Stack>
                   </Paper>
+                </motion.div>
                 ))}
               </Stack>
             )}
