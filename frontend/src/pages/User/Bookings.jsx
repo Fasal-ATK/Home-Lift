@@ -134,120 +134,106 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
   const initials = svcName.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <Paper sx={{ mb: 3, borderRadius: 1.5, overflow: "hidden", boxShadow: 1 }}>
+    <Paper sx={{ mb: 2.5, borderRadius: 2, overflow: "hidden", border: "1px solid", borderColor: "grey.200", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
       {/* header */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, px: 2, py: 1.25, bgcolor: "grey.100", flexWrap: "wrap" }}>
-        <Box sx={{ minWidth: 140 }}>
-          <Typography variant="caption" color="text.secondary">ORDER PLACED</Typography>
-          <Typography variant="body2" fontWeight={700}>{fmtDate(booking.created_at || booking.booking_date)}</Typography>
-        </Box>
-
-        <Box sx={{ minWidth: 120 }}>
-          <Typography variant="caption" color="text.secondary">TOTAL</Typography>
-          {parseFloat(booking.discount_amount || 0) > 0 ? (
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, px: 2.5, py: 1.5, bgcolor: "grey.50", borderBottom: "1px solid", borderColor: "grey.200", flexWrap: "wrap" }}>
+        
+        <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ textDecoration: 'line-through', display: 'block' }}>
-                ₹{booking.original_price}
-              </Typography>
-              <Typography variant="body2" fontWeight={700} color="success.main">
-                ₹{booking.price}
-              </Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">ORDER PLACED</Typography>
+              <Typography variant="body2" fontWeight={600}>{fmtDate(booking.created_at || booking.booking_date)}</Typography>
             </Box>
-          ) : (
-            <Typography variant="body2" fontWeight={700}>₹{booking.price}</Typography>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">TOTAL</Typography>
+              {parseFloat(booking.discount_amount || 0) > 0 ? (
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
+                    ₹{booking.original_price}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700} color="success.main">
+                    ₹{booking.price}
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="body2" fontWeight={700}>₹{booking.price}</Typography>
+              )}
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">ORDER #</Typography>
+              <Typography variant="body2" fontWeight={600}>{booking.id}</Typography>
+            </Box>
+        </Box>
+
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Button size="small" variant="outlined" onClick={() => onView(booking.id)} sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 600 }}>
+            View Details
+          </Button>
+          {['confirmed', 'ongoing', 'in_progress', 'completed'].includes(booking.status) && (
+            <Button size="small" variant="outlined" color="primary" onClick={() => onChat(booking)} sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 600 }}>
+              Chat
+            </Button>
           )}
-        </Box>
-
-        <Box sx={{ minWidth: 220, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary">SHIP TO</Typography>
-          <Typography variant="body2" fontWeight={700} noWrap>
-            {addr ? addr.title : booking.full_name}
-          </Typography>
-        </Box>
-
-        <Box sx={{ minWidth: 220, textAlign: "right" }}>
-          <Typography variant="caption" color="text.secondary">ORDER # {booking.id}</Typography>
-          <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
-            <Button size="small" variant="text" onClick={() => onView(booking.id)} sx={{ textTransform: "none" }}>
-              View order details
-            </Button>
-            {['confirmed', 'ongoing', 'in_progress', 'completed'].includes(booking.status) && (
-              <Button size="small" variant="text" onClick={() => onChat(booking)} sx={{ textTransform: "none", color: 'primary.main', fontWeight: 'bold' }}>
-                Chat with Provider
-              </Button>
-            )}
-            <Button
-              size="small"
-              variant="text"
-              onClick={() => onInvoice(booking.id)}
-              sx={{ textTransform: "none" }}
-              disabled={booking.status === 'pending' || booking.status === 'cancelled'}
-            >
-              Invoice ▾
-            </Button>
-          </Stack>
-        </Box>
+          <Button
+            size="small"
+            variant="outlined"
+            color="inherit"
+            onClick={() => onInvoice(booking.id)}
+            sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 600 }}
+            disabled={booking.status === 'pending' || booking.status === 'cancelled'}
+          >
+            Invoice
+          </Button>
+        </Stack>
       </Box>
 
-      <Divider />
-
       {/* body */}
-      <Box sx={{ px: { xs: 2, md: 3 }, py: 1.5 }}>
-        <Typography variant="h6" fontWeight={800} sx={{ mb: 1, fontSize: '1.1rem' }}>
-          {booking.status === "completed" || booking.status === "confirmed"
-            ? "Delivered"
-            : (booking.status || "").replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-          {booking.status === "completed" && booking.booking_date ? ` ${fmtDate(booking.booking_date)}` : ""}
-        </Typography>
-
-        {/* product area */}
-        <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start", flexWrap: "wrap" }}>
-          <Box sx={{ width: 72, height: 72, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "background.paper", borderRadius: 1, overflow: "hidden", border: "1px solid rgba(0,0,0,0.05)" }}>
+      <Box sx={{ px: 2.5, py: 2, display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+        
+        {/* Product Image & Title */}
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center", flex: 1.5, minWidth: 250 }}>
+          <Box sx={{ width: 72, height: 72, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "grey.100", borderRadius: 2, overflow: "hidden" }}>
             {thumb ? (
-              <Box component="img" src={thumb} alt="thumb" sx={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }} />
+              <Box component="img" src={thumb} alt="thumb" sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
-              <Avatar sx={{ width: 48, height: 48, bgcolor: "primary.light", fontWeight: 700 }}>{initials}</Avatar>
+              <Avatar sx={{ width: 72, height: 72, bgcolor: "primary.light", fontWeight: 700, borderRadius: 2 }}>{initials}</Avatar>
             )}
           </Box>
 
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0 }}>
+          <Box>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2, mb: 0.5 }}>
               {svcName}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+            <Chip
+              label={(booking.status || "").replace("_", " ").toUpperCase()}
+              size="small"
+              color={statusColor(booking.status)}
+              sx={{ fontWeight: 700, height: 22, fontSize: '0.7rem', borderRadius: 1, mb: 0.5 }}
+            />
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
               {booking.full_name} • {booking.phone}
             </Typography>
+          </Box>
+        </Box>
 
+        {/* Schedule & Address */}
+        <Box sx={{ flex: 1.5, minWidth: 250, borderLeft: { md: "1px solid #eee" }, pl: { md: 3 } }}>
             <Typography variant="body2" sx={{ mb: 0.5 }}>
-              <strong>Date:</strong> {booking.booking_date || fmtDate(booking.created_at)} &nbsp; <strong>Time:</strong> {fmtTime(booking.booking_time)}
+              <strong>Scheduled:</strong> {booking.booking_date || fmtDate(booking.created_at)} at {fmtTime(booking.booking_time)}
             </Typography>
-
-            {addr ? (
-              <Box sx={{ mb: 0.5 }}>
-                <Typography variant="body2">
-                  <strong>Address:</strong> {addr.title} — {addr.address_line}, {addr.city}{addr.district ? `, ${addr.district}` : ""}, {addr.state} {addr.postal_code}
-                </Typography>
-              </Box>
-            ) : booking.address ? (
-              <Box sx={{ mb: 0.5 }}>
-                <Typography variant="body2"><strong>Address:</strong> {booking.address}</Typography>
-              </Box>
-            ) : null}
-
+            <Typography variant="body2" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              <strong>Address:</strong> {addr ? `${addr.title} - ${addr.address_line}, ${addr.city}` : booking.address}
+            </Typography>
             {booking.notes && (
-              <Typography variant="body2" color="text.secondary">
-                <strong>Notes:</strong> {booking.notes}
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                Note: {booking.notes}
               </Typography>
             )}
-          </Box>
+        </Box>
 
-          <Box sx={{ minWidth: 150, textAlign: "right", display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
-            <Chip
-              label={(booking.status || "").replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-              color={statusColor(booking.status)}
-              sx={{ fontWeight: 700, textTransform: "capitalize" }}
-            />
-
+        {/* Payment & Actions */}
+        <Box sx={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', md: 'flex-end' }, gap: 1, borderLeft: { md: "1px solid #eee" }, pl: { md: 3 } }}>
             {/* Advance Status */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               {booking.is_refunded ? (
@@ -261,33 +247,33 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
                 <>
                   <CheckCircleIcon sx={{ fontSize: 16, color: "success.main" }} />
                   <Typography variant="caption" fontWeight={700} sx={{ color: "success.main" }}>
-                    Advance Payment Completed
+                    Advance Paid
                   </Typography>
                 </>
               ) : (
                 <>
                   <CancelIcon sx={{ fontSize: 16, color: "warning.main" }} />
                   <Typography variant="caption" fontWeight={700} sx={{ color: "warning.main" }}>
-                    Advance Payment Pending
+                    Advance Pending
                   </Typography>
                   {booking.status === 'pending' && (
                     <Button
                       size="small"
-                      variant="outlined"
+                      variant="contained"
                       color="warning"
                       onClick={() => onPayAdvance(booking)}
-                      sx={{ textTransform: 'none', py: 0, px: 1, fontSize: '0.65rem', height: 20 }}
+                      sx={{ textTransform: 'none', py: 0.25, px: 1.5, fontSize: '0.7rem', ml: 1, borderRadius: 1.5, boxShadow: 'none' }}
                     >
-                      Pay Now
+                      Pay
                     </Button>
                   )}
                 </>
               )}
             </Box>
 
-            {/* Remaining Payment (only show if in_progress or completed) */}
+            {/* Remaining Payment */}
             {(booking.status === 'in_progress' || booking.status === 'completed') && booking.remaining_payment > 0 && (
-              <Box sx={{ mt: 0.5, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', md: 'flex-end' } }}>
                 <Typography variant="caption" color="text.secondary">
                   Remaining: <strong>₹{booking.remaining_payment}</strong>
                 </Typography>
@@ -297,22 +283,21 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
                     size="small"
                     color="primary"
                     onClick={() => onPayRemaining(booking)}
-                    sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                    sx={{ textTransform: 'none', fontWeight: 'bold', mt: 0.5, borderRadius: 1.5, boxShadow: 'none' }}
                   >
                     Pay Balance
                   </Button>
                 )}
                 {booking.is_fully_paid && (
-                  <Typography variant="caption" fontWeight={700} sx={{ color: "success.main" }}>
+                  <Typography variant="caption" fontWeight={700} sx={{ color: "success.main", mt: 0.5 }}>
                     Fully Paid
                   </Typography>
                 )}
               </Box>
             )}
-          </Box>
         </Box>
       </Box>
-    </Paper >
+    </Paper>
   );
 }
 
@@ -711,55 +696,55 @@ export default function Bookings() {
           bgcolor: 'background.paper',
           boxShadow: 24,
           p: 3,
-          borderRadius: 2
+          borderRadius: 3
         }}>
-          <Typography variant="h6" mb={1} fontWeight="bold">
-            {selectedBooking?.paymentType === 'advance' ? 'Complete Advance Payment' : 'Complete Remaining Payment'}
+          <Typography variant="h6" mb={1} fontWeight="800">
+            {selectedBooking?.paymentType === 'advance' ? 'Advance Payment' : 'Remaining Balance'}
           </Typography>
-          <Typography variant="body2" color="text.secondary" mb={2}>
+          <Typography variant="body2" color="text.secondary" mb={3}>
             {selectedBooking?.paymentType === 'advance'
-              ? `Paying the advance amount of ₹${selectedBooking?.advance} for ${selectedBooking?.service_name || 'service'}.`
-              : `Paying the remaining balance of ₹${selectedBooking?.remaining_payment} for ${selectedBooking?.service_name || 'service'}.`
+              ? `You are paying an advance of ₹${selectedBooking?.advance} for your ${selectedBooking?.service_name || 'service'} booking.`
+              : `You are paying the remaining balance of ₹${selectedBooking?.remaining_payment} for your ${selectedBooking?.service_name || 'service'} booking.`
             }
           </Typography>
 
-          <Box sx={{ mb: 2 }}>
-            <FormControl component="fieldset">
-              <FormLabel component="legend" sx={{ fontWeight: "bold", mb: 0.5, fontSize: '0.9rem' }}>
-                Select Payment Method
-              </FormLabel>
-              <RadioGroup
-                row
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              >
-                <FormControlLabel
-                  value="card"
-                  control={<Radio size="small" />}
-                  label={<Typography variant="body2">Credit/Debit Card (Stripe)</Typography>}
-                />
-                <FormControlLabel
-                  value="wallet"
-                  control={<Radio size="small" />}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2">Wallet</Typography>
-                      <Chip
-                        label={`Balance: ₹${walletBalance}`}
-                        size="small"
-                        color={Number(walletBalance) >= Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment) ? "success" : "error"}
-                        variant="outlined"
-                        sx={{ height: 20, fontSize: '0.65rem' }}
-                      />
-                    </Box>
-                  }
-                  disabled={Number(walletBalance) < Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment)}
-                />
-              </RadioGroup>
-            </FormControl>
-          </Box>
+          <Typography variant="subtitle2" fontWeight={700} mb={1}>Select Payment Method</Typography>
+          <RadioGroup
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
+          >
+            <Paper variant="outlined" sx={{ mb: 1.5, p: 1, borderRadius: 2, borderColor: paymentMethod === 'card' ? 'primary.main' : 'grey.300', bgcolor: paymentMethod === 'card' ? 'primary.50' : 'transparent' }}>
+              <FormControlLabel
+                value="card"
+                control={<Radio size="small" />}
+                label={<Typography variant="body2" fontWeight={600}>Credit/Debit Card (Stripe)</Typography>}
+                sx={{ width: '100%', m: 0 }}
+              />
+            </Paper>
 
-          <Divider sx={{ mb: 3 }} />
+            <Paper variant="outlined" sx={{ p: 1, borderRadius: 2, borderColor: paymentMethod === 'wallet' ? 'primary.main' : 'grey.300', bgcolor: paymentMethod === 'wallet' ? 'primary.50' : 'transparent', opacity: Number(walletBalance) < Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment) ? 0.5 : 1 }}>
+              <FormControlLabel
+                value="wallet"
+                control={<Radio size="small" />}
+                label={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                    <Typography variant="body2" fontWeight={600}>Wallet</Typography>
+                    <Chip
+                      label={`Balance: ₹${walletBalance}`}
+                      size="small"
+                      color={Number(walletBalance) >= Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment) ? "success" : "error"}
+                      variant="outlined"
+                      sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
+                    />
+                  </Box>
+                }
+                sx={{ width: '100%', m: 0, '& .MuiFormControlLabel-label': { flex: 1 } }}
+                disabled={Number(walletBalance) < Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment)}
+              />
+            </Paper>
+          </RadioGroup>
+
+          <Divider sx={{ my: 3 }} />
 
           {paymentMethod === 'card' ? (
             clientSecret && (
