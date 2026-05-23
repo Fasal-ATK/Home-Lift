@@ -192,8 +192,8 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
       <Divider />
 
       {/* body */}
-      <Box sx={{ px: { xs: 2, md: 3 }, py: 2 }}>
-        <Typography variant="h6" fontWeight={800} sx={{ mb: 1 }}>
+      <Box sx={{ px: { xs: 2, md: 3 }, py: 1.5 }}>
+        <Typography variant="h6" fontWeight={800} sx={{ mb: 1, fontSize: '1.1rem' }}>
           {booking.status === "completed" || booking.status === "confirmed"
             ? "Delivered"
             : (booking.status || "").replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
@@ -202,38 +202,34 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
 
         {/* product area */}
         <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start", flexWrap: "wrap" }}>
-          <Box sx={{ width: 92, height: 92, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "background.paper", borderRadius: 1, overflow: "hidden", border: "1px solid rgba(0,0,0,0.05)" }}>
+          <Box sx={{ width: 72, height: 72, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "background.paper", borderRadius: 1, overflow: "hidden", border: "1px solid rgba(0,0,0,0.05)" }}>
             {thumb ? (
               <Box component="img" src={thumb} alt="thumb" sx={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }} />
             ) : (
-              <Avatar sx={{ width: 64, height: 64, bgcolor: "primary.light", fontWeight: 700 }}>{initials}</Avatar>
+              <Avatar sx={{ width: 48, height: 48, bgcolor: "primary.light", fontWeight: 700 }}>{initials}</Avatar>
             )}
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.5 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0 }}>
               {svcName}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
               {booking.full_name} • {booking.phone}
             </Typography>
 
-            <Typography variant="body2" sx={{ mb: 1 }}>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>
               <strong>Date:</strong> {booking.booking_date || fmtDate(booking.created_at)} &nbsp; <strong>Time:</strong> {fmtTime(booking.booking_time)}
             </Typography>
 
             {addr ? (
-              <Box sx={{ mb: 1 }}>
+              <Box sx={{ mb: 0.5 }}>
                 <Typography variant="body2">
-                  <strong>Address:</strong> {addr.title} — {addr.address_line}
-                  <br />
-                  <Typography component="span" variant="body2" color="text.secondary">
-                    {addr.city}{addr.district ? `, ${addr.district}` : ""}, {addr.state} {addr.postal_code}
-                  </Typography>
+                  <strong>Address:</strong> {addr.title} — {addr.address_line}, {addr.city}{addr.district ? `, ${addr.district}` : ""}, {addr.state} {addr.postal_code}
                 </Typography>
               </Box>
             ) : booking.address ? (
-              <Box sx={{ mb: 1 }}>
+              <Box sx={{ mb: 0.5 }}>
                 <Typography variant="body2"><strong>Address:</strong> {booking.address}</Typography>
               </Box>
             ) : null}
@@ -714,25 +710,26 @@ export default function Bookings() {
           width: 450,
           bgcolor: 'background.paper',
           boxShadow: 24,
-          p: 4,
+          p: 3,
           borderRadius: 2
         }}>
-          <Typography variant="h6" mb={2} fontWeight="bold">
+          <Typography variant="h6" mb={1} fontWeight="bold">
             {selectedBooking?.paymentType === 'advance' ? 'Complete Advance Payment' : 'Complete Remaining Payment'}
           </Typography>
-          <Typography variant="body2" color="text.secondary" mb={3}>
+          <Typography variant="body2" color="text.secondary" mb={2}>
             {selectedBooking?.paymentType === 'advance'
               ? `Paying the advance amount of ₹${selectedBooking?.advance} for ${selectedBooking?.service_name || 'service'}.`
               : `Paying the remaining balance of ₹${selectedBooking?.remaining_payment} for ${selectedBooking?.service_name || 'service'}.`
             }
           </Typography>
 
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 2 }}>
             <FormControl component="fieldset">
-              <FormLabel component="legend" sx={{ fontWeight: "bold", mb: 1, fontSize: '0.9rem' }}>
+              <FormLabel component="legend" sx={{ fontWeight: "bold", mb: 0.5, fontSize: '0.9rem' }}>
                 Select Payment Method
               </FormLabel>
               <RadioGroup
+                row
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
               >
