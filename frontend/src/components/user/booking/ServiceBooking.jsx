@@ -189,7 +189,6 @@ const BookingPage = () => {
       });
   };
 
-  // Generic Field component
   const Field = ({
     name,
     label,
@@ -217,7 +216,6 @@ const BookingPage = () => {
           multiline={multiline}
           rows={rows}
           fullWidth
-          margin="normal"
           error={!!fieldState.error}
           helperText={fieldState.error?.message}
           InputProps={{ readOnly }}
@@ -301,87 +299,94 @@ const BookingPage = () => {
                 )}
               />
 
-              <Field name="full_name" label="Full Name" rules={{ required: "Full name is required" }} />
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
+                <Field name="full_name" label="Full Name" rules={{ required: "Full name is required" }} />
 
-              {/* Phone Controller: numbers-only, maxLength 10, exact 10 digits validation */}
-              <Controller
-                name="phone"
-                control={control}
-                defaultValue=""
-                rules={{
-                  required: "Phone number is required",
-                  pattern: { value: /^\d{10}$/, message: "Phone number must be exactly 10 digits" },
-                }}
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    label="Phone Number"
-                    margin="normal"
-                    fullWidth
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                    inputProps={{
-                      inputMode: "numeric",
-                      maxLength: 10,
-                      pattern: "[0-9]*",
-                    }}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
-                      field.onChange(digits);
-                    }}
-                  />
-                )}
-              />
+                {/* Phone Controller: numbers-only, maxLength 10, exact 10 digits validation */}
+                <Controller
+                  name="phone"
+                  control={control}
+                  defaultValue=""
+                  rules={{
+                    required: "Phone number is required",
+                    pattern: { value: /^\d{10}$/, message: "Phone number must be exactly 10 digits" },
+                  }}
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      {...field}
+                      label="Phone Number"
+                      fullWidth
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                      inputProps={{
+                        inputMode: "numeric",
+                        maxLength: 10,
+                        pattern: "[0-9]*",
+                      }}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        field.onChange(digits);
+                      }}
+                    />
+                  )}
+                />
+              </Box>
 
-              <Controller
-                name="address"
-                control={control}
-                rules={{ required: "Pick a service address" }}
-                defaultValue=""
-                render={({ field, fieldState }) => (
-                  <Autocomplete
-                    options={userAddresses}
-                    getOptionLabel={opt =>
-                      opt
-                        ? `${opt.title}: ${opt.address_line}, ${opt.city}, ${opt.state} ${opt.postal_code}`
-                        : ""
-                    }
-                    loading={addressesLoading}
-                    value={userAddresses.find(a => a.id === field.value) || null}
-                    onChange={(_e, val) => field.onChange(val ? val.id : "")}
-                    renderInput={params => (
-                      <TextField
-                        {...params}
-                        label="Service Address"
-                        margin="normal"
-                        fullWidth
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
-                      />
-                    )}
-                    disabled={addressesLoading}
-                    isOptionEqualToValue={(opt, val) => opt.id === val.id}
-                  />
-                )}
-              />
-              <Field name="notes" label="Notes (optional)" multiline rows={2} />
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
+                <Field
+                  name="booking_date"
+                  label="Booking Date"
+                  type="date"
+                  rules={{ required: "Date is required" }}
+                  InputProps={{
+                    inputProps: { min: today }
+                  }}
+                />
+                <Field
+                  name="booking_time"
+                  label="Time Slot"
+                  select
+                  options={availableTimeSlots}
+                  rules={{ required: "Time slot is required" }}
+                />
+              </Box>
 
-              <Field
-                name="booking_date"
-                label="Booking Date"
-                type="date"
-                rules={{ required: "Date is required" }}
-                InputProps={{
-                  inputProps: { min: today }
-                }}
-              />
-              <Field
-                name="booking_time"
-                label="Time Slot"
-                select
-                options={availableTimeSlots}
-                rules={{ required: "Time slot is required" }}
-              />
+              <Box sx={{ mb: 2 }}>
+                <Controller
+                  name="address"
+                  control={control}
+                  rules={{ required: "Pick a service address" }}
+                  defaultValue=""
+                  render={({ field, fieldState }) => (
+                    <Autocomplete
+                      options={userAddresses}
+                      getOptionLabel={opt =>
+                        opt
+                          ? `${opt.title}: ${opt.address_line}, ${opt.city}, ${opt.state} ${opt.postal_code}`
+                          : ""
+                      }
+                      loading={addressesLoading}
+                      value={userAddresses.find(a => a.id === field.value) || null}
+                      onChange={(_e, val) => field.onChange(val ? val.id : "")}
+                      renderInput={params => (
+                        <TextField
+                          {...params}
+                          label="Service Address"
+                          fullWidth
+                          error={!!fieldState.error}
+                          helperText={fieldState.error?.message}
+                        />
+                      )}
+                      disabled={addressesLoading}
+                      isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                    />
+                  )}
+                />
+              </Box>
+
+              <Box sx={{ mb: 3 }}>
+                <Field name="notes" label="Notes (optional)" multiline rows={2} />
+              </Box>
 
               <Box sx={{ mt: 3, mb: 2 }}>
                 <FormControl component="fieldset">
