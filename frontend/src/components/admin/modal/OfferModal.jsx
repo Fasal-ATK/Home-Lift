@@ -34,8 +34,8 @@ import { Stack, IconButton } from "@mui/material";
 export default function OfferModal({ open, handleClose, offer = null }) {
     const dispatch = useDispatch();
     const { actionLoading } = useSelector((state) => state.offers);
-    const { list: categories } = useSelector((state) => state.categories);
-    const { list: services } = useSelector((state) => state.services);
+    const { list: categories, isFullList: categoriesFull } = useSelector((state) => state.categories);
+    const { list: services, isFullList: servicesFull } = useSelector((state) => state.services);
 
     const [formData, setFormData] = useState({
         title: "",
@@ -50,10 +50,10 @@ export default function OfferModal({ open, handleClose, offer = null }) {
 
     useEffect(() => {
         if (open) {
-            dispatch(fetchCategories());
-            dispatch(fetchServices());
+            if (!categoriesFull) dispatch(fetchCategories({ no_pagination: true }));
+            if (!servicesFull) dispatch(fetchServices({ no_pagination: true }));
         }
-    }, [dispatch, open]);
+    }, [dispatch, open, categoriesFull, servicesFull]);
 
     useEffect(() => {
         if (offer) {
