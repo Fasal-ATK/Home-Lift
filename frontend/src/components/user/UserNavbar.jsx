@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -9,6 +9,7 @@ import {
   Menu,
   MenuItem,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import { Notifications, LocationOn, AccountCircle, Chat, Menu as MenuIcon } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -18,11 +19,11 @@ import { ShowToast } from '../common/Toast';
 import { userService } from '../../services/apiServices';
 import { setUser } from '../../redux/slices/authSlice';
 import { fetchBookings } from '../../redux/slices/bookingSlice';
-import { useEffect } from 'react';
 
 const UserNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
 
   const { isProvider, user } = useSelector((state) => state.auth);
   const { bookings } = useSelector((state) => state.bookings);
@@ -66,22 +67,48 @@ const UserNavbar = () => {
     { label: "SUPPORT", path: "/support" },
   ];
 
-  // Only show the CHAT option if there's at least one booking with an assigned provider
   const hasAssignedProvider = bookings.some(b => b.provider !== null);
 
   return (
-    <AppBar position="sticky" color="inherit" elevation={3} sx={{ borderRadius: '14px' }}>
-      <Toolbar sx={{ justifyContent: 'space-between', px: 4 }}>
+    <AppBar
+      position="sticky"
+      color="inherit"
+      elevation={0}
+      sx={{
+        borderRadius: { xs: 0, sm: '16px' },
+        mt: { xs: 0, sm: 2 },
+        mx: { xs: 0, sm: 2 },
+        width: { xs: '100%', sm: 'calc(100% - 32px)' },
+        background: "rgba(255, 255, 255, 0.9)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid rgba(0,0,0,0.05)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+      }}
+    >
+      <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 4 }, minHeight: '70px !important' }}>
         {/* Left: Logo and Title */}
-        <Box display="flex" alignItems="center" gap={1}>
-          <LocationOn sx={{ color: location.pathname === "/home" ? '#0066CC' : '#555' }} />
+        <Box display="flex" alignItems="center" gap={1.5} sx={{ cursor: 'pointer' }} onClick={() => navigate('/home')}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 2.5,
+              background: "linear-gradient(135deg, #4f46e5, #8b5cf6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 4px 12px rgba(79,70,229,0.3)"
+            }}
+          >
+            <LocationOn sx={{ color: '#fff', fontSize: 24 }} />
+          </Box>
           <Typography
             variant="h6"
-            fontWeight="bold"
-            color={location.pathname === "/home" ? "primary" : "inherit"}
-            sx={{ display: { xs: 'flex', sm: 'block' } }}
+            fontWeight="900"
+            color="#1e1b4b"
+            sx={{ display: { xs: 'none', sm: 'block' }, letterSpacing: -0.5 }}
           >
-            HOME LIFT
+            HOME<Box component="span" sx={{ color: '#4f46e5' }}>LIFT</Box>
           </Typography>
         </Box>
 
@@ -90,7 +117,7 @@ const UserNavbar = () => {
           {/* Desktop Nav links */}
           <Box display={{ xs: 'none', md: 'flex' }} gap={2} alignItems="center">
             {navLinks.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive = location.pathname.startsWith(item.path);
               return (
                 <Typography
                   key={item.label}
@@ -101,8 +128,8 @@ const UserNavbar = () => {
                   sx={{
                     cursor: "pointer",
                     textDecoration: "none",
-                    color: isActive ? "#0066CC" : "inherit",
-                    "&:hover": { color: "#0066CC" },
+                    color: isActive ? "#4f46e5" : "inherit",
+                    "&:hover": { color: "#4f46e5" },
                   }}
                 >
                   {item.label}
@@ -117,7 +144,11 @@ const UserNavbar = () => {
               <IconButton
                 component={Link}
                 to="/notifications"
-                sx={{ color: location.pathname === "/notifications" ? '#0066CC' : '#555' }}
+                sx={{
+                  color: location.pathname === "/notifications" ? '#4f46e5' : '#64748b',
+                  bgcolor: location.pathname === "/notifications" ? 'rgba(79,70,229,0.08)' : 'transparent',
+                  "&:hover": { bgcolor: "rgba(79,70,229,0.04)" }
+                }}
               >
                 <Notifications />
               </IconButton>
@@ -127,7 +158,11 @@ const UserNavbar = () => {
               <IconButton
                 component={Link}
                 to="/chat"
-                sx={{ color: location.pathname === "/chat" ? '#0066CC' : '#555' }}
+                sx={{
+                  color: location.pathname === "/chat" ? '#4f46e5' : '#64748b',
+                  bgcolor: location.pathname === "/chat" ? 'rgba(79,70,229,0.08)' : 'transparent',
+                  "&:hover": { bgcolor: "rgba(79,70,229,0.04)" }
+                }}
               >
                 <Chat />
               </IconButton>
@@ -137,7 +172,11 @@ const UserNavbar = () => {
               <IconButton
                 component={Link}
                 to="/profile"
-                sx={{ color: location.pathname === "/profile" ? '#0066CC' : '#555' }}
+                sx={{
+                  color: location.pathname === "/profile" ? '#4f46e5' : '#64748b',
+                  bgcolor: location.pathname === "/profile" ? 'rgba(79,70,229,0.08)' : 'transparent',
+                  "&:hover": { bgcolor: "rgba(79,70,229,0.04)" }
+                }}
               >
                 <AccountCircle />
               </IconButton>
@@ -151,16 +190,17 @@ const UserNavbar = () => {
                 <Button
                   variant="contained"
                   sx={{
-                    backgroundColor: '#0066CC',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
                     textTransform: "none",
-                    borderRadius: "10px",
-                    "&:hover": { backgroundColor: "#0052a3" },
-                    px: 2,
-                    minWidth: '120px'
+                    borderRadius: 2.5,
+                    fontWeight: 700,
+                    boxShadow: "0 4px 12px rgba(16,185,129,0.3)",
+                    "&:hover": { background: "linear-gradient(135deg, #059669, #047857)" },
+                    px: 3,
                   }}
                   onClick={handleProviderRedirect}
                 >
-                  Provider Page
+                  Provider View
                 </Button>
               </Box>
             </Tooltip>
@@ -170,8 +210,7 @@ const UserNavbar = () => {
           <Tooltip title="Navigation Menu">
             <IconButton 
               onClick={handleMobileMenuOpen} 
-              color="inherit"
-              sx={{ display: { xs: 'flex', md: 'none' } }}
+              sx={{ display: { xs: 'flex', md: 'none' }, color: "#1e293b" }}
             >
               <MenuIcon />
             </IconButton>
@@ -179,11 +218,14 @@ const UserNavbar = () => {
 
           {/* Logout (Desktop only) */}
           <Tooltip title="Logout">
-            <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <Box sx={{ display: { xs: 'none', md: 'block' }, ml: 1 }}>
               <LogoutButton
-                collapsed={false}
+                collapsed={true} // Use collapsed version for icon only
                 sx={{
-                  "&:hover": { backgroundColor: "red", color: "white" }
+                  color: "#ef4444",
+                  bgcolor: "rgba(239,68,68,0.08)",
+                  borderRadius: 2,
+                  "&:hover": { bgcolor: "#ef4444", color: "white" }
                 }}
               />
             </Box>
@@ -196,6 +238,14 @@ const UserNavbar = () => {
         anchorEl={mobileMenuAnchorEl}
         open={Boolean(mobileMenuAnchorEl)}
         onClose={handleMobileMenuClose}
+        PaperProps={{
+          sx: {
+            mt: 1.5,
+            width: 200,
+            borderRadius: 3,
+            boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+          }
+        }}
         sx={{ display: { xs: 'block', md: 'none' } }}
       >
         {navLinks.map((item) => (
@@ -205,8 +255,9 @@ const UserNavbar = () => {
             to={item.path}
             onClick={handleMobileMenuClose}
             sx={{ 
-              color: location.pathname === item.path ? '#0066CC' : 'inherit', 
-              fontWeight: location.pathname === item.path ? 'bold' : 'normal' 
+              color: location.pathname.startsWith(item.path) ? '#4f46e5' : '#475569', 
+              fontWeight: location.pathname.startsWith(item.path) ? 800 : 600,
+              py: 1.5,
             }}
           >
             {item.label}
@@ -219,19 +270,23 @@ const UserNavbar = () => {
               handleMobileMenuClose();
               handleProviderRedirect();
             }}
-            sx={{ fontWeight: 'bold', color: '#0066CC' }}
+            sx={{ fontWeight: 800, color: '#10b981', py: 1.5 }}
           >
-            Provider Page
+            Provider View
           </MenuItem>
         )}
         
         {/* Add Logout Button to mobile menu */}
-        <Box sx={{ px: 2, py: 1 }}>
+        <Box sx={{ px: 2, py: 1.5, mt: 1, borderTop: "1px solid rgba(0,0,0,0.05)" }}>
           <LogoutButton
             collapsed={false}
             sx={{
               width: '100%',
-              "&:hover": { backgroundColor: "red", color: "white" }
+              bgcolor: "rgba(239,68,68,0.08)",
+              color: "#ef4444",
+              fontWeight: 700,
+              borderRadius: 2,
+              "&:hover": { bgcolor: "#ef4444", color: "white" }
             }}
           />
         </Box>

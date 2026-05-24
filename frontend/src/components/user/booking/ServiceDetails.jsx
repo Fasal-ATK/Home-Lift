@@ -15,6 +15,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
 import { fetchCategories } from "../../../redux/slices/categorySlice";
+import { fetchServices } from "../../../redux/slices/serviceSlice";
 import ServiceCard from "../../common/ServiceCard";
 
 
@@ -24,14 +25,17 @@ const ServiceDetails = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const service = location.state?.service;
-  const allServices = useSelector((state) => state.services.list);
-  const categories = useSelector((state) => state.categories.list);
+  const { list: allServices, isFullList: servicesFull } = useSelector((state) => state.services);
+  const { list: categories, isFullList: categoriesFull } = useSelector((state) => state.categories);
 
   useEffect(() => {
-    if (!categories || categories.length === 0) {
-      dispatch(fetchCategories());
+    if (!categoriesFull) {
+      dispatch(fetchCategories({ no_pagination: true }));
     }
-  }, [dispatch, categories]);
+    if (!servicesFull) {
+      dispatch(fetchServices({ no_pagination: true }));
+    }
+  }, [dispatch, categoriesFull, servicesFull]);
 
   if (!service) {
     navigate("/services");

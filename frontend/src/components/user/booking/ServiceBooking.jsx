@@ -21,7 +21,7 @@ import {
   Chip,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
-import { createBooking, fetchBookings } from "../../../redux/slices/bookingSlice";
+import { createBooking } from "../../../redux/slices/bookingSlice";
 import Autocomplete from "@mui/material/Autocomplete";
 import { fetchAddresses } from "../../../redux/slices/user/userSlice";
 import { fetchWallet, payWithWalletThunk } from "../../../redux/slices/walletSlice";
@@ -30,6 +30,7 @@ import { stripePromise } from "../../../../stripe/stripe";
 import CheckoutForm from "../../common/payment";
 import { createPaymentIntent } from "../../../services/apiServices";
 import { ShowToast } from "../../common/Toast";
+import { getErrorMessage } from "../../../utils/errorHelper";
 
 const calcAdvance = (p) => {
   const price = Number(p);
@@ -179,7 +180,7 @@ const BookingPage = () => {
               })
               .catch((err) => {
                 console.error("Wallet Payment Error:", err);
-                ShowToast(err?.message || "Wallet payment failed. Please try again.", "error");
+                ShowToast(getErrorMessage(err, "Wallet payment failed. Please try again."), "error");
               });
           }
         }
@@ -525,9 +526,7 @@ const BookingPage = () => {
 
             {error && (
               <Typography color="error" mt={2}>
-                {typeof error === 'string'
-                  ? error
-                  : error.message || error.error || (typeof error === 'object' ? Object.values(error).flat().join(', ') : JSON.stringify(error))}
+                {getErrorMessage(error)}
               </Typography>
             )}
           </Paper>

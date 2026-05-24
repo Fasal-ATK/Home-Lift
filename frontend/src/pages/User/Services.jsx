@@ -12,8 +12,8 @@ function Services() {
   const dispatch = useDispatch();
   const navigate = useNavigate(); // ✅ Initialize navigate
 
-  const { list: categories } = useSelector((state) => state.categories);
-  const { list: services, loading: servicesLoading } = useSelector(
+  const { list: categories, isFullList: categoriesFull } = useSelector((state) => state.categories);
+  const { list: services, loading: servicesLoading, isFullList: servicesFull } = useSelector(
     (state) => state.services
   );
 
@@ -21,9 +21,9 @@ function Services() {
 
   useEffect(() => {
     // Request a full list for the catalog page to allow simple local filtering
-    if (!categories.length) dispatch(fetchCategories({ no_pagination: true }));
-    if (!services.length) dispatch(fetchServices({ no_pagination: true }));
-  }, [dispatch, categories.length, services.length]);
+    if (!categoriesFull) dispatch(fetchCategories({ no_pagination: true }));
+    if (!servicesFull) dispatch(fetchServices({ no_pagination: true }));
+  }, [dispatch, categoriesFull, servicesFull]);
 
   const filteredServices =
     selectedCategory === null

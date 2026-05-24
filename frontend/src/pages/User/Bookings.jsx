@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -24,16 +24,10 @@ import {
   Alert,
   Snackbar,
   Radio,
-  RadioGroup,
-  FormControlLabel,
-  FormLabel,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import MapIcon from "@mui/icons-material/Map";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchBookings, clearError, selectTotalBookingCount } from "../../redux/slices/bookingSlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
@@ -44,27 +38,21 @@ import { ShowToast } from "../../components/common/Toast";
 import { Elements } from "@stripe/react-stripe-js";
 import { stripePromise } from "../../../stripe/stripe";
 import CheckoutForm from "../../components/common/payment";
+import { getErrorMessage } from "../../utils/errorHelper";
 
 import Modal from "@mui/material/Modal";
 
 const STATUSES = ["pending", "confirmed", "in_progress", "completed", "cancelled"];
 
-const statusColor = (status) => {
-  switch (status) {
-    case "pending":
-      return "warning";
-    case "confirmed":
-      return "info";
-    case "in_progress":
-      return "primary";
-    case "completed":
-      return "success";
-    case "cancelled":
-      return "error";
-    default:
-      return "default";
-  }
+const STATUS_CONFIG = {
+  pending: { color: "#d97706", bg: "#fffbeb", border: "#fde68a", label: "Pending", muiColor: "warning" },
+  confirmed: { color: "#0369a1", bg: "#eff6ff", border: "#bfdbfe", label: "Confirmed", muiColor: "info" },
+  in_progress: { color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", label: "In Progress", muiColor: "primary" },
+  completed: { color: "#15803d", bg: "#f0fdf4", border: "#bbf7d0", label: "Completed", muiColor: "success" },
+  cancelled: { color: "#dc2626", bg: "#fff1f2", border: "#fecdd3", label: "Cancelled", muiColor: "error" },
 };
+
+const statusColor = (status) => STATUS_CONFIG[status]?.muiColor || "default";
 
 const DEFAULT_STATUS = [];
 
@@ -107,22 +95,9 @@ const toLocalYMD = (dateStr) => {
 };
 
 // convert error payload to readable string
-const stringifyError = (err) => {
-  if (!err) return "";
-  if (typeof err === "string") return err;
-  try {
-    if (err.message) return err.message;
-    if (err.error) return err.error;
-    // If it's an object (e.g. { detail: ..., ... }), try common keys
-    if (err.detail) return err.detail;
-    if (err.non_field_errors) return Array.isArray(err.non_field_errors) ? err.non_field_errors.join(", ") : String(err.non_field_errors);
-    return JSON.stringify(err);
-  } catch {
-    return String(err);
-  }
-};
+const stringifyError = (err) => getErrorMessage(err);
 
-/* ---- OrderCard (uses services list & shows city/state only in header) ---- */
+/* ---- OrderCard ---- */
 function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, onChat, services }) {
   const addr = booking.address_details;
   const thumb = resolveThumb(booking, services);
@@ -132,55 +107,70 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
     booking.service ||
     "Service";
   const initials = svcName.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  const statusCfg = STATUS_CONFIG[booking.status] || {};
+  const hasDiscount = parseFloat(booking.discount_amount || 0) > 0;
 
   return (
-    <Paper sx={{ mb: 2.5, borderRadius: 2, overflow: "hidden", border: "1px solid", borderColor: "grey.200", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-      {/* header */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, px: 2.5, py: 1.5, bgcolor: "grey.50", borderBottom: "1px solid", borderColor: "grey.200", flexWrap: "wrap" }}>
-        
-        <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">ORDER PLACED</Typography>
-              <Typography variant="body2" fontWeight={600}>{fmtDate(booking.created_at || booking.booking_date)}</Typography>
-            </Box>
+    <Paper elevation={0} sx={{
+      mb: 2,
+      borderRadius: 2.5,
+      overflow: "hidden",
+      border: "1px solid",
+      borderColor: "grey.200",
+      transition: "box-shadow 0.2s",
+      "&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.07)" },
+    }}>
+      {/* Header bar */}
+      <Box sx={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: 2, px: 2.5, py: 1.2,
+        bgcolor: "grey.50", borderBottom: "1px solid", borderColor: "grey.100",
+        flexWrap: "wrap",
+      }}>
+        <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
+          <Box>
+            <Typography variant="caption" color="text.disabled" fontWeight={700} sx={{ letterSpacing: 0.8, fontSize: '0.6rem' }}>PLACED</Typography>
+            <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.8rem' }}>{fmtDate(booking.created_at || booking.booking_date)}</Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.disabled" fontWeight={700} sx={{ letterSpacing: 0.8, fontSize: '0.6rem' }}>TOTAL</Typography>
+            {hasDiscount ? (
+              <Stack direction="row" spacing={0.8} alignItems="center">
+                <Typography variant="caption" color="text.disabled" sx={{ textDecoration: 'line-through' }}>₹{booking.original_price}</Typography>
+                <Typography variant="body2" fontWeight={700} color="success.main" sx={{ fontSize: '0.8rem' }}>₹{booking.price}</Typography>
+              </Stack>
+            ) : (
+              <Typography variant="body2" fontWeight={700} sx={{ fontSize: '0.8rem' }}>₹{booking.price}</Typography>
+            )}
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.disabled" fontWeight={700} sx={{ letterSpacing: 0.8, fontSize: '0.6rem' }}>ORDER #</Typography>
+            <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.8rem' }}>{booking.id}</Typography>
+          </Box>
+        </Stack>
 
-            <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">TOTAL</Typography>
-              {parseFloat(booking.discount_amount || 0) > 0 ? (
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
-                    ₹{booking.original_price}
-                  </Typography>
-                  <Typography variant="body2" fontWeight={700} color="success.main">
-                    ₹{booking.price}
-                  </Typography>
-                </Box>
-              ) : (
-                <Typography variant="body2" fontWeight={700}>₹{booking.price}</Typography>
-              )}
-            </Box>
-
-            <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">ORDER #</Typography>
-              <Typography variant="body2" fontWeight={600}>{booking.id}</Typography>
-            </Box>
-        </Box>
-
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Button size="small" variant="outlined" onClick={() => onView(booking.id)} sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 600 }}>
-            View Details
+        <Stack direction="row" spacing={0.8} alignItems="center">
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => onView(booking.id)}
+            sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 700, fontSize: '0.75rem', py: 0.4 }}
+          >
+            Details
           </Button>
           {['confirmed', 'ongoing', 'in_progress', 'completed'].includes(booking.status) && (
-            <Button size="small" variant="outlined" color="primary" onClick={() => onChat(booking)} sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 600 }}>
+            <Button
+              size="small" variant="outlined" color="primary"
+              onClick={() => onChat(booking)}
+              sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 700, fontSize: '0.75rem', py: 0.4 }}
+            >
               Chat
             </Button>
           )}
           <Button
-            size="small"
-            variant="outlined"
-            color="inherit"
+            size="small" variant="outlined" color="inherit"
             onClick={() => onInvoice(booking.id)}
-            sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 600 }}
+            sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 700, fontSize: '0.75rem', py: 0.4, borderColor: 'grey.300', color: 'text.secondary' }}
             disabled={booking.status === 'pending' || booking.status === 'cancelled'}
           >
             Invoice
@@ -188,113 +178,89 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
         </Stack>
       </Box>
 
-      {/* body */}
-      <Box sx={{ px: 2.5, py: 2, display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'center' }}>
-        
-        {/* Product Image & Title */}
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center", flex: 1.5, minWidth: 250 }}>
-          <Box sx={{ width: 72, height: 72, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "grey.100", borderRadius: 2, overflow: "hidden" }}>
+      {/* Body */}
+      <Box sx={{ px: 2.5, py: 2, display: 'flex', gap: 2.5, flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Service image + info */}
+        <Box sx={{ display: "flex", gap: 1.8, alignItems: "center", flex: 1.5, minWidth: 240 }}>
+          <Box sx={{ width: 60, height: 60, flexShrink: 0, borderRadius: 2, overflow: "hidden", bgcolor: "grey.100" }}>
             {thumb ? (
               <Box component="img" src={thumb} alt="thumb" sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
-              <Avatar sx={{ width: 72, height: 72, bgcolor: "primary.light", fontWeight: 700, borderRadius: 2 }}>{initials}</Avatar>
+              <Avatar sx={{ width: 60, height: 60, bgcolor: "primary.light", fontWeight: 700, borderRadius: 2, fontSize: '1rem' }}>{initials}</Avatar>
             )}
           </Box>
-
           <Box>
-            <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2, mb: 0.5 }}>
-              {svcName}
-            </Typography>
+            <Typography variant="subtitle2" fontWeight={800} sx={{ lineHeight: 1.2, mb: 0.5 }}>{svcName}</Typography>
             <Chip
-              label={(booking.status || "").replace("_", " ").toUpperCase()}
+              label={statusCfg.label || booking.status}
               size="small"
-              color={statusColor(booking.status)}
-              sx={{ fontWeight: 700, height: 22, fontSize: '0.7rem', borderRadius: 1, mb: 0.5 }}
+              sx={{
+                height: 20, fontSize: '0.65rem', fontWeight: 700, mb: 0.5,
+                bgcolor: statusCfg.bg, color: statusCfg.color,
+                border: `1px solid ${statusCfg.border || 'transparent'}`,
+              }}
             />
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-              {booking.full_name} • {booking.phone}
+            <Typography variant="caption" color="text.secondary" display="block">
+              {booking.full_name} · {booking.phone}
             </Typography>
           </Box>
         </Box>
 
         {/* Schedule & Address */}
-        <Box sx={{ flex: 1.5, minWidth: 250, borderLeft: { md: "1px solid #eee" }, pl: { md: 3 } }}>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              <strong>Scheduled:</strong> {booking.booking_date || fmtDate(booking.created_at)} at {fmtTime(booking.booking_time)}
+        <Box sx={{ flex: 1.5, minWidth: 230, borderLeft: { md: "1px solid #f1f5f9" }, pl: { md: 2.5 } }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.72rem' }}>
+            📅 {booking.booking_date || fmtDate(booking.created_at)} · {fmtTime(booking.booking_time)}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{
+            mt: 0.5, fontSize: '0.72rem',
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+          }}>
+            📍 {addr ? `${addr.address_line}, ${addr.city}` : booking.address}
+          </Typography>
+          {booking.notes && (
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.4, fontStyle: 'italic', fontSize: '0.72rem' }}>
+              💬 {booking.notes}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-              <strong>Address:</strong> {addr ? `${addr.title} - ${addr.address_line}, ${addr.city}` : booking.address}
-            </Typography>
-            {booking.notes && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
-                Note: {booking.notes}
-              </Typography>
-            )}
+          )}
         </Box>
 
-        {/* Payment & Actions */}
-        <Box sx={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', md: 'flex-end' }, gap: 1, borderLeft: { md: "1px solid #eee" }, pl: { md: 3 } }}>
-            {/* Advance Status */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              {booking.is_refunded ? (
-                <>
-                  <CheckCircleIcon sx={{ fontSize: 16, color: "info.main" }} />
-                  <Typography variant="caption" fontWeight={700} sx={{ color: "info.main" }}>
-                    Advance Refunded
-                  </Typography>
-                </>
-              ) : booking.is_advance_paid ? (
-                <>
-                  <CheckCircleIcon sx={{ fontSize: 16, color: "success.main" }} />
-                  <Typography variant="caption" fontWeight={700} sx={{ color: "success.main" }}>
-                    Advance Paid
-                  </Typography>
-                </>
+        {/* Payment status & quick-pay */}
+        <Box sx={{ flex: 1, minWidth: 170, borderLeft: { md: "1px solid #f1f5f9" }, pl: { md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 0.8, alignItems: { xs: 'flex-start', md: 'flex-end' } }}>
+          {booking.is_refunded ? (
+            <Chip label="Advance Refunded" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#eff6ff', color: '#0369a1' }} />
+          ) : booking.is_advance_paid ? (
+            <Chip icon={<CheckCircleIcon sx={{ fontSize: '12px !important' }} />} label="Advance Paid" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#f0fdf4', color: '#15803d', '& .MuiChip-icon': { fontSize: 12 } }} />
+          ) : (
+            <Stack direction="row" spacing={0.8} alignItems="center">
+              <Chip label="Advance Due" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#fffbeb', color: '#b45309' }} />
+              {booking.status === 'pending' && (
+                <Button size="small" variant="contained" color="warning"
+                  onClick={() => onPayAdvance(booking)}
+                  sx={{ textTransform: 'none', py: 0.2, px: 1.2, fontSize: '0.68rem', borderRadius: 1.5, boxShadow: 'none', minWidth: 0 }}
+                >
+                  Pay
+                </Button>
+              )}
+            </Stack>
+          )}
+
+          {(booking.status === 'in_progress' || booking.status === 'completed') && booking.remaining_payment > 0 && (
+            <Stack direction="row" spacing={0.8} alignItems="center">
+              {booking.is_fully_paid ? (
+                <Chip icon={<CheckCircleIcon sx={{ fontSize: '12px !important' }} />} label="Fully Paid" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#f0fdf4', color: '#15803d', '& .MuiChip-icon': { fontSize: 12 } }} />
               ) : (
                 <>
-                  <CancelIcon sx={{ fontSize: 16, color: "warning.main" }} />
-                  <Typography variant="caption" fontWeight={700} sx={{ color: "warning.main" }}>
-                    Advance Pending
-                  </Typography>
-                  {booking.status === 'pending' && (
-                    <Button
-                      size="small"
-                      variant="contained"
-                      color="warning"
-                      onClick={() => onPayAdvance(booking)}
-                      sx={{ textTransform: 'none', py: 0.25, px: 1.5, fontSize: '0.7rem', ml: 1, borderRadius: 1.5, boxShadow: 'none' }}
-                    >
-                      Pay
-                    </Button>
-                  )}
+                  <Typography variant="caption" fontWeight={700} color="primary.main">₹{booking.remaining_payment} due</Typography>
+                  <Button size="small" variant="contained" color="primary"
+                    onClick={() => onPayRemaining(booking)}
+                    sx={{ textTransform: 'none', py: 0.2, px: 1.2, fontSize: '0.68rem', borderRadius: 1.5, boxShadow: 'none', minWidth: 0 }}
+                  >
+                    Pay
+                  </Button>
                 </>
               )}
-            </Box>
-
-            {/* Remaining Payment */}
-            {(booking.status === 'in_progress' || booking.status === 'completed') && booking.remaining_payment > 0 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', md: 'flex-end' } }}>
-                <Typography variant="caption" color="text.secondary">
-                  Remaining: <strong>₹{booking.remaining_payment}</strong>
-                </Typography>
-                {!booking.is_fully_paid && (
-                  <Button
-                    variant="contained"
-                    size="small"
-                    color="primary"
-                    onClick={() => onPayRemaining(booking)}
-                    sx={{ textTransform: 'none', fontWeight: 'bold', mt: 0.5, borderRadius: 1.5, boxShadow: 'none' }}
-                  >
-                    Pay Balance
-                  </Button>
-                )}
-                {booking.is_fully_paid && (
-                  <Typography variant="caption" fontWeight={700} sx={{ color: "success.main", mt: 0.5 }}>
-                    Fully Paid
-                  </Typography>
-                )}
-              </Box>
-            )}
+            </Stack>
+          )}
         </Box>
       </Box>
     </Paper>
@@ -309,8 +275,8 @@ export default function Bookings() {
   // redux slices
   const { bookings = [], loading, error } = useSelector((s) => s.bookings);
   const totalCount = useSelector(selectTotalBookingCount);
-  const services = useSelector((s) => s.services.list || []);
-  const categories = useSelector((s) => s.categories.list || []);
+  const { list: services = [], isFullList: servicesFull } = useSelector((s) => s.services);
+  const { list: categories = [], isFullList: categoriesFull } = useSelector((s) => s.categories);
 
   // local state
   const [statusFilter, setStatusFilter] = useState(DEFAULT_STATUS); // 'all' or specific statuses
@@ -364,9 +330,9 @@ export default function Bookings() {
 
     dispatch(fetchBookings(queryParams));
 
-    if (!services.length) dispatch(fetchServices());
-    if (!categories.length) dispatch(fetchCategories());
-  }, [dispatch, page, search, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, services.length, categories.length]);
+    if (!servicesFull) dispatch(fetchServices({ no_pagination: true }));
+    if (!categoriesFull) dispatch(fetchCategories({ no_pagination: true }));
+  }, [dispatch, page, search, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, servicesFull, categoriesFull]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -510,7 +476,7 @@ export default function Bookings() {
       dispatch(fetchBookings({ page }));
     } catch (err) {
       console.error("Wallet payment failed", err);
-      ShowToast(err?.message || "Wallet payment failed. Please try again.", "error");
+      ShowToast(getErrorMessage(err, "Wallet payment failed. Please try again."), "error");
     }
   };
 
@@ -531,28 +497,27 @@ export default function Bookings() {
   const paginated = bookings;
 
   return (
-    <Box sx={{ py: 4, px: { xs: 2, md: 6 }, maxWidth: 1200, mx: "auto" }}>
-      {/* header */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+    <Box sx={{ py: 3, px: { xs: 2, md: 4 }, maxWidth: 1100, mx: "auto" }}>
+      {/* Header */}
+      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} mb={3} spacing={1.5}>
         <Box>
-          <Typography variant="h4" fontWeight={800}>Your Bookings</Typography>
-          <Typography variant="body2" color="text.secondary">Bookings placed in your account</Typography>
+          <Typography variant="h5" fontWeight={800}>My Bookings</Typography>
+          <Typography variant="body2" color="text.secondary" fontWeight={500}>
+            {totalCount > 0 ? `${totalCount} booking${totalCount !== 1 ? 's' : ''} found` : 'No bookings yet'}
+          </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1} alignItems="center">
-          <TextField
-            size="small"
-            placeholder="Search orders"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            InputProps={{
-              startAdornment: (<InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>),
-              endAdornment: search ? (<InputAdornment position="end"><IconButton size="small" onClick={() => setSearch("")}><ClearIcon fontSize="small" /></IconButton></InputAdornment>) : null
-            }}
-            sx={{ minWidth: 320, bgcolor: "background.paper", borderRadius: 1 }}
-          />
-          {/* Search triggers largely by effect on 'search' change, simplified for now */}
-        </Stack>
+        <TextField
+          size="small"
+          placeholder="Search by service, name…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          InputProps={{
+            startAdornment: (<InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} /></InputAdornment>),
+            endAdornment: search ? (<InputAdornment position="end"><IconButton size="small" onClick={() => setSearch("")}><ClearIcon fontSize="small" /></IconButton></InputAdornment>) : null
+          }}
+          sx={{ minWidth: { sm: 280 }, bgcolor: "background.paper", borderRadius: 2 }}
+        />
       </Stack>
 
       {/* Snackbar for transient errors */}
@@ -562,15 +527,14 @@ export default function Bookings() {
         </Alert>
       </Snackbar>
 
-      {/* filter row */}
-      <Paper sx={{ p: 2, mb: 3, borderRadius: 1 }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center" justifyContent="space-between">
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="body2"><strong>{totalCount}</strong> orders found</Typography>
-
-            {/* Past range */}
+      {/* Filter bar */}
+      <Paper elevation={0} sx={{ p: 2, mb: 2.5, borderRadius: 2.5, border: '1px solid', borderColor: 'grey.200' }}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems="center" justifyContent="space-between" mb={1.5}>
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
             <FormControl size="small">
-              <Select value={pastRange} onChange={(e) => setPastRange(e.target.value)} displayEmpty sx={{ minWidth: 150 }}>
+              <Select value={pastRange} onChange={(e) => setPastRange(e.target.value)} displayEmpty
+                sx={{ minWidth: 130, fontSize: '0.82rem', fontWeight: 600, borderRadius: 1.5 }}
+              >
                 <MenuItem value="all">All time</MenuItem>
                 <MenuItem value="today">Today</MenuItem>
                 <MenuItem value="this_week">This week</MenuItem>
@@ -578,16 +542,13 @@ export default function Bookings() {
                 <MenuItem value="past3m">Past 3 months</MenuItem>
               </Select>
             </FormControl>
-          </Stack>
 
-          <Stack direction="row" spacing={1} alignItems="center">
-            {/* category selector (avatar + name) */}
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Category</InputLabel>
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel sx={{ fontSize: '0.82rem' }}>Category</InputLabel>
               <Select
-                value={selectedCategory}
-                label="Category"
+                value={selectedCategory} label="Category"
                 onChange={(e) => setSelectedCategory(e.target.value)}
+                sx={{ fontSize: '0.82rem', borderRadius: 1.5 }}
                 renderValue={(val) => {
                   if (!val) return "All categories";
                   const cat = categories.find(c => String(c.id) === String(val));
@@ -598,59 +559,67 @@ export default function Bookings() {
                 {categories.map((c) => (
                   <MenuItem key={c.id} value={String(c.id)}>
                     <ListItemIcon>
-                      {c.icon ? (
-                        <Avatar src={c.icon} sx={{ width: 28, height: 28 }} />
-                      ) : (
-                        <Avatar sx={{ width: 28, height: 28 }}>{(c.name || "C")[0]}</Avatar>
-                      )}
+                      {c.icon ? <Avatar src={c.icon} sx={{ width: 24, height: 24 }} /> : <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>{(c.name || "C")[0]}</Avatar>}
                     </ListItemIcon>
-                    <ListItemText primary={c.name} />
+                    <ListItemText primary={c.name} primaryTypographyProps={{ fontSize: '0.82rem' }} />
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
-            {/* clear category button only visible when selected */}
-            {selectedCategory ? (
-              <Tooltip title="Clear category">
-                <IconButton size="small" onClick={() => setSelectedCategory("")}>
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            ) : null}
-
-            <Button variant="outlined" onClick={clearFilters}>Reset</Button>
-
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel>Sort</InputLabel>
-              <Select value={sortBy} label="Sort" onChange={(e) => setSortBy(e.target.value)}>
-                <MenuItem value="date_desc">Date (new → old)</MenuItem>
-                <MenuItem value="date_asc">Date (old → new)</MenuItem>
-                <MenuItem value="price_desc">Price (high → low)</MenuItem>
-                <MenuItem value="price_asc">Price (low → high)</MenuItem>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel sx={{ fontSize: '0.82rem' }}>Sort</InputLabel>
+              <Select value={sortBy} label="Sort" onChange={(e) => setSortBy(e.target.value)} sx={{ fontSize: '0.82rem', borderRadius: 1.5 }}>
+                <MenuItem value="date_desc">Newest first</MenuItem>
+                <MenuItem value="date_asc">Oldest first</MenuItem>
+                <MenuItem value="price_desc">Price: High → Low</MenuItem>
+                <MenuItem value="price_asc">Price: Low → High</MenuItem>
               </Select>
             </FormControl>
           </Stack>
+
+          <Stack direction="row" spacing={1} alignItems="center">
+            {selectedCategory && (
+              <Tooltip title="Clear category">
+                <IconButton size="small" onClick={() => setSelectedCategory("")} sx={{ bgcolor: 'grey.100' }}><ClearIcon fontSize="small" /></IconButton>
+              </Tooltip>
+            )}
+            <Button size="small" variant="outlined" onClick={clearFilters}
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 1.5, fontSize: '0.78rem', borderColor: 'grey.300', color: 'text.secondary' }}
+            >
+              Reset All
+            </Button>
+          </Stack>
         </Stack>
 
-        {/* status chips */}
-        <Stack direction="row" spacing={1} alignItems="center" mt={2} sx={{ flexWrap: "wrap" }}>
-          {STATUSES.map((s) => (
-            <Chip
-              key={s}
-              label={s.replace("_", " ")}
-              size="small"
-              clickable
-              onClick={() => toggleStatus(s)}
-              color={statusFilter.includes(s) ? statusColor(s) : "default"}
-              variant={statusFilter.includes(s) ? "filled" : "outlined"}
-              sx={{ textTransform: "capitalize", fontWeight: 600, borderRadius: 2 }}
-            />
-          ))}
-
-          {JSON.stringify(statusFilter) !== JSON.stringify(DEFAULT_STATUS) && (
-            <Button size="small" onClick={clearStatusSelection} sx={{ ml: 1 }}>
-              Clear status
+        {/* Status filter chips */}
+        <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap">
+          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mr: 0.5 }}>Status:</Typography>
+          {STATUSES.map((s) => {
+            const cfg = STATUS_CONFIG[s] || {};
+            const active = statusFilter.includes(s);
+            return (
+              <Chip
+                key={s}
+                label={cfg.label || s.replace("_", " ")}
+                size="small"
+                clickable
+                onClick={() => toggleStatus(s)}
+                sx={{
+                  textTransform: "capitalize", fontWeight: 700, fontSize: '0.68rem', height: 24,
+                  bgcolor: active ? cfg.bg : 'grey.100',
+                  color: active ? cfg.color : 'text.secondary',
+                  border: `1px solid ${active ? (cfg.border || cfg.color) : '#e5e7eb'}`,
+                  transition: 'all 0.15s',
+                }}
+              />
+            );
+          })}
+          {statusFilter.length > 0 && (
+            <Button size="small" onClick={clearStatusSelection}
+              sx={{ fontSize: '0.72rem', textTransform: 'none', color: 'text.secondary', fontWeight: 600, ml: 0.5, p: 0, minWidth: 0 }}
+            >
+              Clear
             </Button>
           )}
         </Stack>
@@ -682,103 +651,115 @@ export default function Bookings() {
       )}
 
       {/* Payment Modal */}
-      <Modal
-        open={payModalOpen}
-        onClose={() => setPayModalOpen(false)}
-        aria-labelledby="pay-remaining-modal"
-      >
+      <Modal open={payModalOpen} onClose={() => setPayModalOpen(false)}>
         <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 450,
-          bgcolor: 'background.paper',
-          boxShadow: 24,
-          p: 3,
-          borderRadius: 3
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          width: { xs: '90vw', sm: 460 }, bgcolor: 'background.paper',
+          borderRadius: 3, boxShadow: '0 24px 64px rgba(0,0,0,0.15)',
+          maxHeight: '90vh', overflowY: 'auto'
         }}>
-          <Typography variant="h6" mb={1} fontWeight="800">
-            {selectedBooking?.paymentType === 'advance' ? 'Advance Payment' : 'Remaining Balance'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            {selectedBooking?.paymentType === 'advance'
-              ? `You are paying an advance of ₹${selectedBooking?.advance} for your ${selectedBooking?.service_name || 'service'} booking.`
-              : `You are paying the remaining balance of ₹${selectedBooking?.remaining_payment} for your ${selectedBooking?.service_name || 'service'} booking.`
-            }
-          </Typography>
+          <Box sx={{ height: 4, background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" fontWeight={800} mb={0.5}>
+              {selectedBooking?.paymentType === 'advance' ? 'Pay Advance' : 'Pay Remaining Balance'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={2.5}>
+              {selectedBooking?.paymentType === 'advance'
+                ? `₹${selectedBooking?.advance} advance for ${selectedBooking?.service_name || 'service'}`
+                : `₹${selectedBooking?.remaining_payment} remaining for ${selectedBooking?.service_name || 'service'}`
+              }
+            </Typography>
 
-          <Typography variant="subtitle2" fontWeight={700} mb={1}>Select Payment Method</Typography>
-          <RadioGroup
-            value={paymentMethod}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-          >
-            <Paper variant="outlined" sx={{ mb: 1.5, p: 1, borderRadius: 2, borderColor: paymentMethod === 'card' ? 'primary.main' : 'grey.300', bgcolor: paymentMethod === 'card' ? 'primary.50' : 'transparent' }}>
-              <FormControlLabel
-                value="card"
-                control={<Radio size="small" />}
-                label={<Typography variant="body2" fontWeight={600}>Credit/Debit Card (Stripe)</Typography>}
-                sx={{ width: '100%', m: 0 }}
-              />
-            </Paper>
+            <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.65rem', display: 'block', mb: 1 }}>
+              Payment Method
+            </Typography>
 
-            <Paper variant="outlined" sx={{ p: 1, borderRadius: 2, borderColor: paymentMethod === 'wallet' ? 'primary.main' : 'grey.300', bgcolor: paymentMethod === 'wallet' ? 'primary.50' : 'transparent', opacity: Number(walletBalance) < Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment) ? 0.5 : 1 }}>
-              <FormControlLabel
-                value="wallet"
-                control={<Radio size="small" />}
-                label={
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                    <Typography variant="body2" fontWeight={600}>Wallet</Typography>
-                    <Chip
-                      label={`Balance: ₹${walletBalance}`}
-                      size="small"
-                      color={Number(walletBalance) >= Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment) ? "success" : "error"}
-                      variant="outlined"
-                      sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
-                    />
+            <Stack spacing={1} mb={2.5}>
+              {[
+                { value: 'card', label: 'Credit / Debit Card', sub: 'Powered by Stripe' },
+                {
+                  value: 'wallet', label: 'Wallet',
+                  sub: `Balance: ₹${walletBalance}`,
+                  disabled: Number(walletBalance) < Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment),
+                  balanceOk: Number(walletBalance) >= Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment),
+                },
+              ].map((opt) => (
+                <Box
+                  key={opt.value}
+                  onClick={() => !opt.disabled && setPaymentMethod(opt.value)}
+                  sx={{
+                    p: 1.5, borderRadius: 2, border: '1.5px solid',
+                    borderColor: paymentMethod === opt.value ? '#6366f1' : 'grey.200',
+                    bgcolor: paymentMethod === opt.value ? '#f5f3ff' : 'transparent',
+                    cursor: opt.disabled ? 'not-allowed' : 'pointer',
+                    opacity: opt.disabled ? 0.5 : 1,
+                    display: 'flex', alignItems: 'center', gap: 1.5, transition: 'all 0.15s',
+                  }}
+                >
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body2" fontWeight={700}>{opt.label}</Typography>
+                    <Typography variant="caption" color="text.secondary">{opt.sub}</Typography>
                   </Box>
+                  {opt.value === 'wallet' && (
+                    <Chip
+                      label={`₹${walletBalance}`} size="small"
+                      sx={{
+                        height: 18, fontSize: '0.6rem', fontWeight: 700,
+                        bgcolor: opt.balanceOk ? '#f0fdf4' : '#fff1f2',
+                        color: opt.balanceOk ? '#16a34a' : '#dc2626'
+                      }}
+                    />
+                  )}
+                  <Radio checked={paymentMethod === opt.value} size="small" sx={{ p: 0 }}
+                    onClick={() => !opt.disabled && setPaymentMethod(opt.value)}
+                  />
+                </Box>
+              ))}
+            </Stack>
+
+            <Divider sx={{ mb: 2.5 }} />
+
+            {paymentMethod === 'card' ? (
+              clientSecret && (
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <CheckoutForm
+                    buttonLabel={selectedBooking?.paymentType === 'advance'
+                      ? `Pay ₹${selectedBooking?.advance} Now`
+                      : `Pay ₹${selectedBooking?.remaining_payment} Now`
+                    }
+                  />
+                </Elements>
+              )
+            ) : (
+              <Button
+                variant="contained" fullWidth onClick={handleWalletPay}
+                disabled={loading || Number(walletBalance) < Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment)}
+                sx={{ py: 1.3, fontWeight: 700, textTransform: 'none', bgcolor: '#6366f1', '&:hover': { bgcolor: '#4f46e5' }, borderRadius: 2 }}
+              >
+                {loading
+                  ? <CircularProgress size={22} color="inherit" />
+                  : `Pay ₹${selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment} with Wallet`
                 }
-                sx={{ width: '100%', m: 0, '& .MuiFormControlLabel-label': { flex: 1 } }}
-                disabled={Number(walletBalance) < Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment)}
-              />
-            </Paper>
-          </RadioGroup>
-
-          <Divider sx={{ my: 3 }} />
-
-          {paymentMethod === 'card' ? (
-            clientSecret && (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <CheckoutForm buttonLabel={selectedBooking?.paymentType === 'advance' ? `Pay ₹${selectedBooking?.advance} Now` : `Pay ₹${selectedBooking?.remaining_payment} Now`} />
-              </Elements>
-            )
-          ) : (
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleWalletPay}
-              disabled={loading || Number(walletBalance) < Number(selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment)}
-              sx={{ py: 1.5, fontWeight: "bold", textTransform: 'none' }}
-            >
-              {loading ? <CircularProgress size={24} /> : `Pay ₹${selectedBooking?.paymentType === 'advance' ? selectedBooking?.advance : selectedBooking?.remaining_payment} with Wallet`}
-            </Button>
-          )}
+              </Button>
+            )}
+          </Box>
         </Box>
       </Modal>
 
-      {/* pagination */}
+      {/* Pagination */}
       {totalCount > perPage && (
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
-          <Typography variant="body2" color="text.secondary">
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2.5 }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={500}>
             Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, totalCount)} of {totalCount} bookings
           </Typography>
           <Pagination
             count={Math.ceil((totalCount || 0) / perPage)}
             page={page}
-            onChange={(_, p) => setPage(p)}
+            onChange={(_, p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             color="primary"
-            showFirstButton
-            showLastButton
+            shape="rounded"
+            size="small"
+            showFirstButton showLastButton
           />
         </Box>
       )}
