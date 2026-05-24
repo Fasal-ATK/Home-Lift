@@ -33,12 +33,14 @@ import { ShowToast } from "../../common/Toast";
 import { getErrorMessage } from "../../../utils/errorHelper";
 
 const calcAdvance = (p) => {
-  const price = Number(p);
-  if (!price) return "0.00";
+  const price = Number(p) || 0;
+  if (price <= 0) return "0.00";
   const calculated = price * 0.02;
   const capped = Math.min(calculated, 200);
-  // Stripe minimum is ₹50
-  return Math.max(capped, 50).toFixed(2);
+  // Stripe minimum is ₹50 — but advance should never exceed total price
+  const minAdv = Math.max(capped, 50);
+  const advance = Math.min(minAdv, price);
+  return advance.toFixed(2);
 };
 
 const getDiscountedPrice = (price, offer) => {
@@ -65,6 +67,7 @@ const BookingPage = () => {
   const selectedService = location.state?.service || null;
   const offer = selectedService?.active_offer;
   const finalPrice = getDiscountedPrice(selectedService?.price, offer);
+  const advanceAmount = Number(calcAdvance(finalPrice || 0));
 
   const { loading, error } = useSelector((state) => state.bookings);
   const { handleSubmit, control, reset, watch, setValue } = useForm({
@@ -455,7 +458,7 @@ const BookingPage = () => {
                 <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
                   <Typography color="text.secondary">Advance Payment (Pay now)</Typography>
                   <Typography fontWeight="700" color="primary.main">
-                    ₹{calcAdvance(Number(finalPrice))}
+                    ₹{advanceAmount.toFixed(2)}
                   </Typography>
                 </Box>
 
@@ -464,7 +467,7 @@ const BookingPage = () => {
                 <Box sx={{ display: "flex", justifyContent: "space-between", opacity: 0.6 }}>
                   <Typography variant="body2">Remaining Balance</Typography>
                   <Typography variant="body2" fontWeight="700">
-                    ₹{(Number(finalPrice) - Number(calcAdvance(finalPrice))).toFixed(2)}
+                    ₹{Math.max(0, Number(finalPrice || 0) - advanceAmount).toFixed(2)}
                   </Typography>
                 </Box>
 
@@ -483,7 +486,7 @@ const BookingPage = () => {
               <Controller
                 name="advance"
                 control={control}
-                defaultValue={calcAdvance(selectedService?.price)}
+                defaultValue={calcAdvance(finalPrice)}
                 render={({ field }) => <input type="hidden" {...field} />}
               />
 
