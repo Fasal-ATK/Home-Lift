@@ -350,13 +350,13 @@ const Home = () => {
             </Box>
             
             {/* Scrollable horizontal container for offers */}
-            <Box sx={{ display: "flex", overflowX: "auto", pb: 3, pt: 1, px: 1, gap: 3, "&::-webkit-scrollbar": { display: "none" }, scrollBehavior: "smooth", mx: -1 }}>
+            <Box sx={{ display: "flex", overflowX: "auto", pb: 3, pt: 1, px: 1, gap: 1, "&::-webkit-scrollbar": { display: "none" }, scrollBehavior: "smooth", mx: -1 }}>
               {activeOffers.map((offer) => {
                 const name = offer.service_name || offer.category_name || offer.title;
                 const icon = offer.service_icon || offer.category_icon || "";
 
                 return (
-                  <Box key={offer.unique_key || offer.id} sx={{ minWidth: { xs: 160, sm: 200, md: 240 }, flexShrink: 0 }}>
+                  <Box key={offer.unique_key || offer.id} sx={{ minWidth: { xs: 160, sm: 200, md: 180 }, flexShrink: 0 }}>
                     <ServiceCard
                       name={name}
                       icon={icon}
