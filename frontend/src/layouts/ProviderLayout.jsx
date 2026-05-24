@@ -1,16 +1,18 @@
 // ProviderLayout.jsx
 import { Box } from "@mui/material";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import ProviderSidebar from "../components/provider/ProviderSidebar";
 
 const ProviderLayout = () => {
   const [open, setOpen] = useState(true);
+  const location = useLocation();
 
-  const sidebarWidth = open ? 190 : 70;
+  const sidebarWidth = open ? 220 : 72;
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#f5f5f5" }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "#f8f9fc" }}>
       {/* Fixed Sidebar */}
       <ProviderSidebar open={open} setOpen={setOpen} />
 
@@ -27,7 +29,18 @@ const ProviderLayout = () => {
           overflowX: "hidden",
         }}
       >
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+            style={{ width: "100%", height: "100%" }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </Box>
     </Box>
   );
