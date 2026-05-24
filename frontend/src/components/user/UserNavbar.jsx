@@ -10,8 +10,9 @@ import {
   MenuItem,
   Tooltip,
   useTheme,
+  Avatar,
 } from '@mui/material';
-import { Notifications, LocationOn, AccountCircle, Chat, Menu as MenuIcon } from '@mui/icons-material';
+import { Notifications, LocationOn, Chat, Menu as MenuIcon } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import LogoutButton from '../common/Logout';
@@ -178,7 +179,13 @@ const UserNavbar = () => {
                   "&:hover": { bgcolor: "rgba(79,70,229,0.04)" }
                 }}
               >
-                <AccountCircle />
+                <Avatar
+                  src={user?.profile_picture || undefined}
+                  alt={user?.first_name || user?.username || 'Profile'}
+                  sx={{ width: 32, height: 32, bgcolor: user?.profile_picture ? 'transparent' : '#4f46e5', fontSize: 14 }}
+                >
+                  {!user?.profile_picture && (user?.first_name ? user.first_name[0] : user?.username?.[0] || 'U')}
+                </Avatar>
               </IconButton>
             </Tooltip>
           </Box>
