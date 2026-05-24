@@ -39,6 +39,7 @@ const categorySlice = createSlice({
     totalCount: 0,
     loading: false,
     error: null,
+    isFullList: false,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -53,9 +54,11 @@ const categorySlice = createSlice({
         if (action.payload && action.payload.results) {
           state.list = action.payload.results;
           state.totalCount = action.payload.count;
+          state.isFullList = false;
         } else {
           state.list = action.payload || [];
           state.totalCount = state.list.length;
+          state.isFullList = true;
         }
       })
       .addCase(fetchCategories.rejected, (state, action) => {
