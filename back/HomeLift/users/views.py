@@ -403,7 +403,7 @@ class ProfileUpdateView(APIView):
     
     def get(self, request):
         """Fetch current user profile data"""
-        serializer = UserSerializer(request.user)
+        serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def put(self, request):
@@ -413,7 +413,7 @@ class ProfileUpdateView(APIView):
             logger.debug("Profile Update PUT request for user %s", user.id)
             logger.debug("Request Data: %s", request.data)
             
-            serializer = UserSerializer(user, data=request.data, partial=False)
+            serializer = UserSerializer(user, data=request.data, partial=False, context={'request': request})
             if serializer.is_valid():
                 logger.debug('ProfileUpdateView: PUT serializer valid, saving for user %s', user.id)
                 serializer.save()
@@ -437,7 +437,12 @@ class ProfileUpdateView(APIView):
             logger.debug("Profile Update PATCH request for user %s", user.id)
             logger.debug("Request Data: %s", request.data)
             
-            serializer = UserSerializer(user, data=request.data, partial=True)
+            data = request.data.copy()
+            # Prevent accidental deletion if frontend sends empty profile_picture
+            if 'profile_picture' in data and not hasattr(data['profile_picture'], 'file'):
+                data.pop('profile_picture', None)
+            
+            serializer = UserSerializer(user, data=data, partial=True, context={'request': request})
             if serializer.is_valid():
                 logger.debug('ProfileUpdateView: PATCH serializer valid, saving for user %s', user.id)
                 serializer.save()
@@ -463,7 +468,28 @@ class UserManageView(APIView):
 
     def get(self, request):
         from core.pagination import StandardResultsSetPagination
+        from django.db.models import Q
+        
         users = CustomUser.objects.filter(is_staff=False).order_by('-id')
+        
+        # Search functionality
+        search_query = request.query_params.get('search')
+        if search_query:
+            users = users.filter(
+                Q(username__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(phone_number__icontains=search_query) |
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query)
+            )
+
+        # Status filter (active / inactive)
+        status_filter = request.query_params.get('status')
+        if status_filter == 'active':
+            users = users.filter(is_active=True)
+        elif status_filter == 'inactive':
+            users = users.filter(is_active=False)
+
         paginator = StandardResultsSetPagination()
         result_page = paginator.paginate_queryset(users, request)
         serializer = UserSerializer(result_page, many=True)

@@ -26,6 +26,25 @@ class UserSerializer(serializers.ModelSerializer):
         except:
             return False
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Ensure profile_picture returns the absolute URL correctly from CloudinaryResource
+        if instance.profile_picture:
+            if hasattr(instance.profile_picture, 'url'):
+                representation['profile_picture'] = instance.profile_picture.url
+            elif isinstance(instance.profile_picture, str):
+                # Fallback if it is somehow a string
+                if instance.profile_picture.startswith('http'):
+                    representation['profile_picture'] = instance.profile_picture
+                else:
+                    # Not an absolute URL, but keep it so it's not None
+                    representation['profile_picture'] = instance.profile_picture
+            else:
+                representation['profile_picture'] = str(instance.profile_picture)
+        else:
+            representation['profile_picture'] = None
+        return representation
+
 
 # ---------------------------
 # Signup        
