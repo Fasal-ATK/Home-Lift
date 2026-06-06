@@ -12,7 +12,7 @@ class CustomUser(AbstractUser):
         folder='images/profiles',
         blank=True,
         null=True,
-        help_text="Profile picture for the user (max 5 MB)",
+        help_text="Profile picture for the user (max 2 MB)",
         validators=[validate_image_size]
     )
     is_provider = models.BooleanField(default=False)

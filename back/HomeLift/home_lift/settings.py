@@ -239,7 +239,7 @@ CHANNEL_LAYERS = {
 }
 
 # File Upload Size Limits
-MAX_IMAGE_SIZE_MB = 5  # 5 MB for images (profile pictures, icons, etc.)
+MAX_IMAGE_SIZE_MB = 2  # 2 MB for images (profile pictures, icons, etc.)
 MAX_DOCUMENT_SIZE_MB = 10  # 10 MB for documents (PDFs, verification docs)
 
 # Django file upload settings
