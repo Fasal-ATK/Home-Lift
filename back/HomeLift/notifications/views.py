@@ -23,6 +23,23 @@ class NotificationListView(generics.ListAPIView):
             recipient=self.request.user
         ).order_by('-created_at')
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        unread_count = queryset.filter(is_read=False).count()
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            response.data['unread_count'] = unread_count
+            return response
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'results': serializer.data,
+            'unread_count': unread_count
+        })
+
 
 # 2. Mark a specific notification as read, or DELETE it
 class NotificationDetailView(APIView):

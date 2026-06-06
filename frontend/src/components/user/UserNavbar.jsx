@@ -11,6 +11,7 @@ import {
   Tooltip,
   useTheme,
   Avatar,
+  Badge,
 } from '@mui/material';
 import { Notifications, LocationOn, Chat, Menu as MenuIcon } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -28,7 +29,11 @@ const UserNavbar = () => {
 
   const { isProvider, user } = useSelector((state) => state.auth);
   const { bookings } = useSelector((state) => state.bookings);
+  const { unreadCount: notificationsUnreadCount } = useSelector((state) => state.notifications);
+  const { rooms } = useSelector((state) => state.chat);
   const dispatch = useDispatch();
+
+  const chatUnreadCount = rooms?.reduce((acc, room) => acc + (room.unread_count || 0), 0) || 0;
 
   const [mobileMenuAnchorEl, setMobileMenuAnchorEl] = React.useState(null);
   const handleMobileMenuOpen = (event) => setMobileMenuAnchorEl(event.currentTarget);
@@ -151,7 +156,9 @@ const UserNavbar = () => {
                   "&:hover": { bgcolor: "rgba(79,70,229,0.04)" }
                 }}
               >
-                <Notifications />
+                <Badge badgeContent={notificationsUnreadCount} color="error">
+                  <Notifications />
+                </Badge>
               </IconButton>
             </Tooltip>
 
@@ -165,7 +172,9 @@ const UserNavbar = () => {
                   "&:hover": { bgcolor: "rgba(79,70,229,0.04)" }
                 }}
               >
-                <Chat />
+                <Badge badgeContent={chatUnreadCount} color="error">
+                  <Chat />
+                </Badge>
               </IconButton>
             </Tooltip>
 

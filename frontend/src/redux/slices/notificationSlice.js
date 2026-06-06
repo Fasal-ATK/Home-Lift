@@ -62,6 +62,7 @@ const notificationSlice = createSlice({
     loading: false,
     hasMore: true,
     page: 1,
+    unreadCount: 0,
     error: null,
   },
   reducers: {
@@ -70,11 +71,13 @@ const notificationSlice = createSlice({
       state.loading = false;
       state.hasMore = true;
       state.page = 1;
+      state.unreadCount = 0;
       state.error = null;
     },
     // ✅ Handle real-time notification
     addNotification: (state, action) => {
       state.list.unshift(action.payload);
+      state.unreadCount += 1;
     },
   },
   extraReducers: (builder) => {
@@ -86,7 +89,11 @@ const notificationSlice = createSlice({
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.loading = false;
-        const { results, next, page } = action.payload;
+        const { results, next, page, unread_count } = action.payload;
+        
+        if (unread_count !== undefined) {
+          state.unreadCount = unread_count;
+        }
 
         if (page === 1) {
           state.list = results;
@@ -107,13 +114,21 @@ const notificationSlice = createSlice({
       // Mark as read
       .addCase(markNotificationRead.fulfilled, (state, action) => {
         const notif = state.list.find((n) => n.id === action.payload.id);
-        if (notif) notif.is_read = true;
+        if (notif && !notif.is_read) {
+          notif.is_read = true;
+          state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
       })
-      // Bulk Read
+      // Mark Multiple as Read
       .addCase(markNotificationsRead.fulfilled, (state, action) => {
-        state.list = state.list.map(n =>
-          action.payload.ids.includes(n.id) ? { ...n, is_read: true } : n
-        );
+        let countRead = 0;
+        state.list.forEach((n) => {
+          if (action.payload.ids.includes(n.id) && !n.is_read) {
+            n.is_read = true;
+            countRead += 1;
+          }
+        });
+        state.unreadCount = Math.max(0, state.unreadCount - countRead);
       })
       // Bulk Delete
       .addCase(deleteNotifications.fulfilled, (state, action) => {

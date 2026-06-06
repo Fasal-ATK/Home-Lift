@@ -4,9 +4,9 @@ import {
   Typography,
   IconButton,
   Tooltip,
-  Avatar,
   Divider,
   Stack,
+  Badge,
 } from "@mui/material";
 import { styled, keyframes } from "@mui/material/styles";
 import {
@@ -19,10 +19,10 @@ import {
   Menu,
   ChevronLeft,
   SupportAgent,
-  Chat,
   ArrowBack,
   WorkHistory,
 } from "@mui/icons-material";
+import { useSelector } from "react-redux";
 
 // ─── animations ──────────────────────────────────────────────────────────────
 const slideIn = keyframes`
@@ -136,6 +136,23 @@ const BOTTOM_ITEMS = [
 export default function ProviderSidebar({ open, setOpen }) {
   const location = useLocation();
   const navigate  = useNavigate();
+  const { rooms } = useSelector((state) => state.chat);
+
+  const chatUnreadCount = rooms?.reduce((acc, room) => acc + (room.unread_count || 0), 0) || 0;
+
+  const BOTTOM_ITEMS_WITH_BADGE = BOTTOM_ITEMS.map(item => {
+    if (item.text === "Chat") {
+      return {
+        ...item,
+        icon: (
+          <Badge badgeContent={chatUnreadCount} color="error" variant="dot">
+            {item.icon}
+          </Badge>
+        )
+      };
+    }
+    return item;
+  });
 
   const renderItem = (item) => {
     const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
@@ -350,8 +367,9 @@ export default function ProviderSidebar({ open, setOpen }) {
             More
           </Typography>
         )}
-
-        {BOTTOM_ITEMS.map(renderItem)}
+          <Stack spacing={0.5} mt={2}>
+            {BOTTOM_ITEMS_WITH_BADGE.map(renderItem)}
+          </Stack>
       </Box>
 
       {/* ── Footer ────────────────────────────────────────────── */}
