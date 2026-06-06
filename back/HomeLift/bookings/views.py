@@ -71,7 +71,9 @@ class BookingListCreateView(APIView):
         # Basic filtering
         status_param = request.query_params.get('status')
         if status_param and status_param != 'all':
-            qs = qs.filter(status=status_param)
+            statuses = [s.strip() for s in status_param.split(',') if s.strip()]
+            if statuses:
+                qs = qs.filter(status__in=statuses)
 
         search_query = request.query_params.get('search')
         if search_query:
@@ -275,12 +277,39 @@ class ProviderAssignedBookingsView(APIView):
 
     def get(self, request):
         provider = request.user
+        from django.db.models import Q
+        
         qs = Booking.objects.filter(
             provider=provider
         ).select_related("service", "address", "user").order_by("-booking_date", "-booking_time")
 
-        serializer = BookingSerializer(qs, many=True, context={"request": request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        search_query = request.query_params.get('search')
+        if search_query:
+            qs = qs.filter(
+                Q(service__name__icontains=search_query) |
+                Q(user__first_name__icontains=search_query) |
+                Q(user__last_name__icontains=search_query) |
+                Q(user__username__icontains=search_query) |
+                Q(id__icontains=search_query)
+            )
+
+        # Status filter — supports single value or comma-separated list
+        status_param = request.query_params.get('status')
+        if status_param and status_param != 'all':
+            statuses = [s.strip() for s in status_param.split(',') if s.strip()]
+            if statuses:
+                qs = qs.filter(status__in=statuses)
+
+        no_pagination = request.query_params.get('no_pagination')
+        if no_pagination == 'true':
+            serializer = BookingSerializer(qs, many=True, context={"request": request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        from core.pagination import LargeResultsSetPagination
+        paginator = LargeResultsSetPagination()
+        result_page = paginator.paginate_queryset(qs, request)
+        serializer = BookingSerializer(result_page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)
 
 
 

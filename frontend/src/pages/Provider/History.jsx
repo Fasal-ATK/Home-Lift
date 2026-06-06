@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { bookingService } from "../../services/apiServices";
 import { fetchMyAppointments } from "../../redux/slices/provider/providerJobSlice";
+import { selectMyAppointmentsTotalCount } from "../../redux/slices/provider/providerJobSlice";
+import useDebounce from "../../hooks/useDebounce";
 import {
   Box, Typography, Grid, Paper, Chip, Divider, Dialog, DialogTitle,
   DialogContent, DialogActions, Button, Avatar, Stack, IconButton,
   TextField, InputAdornment, Skeleton, Rating, FormControl,
-  InputLabel, Select, MenuItem, Container,
+  InputLabel, Select, MenuItem, Container, Pagination,
 } from "@mui/material";
 import { styled, keyframes } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
@@ -378,36 +380,53 @@ const HistorySkeleton = () => (
 const History = () => {
   const dispatch = useDispatch();
   const { myAppointments, myAppointmentsLoading } = useSelector((state) => state.providerJobs);
-  const [search, setSearch]         = useState("");
+  const totalCount = useSelector(selectMyAppointmentsTotalCount);
+  const PAGE_SIZE = 12;
+
+  const [search, setSearch]           = useState("");
   const [selectedJob, setSelectedJob] = useState(null);
-  const [filter, setFilter]         = useState("all");
-  const [starFilter, setStarFilter] = useState("all");
+  const [filter, setFilter]           = useState("all");  // all | completed | cancelled
+  const [starFilter, setStarFilter]   = useState("all");
+  const [page, setPage]               = useState(1);
 
-  useEffect(() => { dispatch(fetchMyAppointments()); }, [dispatch]);
+  const debouncedSearch = useDebounce(search, 500);
 
-  const historyJobs = (myAppointments || []).filter((j) => ["completed", "cancelled"].includes(j.status));
-
-  const filtered = historyJobs.filter((j) => {
-    const matchSearch = !search
-      || j.service_name?.toLowerCase().includes(search.toLowerCase())
-      || j.full_name?.toLowerCase().includes(search.toLowerCase())
-      || String(j.id).includes(search);
-    const matchFilter = filter === "all" || j.status === filter;
-    let matchStars = true;
-    if (starFilter !== "all") {
-      if (starFilter === "unrated") matchStars = !j.review;
-      else matchStars = j.review && String(j.review.rating) === String(starFilter);
+  useEffect(() => {
+    const params = {
+      page,
+      page_size: PAGE_SIZE,
+      search: debouncedSearch || undefined,
+    };
+    // Pass status to backend unless "all"
+    if (filter === "completed" || filter === "cancelled") {
+      params.status = filter;
+    } else {
+      // default: history = completed + cancelled
+      params.status = "completed,cancelled";
     }
-    return matchSearch && matchFilter && matchStars;
+    dispatch(fetchMyAppointments(params));
+  }, [dispatch, debouncedSearch, filter, page]);
+
+  // Reset to page 1 whenever search or filter changes
+  const handleSearch = (val) => { setSearch(val); setPage(1); };
+  const handleFilter = (val) => { setFilter(val); setPage(1); };
+
+  // Only star-rating filter remains client-side (backend has no star param)
+  const filtered = (myAppointments || []).filter((j) => {
+    if (starFilter === "all") return true;
+    if (starFilter === "unrated") return !j.review;
+    return j.review && String(j.review.rating) === String(starFilter);
   });
 
-  const completed    = historyJobs.filter((j) => j.status === "completed");
-  const cancelled    = historyJobs.filter((j) => j.status === "cancelled");
-  const totalEarnings= completed.reduce((s, j) => s + parseFloat(calcEarnings(j.price)), 0);
-  const avgEarning   = completed.length ? (totalEarnings / completed.length).toFixed(0) : 0;
-  const avgRating    = completed.filter((j) => j.review).length
+  const completed     = (myAppointments || []).filter((j) => j.status === "completed");
+  const cancelled     = (myAppointments || []).filter((j) => j.status === "cancelled");
+  const totalEarnings = completed.reduce((s, j) => s + parseFloat(calcEarnings(j.price)), 0);
+  const avgEarning    = completed.length ? (totalEarnings / completed.length).toFixed(0) : 0;
+  const avgRating     = completed.filter((j) => j.review).length
     ? (completed.reduce((s, j) => s + (j.review?.rating || 0), 0) / completed.filter((j) => j.review).length).toFixed(1)
     : "—";
+
+  const pageCount = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f8f9fc", py: 4 }}>
@@ -447,7 +466,7 @@ const History = () => {
               size="small"
               placeholder="Search by service, customer or ID…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               InputProps={{
                 startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 18, color: "#94a3b8" }} /></InputAdornment>,
                 sx: { borderRadius: 3, fontSize: 14 },
@@ -460,7 +479,7 @@ const History = () => {
                 <Chip
                   key={s}
                   label={s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
-                  onClick={() => setFilter(s)}
+                  onClick={() => handleFilter(s)}
                   sx={{
                     fontWeight: 700,
                     cursor: "pointer",
@@ -512,6 +531,20 @@ const History = () => {
               </Grid>
             ))}
           </Grid>
+        )}
+
+        {/* Pagination */}
+        {pageCount > 1 && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+            <Pagination
+              count={pageCount}
+              page={page}
+              onChange={(_, val) => { setPage(val); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              color="primary"
+              shape="rounded"
+              size="large"
+            />
+          </Box>
         )}
 
         <JobDetailDialog job={selectedJob} open={Boolean(selectedJob)} onClose={() => setSelectedJob(null)} />

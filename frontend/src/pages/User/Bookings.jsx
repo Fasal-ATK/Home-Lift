@@ -39,6 +39,7 @@ import { Elements } from "@stripe/react-stripe-js";
 import { stripePromise } from "../../../stripe/stripe";
 import CheckoutForm from "../../components/common/payment";
 import { getErrorMessage } from "../../utils/errorHelper";
+import useDebounce from "../../hooks/useDebounce";
 
 import Modal from "@mui/material/Modal";
 
@@ -287,6 +288,7 @@ export default function Bookings() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [pastRange, setPastRange] = useState("all");
 
   // Payment Modal State
@@ -320,8 +322,8 @@ export default function Bookings() {
 
     const queryParams = {
       page,
-      search,
-      status: statusFilter.length > 0 ? statusFilter[0] : 'all', // Limitation: only one status filter for now
+      search: debouncedSearch,
+      status: statusFilter.length > 0 ? statusFilter.join(',') : 'all',
       category: selectedCategory,
       date_from: dateFrom,
       date_to: dateTo,
@@ -332,12 +334,12 @@ export default function Bookings() {
 
     if (!servicesFull) dispatch(fetchServices({ no_pagination: true }));
     if (!categoriesFull) dispatch(fetchCategories({ no_pagination: true }));
-  }, [dispatch, page, search, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, servicesFull, categoriesFull]);
+  }, [dispatch, page, debouncedSearch, statusFilter, selectedCategory, dateFrom, dateTo, sortBy, servicesFull, categoriesFull]);
 
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, selectedCategory, dateFrom, dateTo, sortBy, perPage, search, pastRange]);
+  }, [statusFilter, selectedCategory, dateFrom, dateTo, sortBy, perPage, debouncedSearch, pastRange]);
 
   // open snackbar automatically when error changes
   useEffect(() => {
@@ -345,8 +347,9 @@ export default function Bookings() {
   }, [error]);
 
   const toggleStatus = (s) => {
-    // Single select behavior for now to match backend simple filter
-    setStatusFilter((prev) => prev.includes(s) ? [] : [s]);
+    setStatusFilter((prev) =>
+      prev.includes(s) ? prev.filter((item) => item !== s) : [...prev, s]
+    );
   };
 
   const clearStatusSelection = () => setStatusFilter(DEFAULT_STATUS);

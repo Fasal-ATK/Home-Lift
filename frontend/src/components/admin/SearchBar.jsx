@@ -4,7 +4,8 @@ import {
   MenuItem, FormControl, InputLabel, Select, Paper,
 } from '@mui/material';
 import { Search, FilterList, Clear } from '@mui/icons-material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import useDebounce from '../../hooks/useDebounce';
 
 const DEFAULT_OPTIONS = [
   { value: 'all',      label: 'All'      },
@@ -23,16 +24,23 @@ const SearchBarWithFilter = ({
   const [filter, setFilter]         = useState('all');
 
   const options = filterOptions || DEFAULT_OPTIONS;
+  
+  // Use debounced search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Trigger onSearch only when debounced term changes
+  useEffect(() => {
+    onSearch?.(debouncedSearchTerm);
+  }, [debouncedSearchTerm, onSearch]);
 
   const handleSearchChange = (e) => {
-    const val = e.target.value;
-    setSearchTerm(val);
-    onSearch?.(val);
+    setSearchTerm(e.target.value);
+    // onSearch is handled by useEffect
   };
 
   const handleClear = () => {
     setSearchTerm('');
-    onSearch?.('');
+    // onSearch is handled by useEffect
   };
 
   const handleFilterChange = (e) => {

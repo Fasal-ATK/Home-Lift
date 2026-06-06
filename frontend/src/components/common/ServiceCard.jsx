@@ -29,8 +29,7 @@ const ServiceCard = ({
             sx={{
                 width: "100%",
                 maxWidth: 130,
-                minHeight: 160, // Increased from 140 to ensure content fits better
-                height: "auto",
+                height: 160,           // fixed height — no more expanding on long names
                 textAlign: "center",
                 backgroundColor: selected ? "#f0f8ff" : "white",
                 border: selected ? "2px solid #1976d2" : "1px solid #e0e0e0",
@@ -39,21 +38,20 @@ const ServiceCard = ({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: isMore ? "center" : "flex-start", // Centered for "More" button, top for others
+                justifyContent: "space-between",  // even spacing regardless of name length
 
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 position: "relative",
-                overflow: "visible", // Allow content to show on hover if it overflows
+                overflow: "visible",
                 zIndex: 1,
                 "&:hover": {
                     backgroundColor: "#f9f9f9",
-                    transform: "translateY(-9px) scale(1)", // Slightly less scale but more lift
+                    transform: "translateY(-9px) scale(1)",
                     boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
                     zIndex: 20,
-                    // The border "expands" because we allow overflow and scaled box
                 },
                 p: isMore ? 1 : 1.5,
-                pb: 2, 
+                pb: 2,
                 ...sx,
             }}
         >
@@ -106,7 +104,7 @@ const ServiceCard = ({
                     mb: isMore ? 1 : 2,
                     pt: isMore ? 0 : 2,
                     opacity: icon ? 1 : 0.3,
-                    mt: offer ? 1 : 0, // Push down slightly if there's an offer
+                    mt: offer ? 1 : 0,
                 }}
             />
             <Typography
@@ -119,7 +117,11 @@ const ServiceCard = ({
                     px: 1,
                     lineHeight: 1.2,
                     fontSize: "0.85rem",
-                    color: selected ? "primary.main" : "text.primary"
+                    color: selected ? "primary.main" : "text.primary",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden"
                 }}
             >
                 {name}

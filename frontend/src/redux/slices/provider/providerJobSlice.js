@@ -15,18 +15,19 @@ const initialState = jobsAdapter.getInitialState({
   pendingLoading: false,
   myAppointmentsLoading: false,
   myAppointments: [], // Store assigned bookings here
+  myAppointmentsTotalCount: 0, // for pagination in History/Appointments
   error: null,
   acceptError: null,
   acceptingIds: [], // per-job accept in-progress
-  totalCount: 0, // NEW: for pagination
+  totalCount: 0, // for provider job requests pagination
 });
 
 /* Thunks */
 export const fetchMyAppointments = createAsyncThunk(
   "providerJobs/fetchMyAppointments",
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const data = await providerJobService.getMyAppointments();
+      const data = await providerJobService.getMyAppointments(params);
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message || "Failed to fetch my appointments");
@@ -167,7 +168,18 @@ const slice = createSlice({
       })
       .addCase(fetchMyAppointments.fulfilled, (state, action) => {
         state.myAppointmentsLoading = false;
-        state.myAppointments = action.payload || [];
+        const payload = action.payload;
+        // Handle both paginated {count, results} and plain array
+        if (payload && Array.isArray(payload.results)) {
+          state.myAppointments = payload.results;
+          state.myAppointmentsTotalCount = payload.count || 0;
+        } else if (Array.isArray(payload)) {
+          state.myAppointments = payload;
+          state.myAppointmentsTotalCount = payload.length;
+        } else {
+          state.myAppointments = [];
+          state.myAppointmentsTotalCount = 0;
+        }
       })
       .addCase(fetchMyAppointments.rejected, (state, action) => {
         state.myAppointmentsLoading = false;
@@ -199,5 +211,6 @@ export const selectAcceptingIds = (state) => state.providerJobs.acceptingIds;
 export const selectProviderError = (state) => state.providerJobs.error;
 export const selectProviderTotalCount = (state) => state.providerJobs.totalCount;
 export const selectMyAppointments = (state) => state.providerJobs.myAppointments;
+export const selectMyAppointmentsTotalCount = (state) => state.providerJobs.myAppointmentsTotalCount;
 
 export default slice.reducer;

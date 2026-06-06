@@ -86,7 +86,7 @@ function Login() {
   };
 
   return (
-    <Box sx={{ bgcolor: 'black', minHeight: '90vh', py: 8, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <Box sx={{ bgcolor: 'black', minHeight: '100vh', boxSizing: 'border-box', py: 8, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <Container maxWidth="sm">
         <Box
           sx={{

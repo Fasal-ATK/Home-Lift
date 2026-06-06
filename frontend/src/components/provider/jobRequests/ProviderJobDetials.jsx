@@ -186,7 +186,7 @@ export default function ProviderJobDetail() {
     setLoading(true);
     setError(null);
 
-    dispatch(fetchMyAppointments());
+    dispatch(fetchMyAppointments({ no_pagination: true }));
     dispatch(fetchJobDetail(Number(id)))
       .unwrap()
       .then((res) => { if (mounted) setBooking(res); })

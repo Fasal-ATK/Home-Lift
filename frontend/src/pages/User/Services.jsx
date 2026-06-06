@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Grid, Paper, Typography, Box, Container, TextField, InputAdornment, IconButton, Button } from "@mui/material";
+import { Grid, Paper, Typography, Box, Container, TextField, InputAdornment, IconButton, Button, Pagination } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -9,7 +9,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import { fetchServices } from "../../redux/slices/serviceSlice";
 import allCategory from "../../assets/services/All.png";
-
+import useDebounce from "../../hooks/useDebounce";
 import ServiceCard from "../../components/common/ServiceCard";
 
 function Services() {
@@ -18,19 +18,39 @@ function Services() {
   const location = useLocation();
 
   const { list: categories, isFullList: categoriesFull } = useSelector((state) => state.categories);
-  const { list: services, loading: servicesLoading, isFullList: servicesFull } = useSelector(
+  const { list: services, loading: servicesLoading, totalCount } = useSelector(
     (state) => state.services
   );
 
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCategories, setShowCategories] = useState(true);
+  
+  // Pagination state (if backend uses it)
+  const [page, setPage] = useState(1);
+
+  // Use debounced search query
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   useEffect(() => {
-    // Request a full list for the catalog page to allow simple local filtering
+    // Categories are still fetched completely for the category bar
     if (!categoriesFull) dispatch(fetchCategories({ no_pagination: true }));
-    if (!servicesFull) dispatch(fetchServices({ no_pagination: true }));
-  }, [dispatch, categoriesFull, servicesFull]);
+  }, [dispatch, categoriesFull]);
+
+  useEffect(() => {
+    // Fetch services from backend using search query and category
+    const params = {
+      page: page,
+      page_size: 14,
+    };
+    if (debouncedSearchQuery.trim()) {
+      params.search = debouncedSearchQuery.trim();
+    }
+    if (selectedCategory !== null) {
+      params.category = selectedCategory;
+    }
+    dispatch(fetchServices(params));
+  }, [dispatch, debouncedSearchQuery, selectedCategory, page]);
 
   useEffect(() => {
     if (location.state?.searchQuery) {
@@ -40,26 +60,13 @@ function Services() {
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
+    setPage(1); // Reset page on new search
   };
 
   const clearSearch = () => {
     setSearchQuery("");
+    setPage(1);
   };
-
-  const filteredServices =
-    selectedCategory === null
-      ? services
-      : services.filter((srv) => srv.category === selectedCategory);
-
-  const visibleServices = searchQuery.trim()
-    ? filteredServices.filter((srv) => {
-        const lowerQuery = searchQuery.trim().toLowerCase();
-        return (
-          srv.name?.toLowerCase().includes(lowerQuery) ||
-          srv.description?.toLowerCase().includes(lowerQuery)
-        );
-      })
-    : filteredServices;
 
   // ✅ Navigate to ServiceBooking when service card clicked
   const handleServiceClick = (srv) => {
@@ -156,10 +163,10 @@ function Services() {
       </Typography>
 
       {/* Services */}
-      <Grid container spacing={3}>
+      <Grid container spacing={3} columns={14}>
         {servicesLoading ? (
           <Typography>Loading...</Typography>
-        ) : visibleServices.length === 0 ? (
+        ) : services.length === 0 ? (
           <Grid item xs={12}>
             <Paper
               elevation={0}
@@ -176,8 +183,8 @@ function Services() {
             </Paper>
           </Grid>
         ) : (
-          visibleServices.map((srv) => (
-            <Grid size={{ xs: 6, sm: 4, md: 2 }} key={srv.id}>
+          services.map((srv) => (
+            <Grid size={{ xs: 14, sm: 7, md: 2 }} key={srv.id}>
               <ServiceCard
                 name={srv.name}
                 icon={srv.icon}
@@ -189,6 +196,23 @@ function Services() {
           ))
         )}
       </Grid>
+
+      {/* Pagination */}
+      {totalCount > 14 && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <Pagination
+            count={Math.ceil(totalCount / 14)}
+            page={page}
+            onChange={(_, val) => {
+              setPage(val);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            color="primary"
+            shape="rounded"
+            size="large"
+          />
+        </Box>
+      )}
     </Container>
   );
 }

@@ -44,6 +44,7 @@ import {
   selectAcceptingIds,
   selectMyAppointments,
 } from "../../redux/slices/provider/providerJobSlice";
+import useDebounce from "../../hooks/useDebounce";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 const formatDate = (dateStr) => {
@@ -83,15 +84,16 @@ export default function ProviderRequestsWithServices() {
   const myAppointments = useSelector(selectMyAppointments) || [];
 
   const [search, setSearch]               = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [snack, setSnack]                 = useState({ open: false, message: "", severity: "info" });
   const [page, setPage]                   = useState(1);
   const [selectedService, setSelectedService] = useState("All Services");
   const perPage = 20;
 
   useEffect(() => {
-    dispatch(fetchProviderJobs({ page, search, service: selectedService }));
-    dispatch(fetchMyAppointments());
-  }, [dispatch, page, selectedService, search]);
+    dispatch(fetchProviderJobs({ page, search: debouncedSearch, service: selectedService }));
+    dispatch(fetchMyAppointments({ no_pagination: true }));
+  }, [dispatch, page, selectedService, debouncedSearch]);
 
   // overlap check
   const checkOverlap = (booking) => {

@@ -48,6 +48,7 @@ import { useNavigate } from "react-router-dom";
 import { providerJobService } from "../../services/apiServices";
 import api from "../../API/apiConfig";
 import { ShowToast } from "../../components/common/Toast";
+import useDebounce from "../../hooks/useDebounce";
 
 // ------------------ Helper Date Utilities ------------------
 function pad(n) {
@@ -194,6 +195,7 @@ export default function WeekScheduleDemo() {
   
   // Filtering & Search
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [rawBookings, setRawBookings] = useState([]);
@@ -234,11 +236,11 @@ export default function WeekScheduleDemo() {
   }, [weekStart]);
 
   // Fetch Assigned Bookings
-  const fetchAppointments = async () => {
+  const fetchAppointments = async (searchStr = "") => {
     setLoading(true);
     try {
-      const data = await providerJobService.getMyAppointments();
-      setRawBookings(data);
+      const data = await providerJobService.getMyAppointments({ search: searchStr, no_pagination: true });
+      setRawBookings(data?.results || data || []);
     } catch (err) {
       ShowToast("Failed to load appointments", "error");
       console.error(err);
@@ -248,8 +250,8 @@ export default function WeekScheduleDemo() {
   };
 
   useEffect(() => {
-    fetchAppointments();
-  }, []);
+    fetchAppointments(debouncedSearch);
+  }, [debouncedSearch]);
 
   // Map backend bookings to dynamic calendar objects
   const events = useMemo(() => {
@@ -344,13 +346,8 @@ export default function WeekScheduleDemo() {
   const listEventsFiltered = useMemo(() => {
     return events
       .filter((ev) => {
-        const matchesSearch =
-          ev.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          ev.subtitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          String(ev.id).includes(searchTerm);
-        
         const matchesStatus = statusFilter === "all" || ev.status === statusFilter;
-        return matchesSearch && matchesStatus;
+        return matchesStatus;
       })
       .sort((a, b) => {
         const dateCompare = a.dateStr.localeCompare(b.dateStr);

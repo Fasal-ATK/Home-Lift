@@ -134,8 +134,8 @@ export const providerJobService = {
 
 
 
-    getMyAppointments: async () => {
-        const response = await api.get(apiEndpoints.provider.jobs.myAppointments);
+    getMyAppointments: async (params = {}) => {
+        const response = await api.get(apiEndpoints.provider.jobs.myAppointments, { params });
         return response.data;
     },
 
