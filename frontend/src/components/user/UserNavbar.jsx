@@ -21,6 +21,8 @@ import { ShowToast } from '../common/Toast';
 import { userService } from '../../services/apiServices';
 import { setUser } from '../../redux/slices/authSlice';
 import { fetchBookings } from '../../redux/slices/bookingSlice';
+import { fetchNotifications } from '../../redux/slices/notificationSlice';
+import { fetchChatRooms } from '../../redux/slices/chatSlice';
 
 const UserNavbar = () => {
   const navigate = useNavigate();
@@ -42,6 +44,8 @@ const UserNavbar = () => {
   useEffect(() => {
     if (user) {
       dispatch(fetchBookings());
+      dispatch(fetchNotifications(1));  // load page 1 to get unread count immediately
+      dispatch(fetchChatRooms());       // load chat rooms to get unread chat count
     }
   }, [dispatch, user]);
 

@@ -1,175 +1,264 @@
 import React from "react";
-import { Paper, Box, Typography } from "@mui/material";
+import { Box, Typography, Chip } from "@mui/material";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 
 /**
  * Reusable ServiceCard component for displaying categories or services.
- * 
+ *
  * @param {string} name - The name of the service/category.
  * @param {string} icon - The icon or image URL.
  * @param {function} onClick - Handle card click.
  * @param {boolean} selected - Whether the card is in a selected state (used in Categories).
  * @param {boolean} isMore - Special styling for the "More Services" card.
  * @param {object} offer - Offer data if available.
+ * @param {number} price - Price of the service.
  * @param {object} sx - Additional styles to override defaults.
  */
 const ServiceCard = ({
-    name,
-    icon,
-    onClick,
-    selected = false,
-    isMore = false,
-    offer = null,
-    price = null,
-    sx = {}
+  name,
+  icon,
+  onClick,
+  selected = false,
+  isMore = false,
+  offer = null,
+  price = null,
+  sx = {},
 }) => {
-    return (
-        <Paper
-            onClick={onClick}
-            elevation={selected ? 4 : 1}
-            sx={{
-                width: "100%",
-                maxWidth: 130,
-                height: 160,           // fixed height — no more expanding on long names
-                textAlign: "center",
-                backgroundColor: selected ? "#f0f8ff" : "white",
-                border: selected ? "2px solid #1976d2" : "1px solid #e0e0e0",
-                borderRadius: "12px",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "space-between",  // even spacing regardless of name length
+  const calcDiscountedPrice = () => {
+    if (!price || !offer) return null;
+    const p = Number(price);
+    const dv = Number(offer.discount_value);
+    let final = p;
+    if (offer.discount_type === "percentage") {
+      let disc = (p * dv) / 100;
+      if (offer.max_discount) disc = Math.min(disc, Number(offer.max_discount));
+      final = p - disc;
+    } else {
+      final = p - dv;
+    }
+    return Math.max(final, 0).toFixed(0);
+  };
 
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                position: "relative",
-                overflow: "visible",
-                zIndex: 1,
-                "&:hover": {
-                    backgroundColor: "#f9f9f9",
-                    transform: "translateY(-9px) scale(1)",
-                    boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
-                    zIndex: 20,
-                },
-                p: isMore ? 1 : 1.5,
-                pb: 2,
-                ...sx,
-            }}
+  const discountedPrice = calcDiscountedPrice();
+  const offerLabel =
+    offer &&
+    (offer.discount_type === "percentage"
+      ? `${parseInt(offer.discount_value)}% OFF`
+      : `SAVE ₹${parseInt(offer.discount_value)}`);
+
+  const isServiceCard = price !== null;
+
+  return (
+    <Box
+      onClick={onClick}
+      sx={{
+        position: "relative",
+        cursor: "pointer",
+        borderRadius: "18px",
+        overflow: "hidden",
+        transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        background: selected
+          ? "linear-gradient(145deg, #eef2ff, #e0e7ff)"
+          : "white",
+        border: selected
+          ? "2px solid #6366f1"
+          : "1.5px solid rgba(0,0,0,0.07)",
+        boxShadow: selected
+          ? "0 8px 24px rgba(99, 102, 241, 0.25)"
+          : "0 2px 8px rgba(0,0,0,0.06)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: isServiceCard ? "flex-start" : "center",
+        p: isServiceCard ? 0 : 1.5,
+        pb: isServiceCard ? 0 : 2,
+        minHeight: isServiceCard ? 200 : 140,
+        "&:hover": {
+          transform: "translateY(-8px) scale(1.02)",
+          boxShadow: selected
+            ? "0 20px 40px rgba(99, 102, 241, 0.3)"
+            : "0 16px 36px rgba(0,0,0,0.14)",
+          borderColor: selected ? "#4f46e5" : "#a5b4fc",
+          background: selected
+            ? "linear-gradient(145deg, #e0e7ff, #c7d2fe)"
+            : "linear-gradient(145deg, #fafafa, #f5f5ff)",
+          zIndex: 10,
+        },
+        ...sx,
+      }}
+    >
+      {/* Offer Badge */}
+      {offer && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 10,
+            left: 0,
+            background: "linear-gradient(90deg, #f59e0b, #ef4444)",
+            color: "#fff",
+            px: 1.2,
+            py: 0.3,
+            borderRadius: "0 8px 8px 0",
+            display: "flex",
+            alignItems: "center",
+            gap: 0.4,
+            zIndex: 5,
+            boxShadow: "0 2px 8px rgba(239,68,68,0.4)",
+          }}
         >
-            {/* Offer Ribbon - wrapped in a clipping mask container */}
-            {offer && (
-                <Box
-                    sx={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        overflow: "hidden",
-                        borderRadius: "12px",
-                        pointerEvents: "none",
-                        zIndex: 2,
-                    }}
+          <LocalOfferIcon sx={{ fontSize: 10 }} />
+          <Typography
+            sx={{ fontSize: "0.62rem", fontWeight: 800, letterSpacing: 0.5 }}
+          >
+            {offerLabel}
+          </Typography>
+        </Box>
+      )}
+
+      {/* Icon area */}
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          pt: isServiceCard ? (offer ? 3.5 : 2) : 1,
+          pb: isServiceCard ? 1.5 : 1,
+        }}
+      >
+        <Box
+          sx={{
+            width: isServiceCard ? 72 : 58,
+            height: isServiceCard ? 72 : 58,
+            borderRadius: isServiceCard ? "20px" : "16px",
+            background: selected
+              ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+              : "linear-gradient(135deg, #f1f5f9, #e2e8f0)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: selected
+              ? "0 6px 18px rgba(99,102,241,0.4)"
+              : "0 2px 8px rgba(0,0,0,0.08)",
+            transition: "all 0.35s ease",
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            component="img"
+            src={icon || ""}
+            alt={name}
+            sx={{
+              width: isServiceCard ? 48 : 38,
+              height: isServiceCard ? 48 : 38,
+              objectFit: "contain",
+              opacity: icon ? 1 : 0.25,
+            }}
+          />
+        </Box>
+      </Box>
+
+      {/* Name */}
+      <Typography
+        variant="body2"
+        sx={{
+          textAlign: "center",
+          fontWeight: selected ? 800 : 600,
+          fontSize: isServiceCard ? "0.88rem" : "0.8rem",
+          color: selected ? "#4f46e5" : "#1e293b",
+          px: 1.5,
+          lineHeight: 1.3,
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          mb: isServiceCard ? 0.5 : 0,
+        }}
+      >
+        {name}
+      </Typography>
+
+      {/* Price block — service cards only */}
+      {isServiceCard && (
+        <Box
+          sx={{
+            mt: "auto",
+            width: "100%",
+            px: 1.5,
+            pb: 1.5,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 0.3,
+          }}
+        >
+          {offer ? (
+            <>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                <Typography
+                  sx={{
+                    fontSize: "0.7rem",
+                    color: "#94a3b8",
+                    textDecoration: "line-through",
+                  }}
                 >
-                    <Box
-                        sx={{
-                            position: "absolute",
-                            top: 10,
-                            right: -30,
-                            backgroundColor: "#f2b705",
-                            color: "black",
-                            px: 4,
-                            py: 0.5,
-                            transform: "rotate(45deg)",
-                            fontSize: "0.65rem",
-                            fontWeight: "bold",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                            whiteSpace: "nowrap",
-                        }}
-                    >
-                        {offer.discount_type === 'percentage'
-                            ? `${parseInt(offer.discount_value)}% OFF`
-                            : `SAVE ₹${parseInt(offer.discount_value)}`}
-                    </Box>
-                </Box>
-            )}
-
-            <Box
-                component="img"
-                src={icon || ""}
-                alt={name}
+                  ₹{price}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "1rem",
+                    fontWeight: 800,
+                    color: "#16a34a",
+                    lineHeight: 1,
+                  }}
+                >
+                  ₹{discountedPrice}
+                </Typography>
+              </Box>
+              <Chip
+                label={offerLabel}
+                size="small"
                 sx={{
-                    width: 60,
-                    height: 60,
-                    objectFit: "contain",
-                    mb: isMore ? 1 : 2,
-                    pt: isMore ? 0 : 2,
-                    opacity: icon ? 1 : 0.3,
-                    mt: offer ? 1 : 0,
+                  height: 18,
+                  fontSize: "0.6rem",
+                  fontWeight: 700,
+                  background: "linear-gradient(90deg,#fef3c7,#fde68a)",
+                  color: "#92400e",
+                  border: "1px solid #f59e0b",
+                  "& .MuiChip-label": { px: 0.8 },
                 }}
-            />
+              />
+            </>
+          ) : (
             <Typography
-                variant="body2"
-                fontWeight="bold"
-                sx={{
-                    textAlign: "center",
-                    whiteSpace: "normal",
-                    wordBreak: "break-word",
-                    px: 1,
-                    lineHeight: 1.2,
-                    fontSize: "0.85rem",
-                    color: selected ? "primary.main" : "text.primary",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden"
-                }}
+              sx={{
+                fontSize: "0.95rem",
+                fontWeight: 700,
+                color: "#4f46e5",
+              }}
             >
-                {name}
+              ₹{price}
             </Typography>
+          )}
+        </Box>
+      )}
 
-            {price && (
-                <Box sx={{ mt: 0.5, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    {offer ? (
-                        <>
-                            <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{ textDecoration: "line-through", fontSize: "0.7rem" }}
-                                >
-                                    ₹{price}
-                                </Typography>
-                                <Typography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                    color="success.main"
-                                    sx={{ fontSize: "0.75rem" }}
-                                >
-                                    ₹{(() => {
-                                        const p = Number(price);
-                                        const dv = Number(offer.discount_value);
-                                        let final = p;
-                                        if (offer.discount_type === 'percentage') {
-                                            let disc = (p * dv) / 100;
-                                            if (offer.max_discount) disc = Math.min(disc, Number(offer.max_discount));
-                                            final = p - disc;
-                                        } else {
-                                            final = p - dv;
-                                        }
-                                        return Math.max(final, 0).toFixed(0);
-                                    })()}
-                                </Typography>
-                            </Box>
-                        </>
-                    ) : (
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
-                            ₹{price}
-                        </Typography>
-                    )}
-                </Box>
-            )}
-        </Paper>
-    );
+      {/* Bottom accent bar when selected */}
+      {selected && (
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: 0,
+            left: "15%",
+            right: "15%",
+            height: 3,
+            borderRadius: "3px 3px 0 0",
+            background: "linear-gradient(90deg, #6366f1, #8b5cf6)",
+          }}
+        />
+      )}
+    </Box>
+  );
 };
 
 export default ServiceCard;

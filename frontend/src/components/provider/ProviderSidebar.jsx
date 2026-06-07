@@ -19,6 +19,7 @@ import {
   Menu,
   ChevronLeft,
   SupportAgent,
+  Chat,
   ArrowBack,
   WorkHistory,
 } from "@mui/icons-material";

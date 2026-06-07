@@ -310,30 +310,26 @@ const Home = () => {
           ) : servicesError ? (
             <Typography color="error">Failed to load services</Typography>
           ) : (
-            <Grid container spacing={3}>
-              {services.slice(0, 11).map((srv) => (
-                <Grid item xs={6} sm={4} md={3} lg={2} key={srv.id}>
-                  <Box sx={{ "& > *": { height: "100%" } }}>
-                    <ServiceCard
-                      name={srv.name}
-                      icon={srv.icon || ""}
-                      offer={srv.active_offer}
-                      price={srv.price}
-                      onClick={() => handleServiceClick(srv)}
-                    />
-                  </Box>
+            <Grid container spacing={2.5}>
+              {services.slice(0, 7).map((srv) => (
+                <Grid size={{ xs: 6, sm: 4, md: 3, lg: 2 }} key={srv.id}>
+                  <ServiceCard
+                    name={srv.name}
+                    icon={srv.icon || ""}
+                    offer={srv.active_offer}
+                    price={srv.price}
+                    onClick={() => handleServiceClick(srv)}
+                  />
                 </Grid>
               ))}
 
-              <Grid item xs={6} sm={4} md={3} lg={2}>
-                <Box sx={{ "& > *": { height: "100%" } }}>
-                  <ServiceCard
-                    name="More Services"
-                    icon={moreImg}
-                    isMore
-                    onClick={() => navigate("/services")}
-                  />
-                </Box>
+              <Grid size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
+                <ServiceCard
+                  name="More Services"
+                  icon={moreImg}
+                  isMore
+                  onClick={() => navigate("/services")}
+                />
               </Grid>
             </Grid>
           )}
