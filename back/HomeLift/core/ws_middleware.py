@@ -10,13 +10,14 @@ from rest_framework_simplejwt.tokens import AccessToken
 import logging
 from django.contrib.auth import get_user_model
 
-User = get_user_model()
+
 logger = logging.getLogger(__name__)
 
 
 @database_sync_to_async
 def get_user_from_token(token_key):
     try:
+        User = get_user_model()
         token = AccessToken(token_key)
         user_id = token['user_id']
         return User.objects.get(id=user_id)

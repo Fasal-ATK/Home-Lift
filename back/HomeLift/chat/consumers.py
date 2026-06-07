@@ -2,10 +2,7 @@ import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from django.contrib.auth import get_user_model
-from .models import ChatRoom, ChatMessage
 
-User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
@@ -132,6 +129,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_room(self, room_id):
+        from .models import ChatRoom
         try:
             return ChatRoom.objects.select_related('user', 'provider', 'booking__service').get(id=room_id)
         except ChatRoom.DoesNotExist:
@@ -139,6 +137,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def save_message(self, content):
+        from .models import ChatMessage
         return ChatMessage.objects.create(
             room=self.room,
             sender=self.user,
