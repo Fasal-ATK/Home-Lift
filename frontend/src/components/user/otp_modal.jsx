@@ -79,28 +79,65 @@ export default function OtpModal({
   return (
     <Modal open={open} onClose={onClose}>
       <Box sx={{
-        bgcolor: 'white', p: 4, borderRadius: 2,
-        boxShadow: 4, width: 300, mx: 'auto', mt: '20vh', textAlign: 'center', position: 'relative'
+        background: 'rgba(30, 27, 75, 0.85)', // dark indigo glass base
+        backdropFilter: 'blur(20px)',
+        webkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        p: 4,
+        borderRadius: 5,
+        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
+        width: 320,
+        mx: 'auto',
+        mt: '20vh',
+        textAlign: 'center',
+        position: 'relative',
+        color: '#ffffff',
       }}>
         <IconButton
           onClick={onClose}
-          sx={{ position: 'absolute', top: 8, right: 8 }}
+          sx={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            color: 'rgba(255, 255, 255, 0.65)',
+            '&:hover': { color: '#ffffff', transform: 'rotate(90deg)' },
+            transition: 'all 0.28s ease',
+          }}
           aria-label="close"
         >
           <CloseIcon />
         </IconButton>
 
-        <Typography variant="h6" mb={2}>{getTitle()}</Typography>
-        <Typography variant="body2" mb={2}>
+        <Typography variant="h6" mb={1} fontWeight="bold" sx={{ color: '#ffffff' }}>
+          {getTitle()}
+        </Typography>
+        <Typography variant="body2" mb={3} sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>
           {getMessage()}
           {timeLeft > 0 && (
-            <Box component="span" sx={{ display: 'block', mt: 1, fontWeight: 'bold', color: 'primary.main' }}>
+            <Box component="span" sx={{ display: 'block', mt: 1.5, fontWeight: 'bold', color: '#818cf8' }}>
               Expires in: {formatTime(timeLeft)}
             </Box>
           )}
         </Typography>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert
+            severity="error"
+            sx={{
+              mb: 2,
+              borderRadius: '12px',
+              bgcolor: 'rgba(239, 68, 68, 0.15)',
+              color: '#fca5a5',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              textAlign: 'left',
+              '& .MuiAlert-icon': {
+                color: '#f87171',
+              }
+            }}
+          >
+            {error}
+          </Alert>
+        )}
 
         <TextField
           fullWidth
@@ -108,22 +145,61 @@ export default function OtpModal({
           type="text"
           inputProps={{
             maxLength: 6,
-            pattern: '[0-9]*'
+            pattern: '[0-9]*',
+            style: { textAlign: 'center', letterSpacing: '8px', fontSize: '1.2rem', fontWeight: 'bold' }
           }}
           value={otp}
           onChange={e => {
             const value = e.target.value.replace(/[^0-9]/g, '');
             setOtp(value);
           }}
-          sx={{ mb: 2 }}
-          placeholder="Enter 6-digit OTP"
+          sx={{
+            mb: 2.5,
+            '& .MuiOutlinedInput-root': {
+              color: '#ffffff',
+              '& fieldset': {
+                borderColor: 'rgba(255, 255, 255, 0.25)',
+                borderRadius: '12px',
+                transition: 'border-color 0.2s ease',
+              },
+              '&:hover fieldset': {
+                borderColor: 'rgba(255, 255, 255, 0.55)',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#818cf8',
+              },
+            },
+            '& .MuiInputLabel-root': {
+              color: 'rgba(255, 255, 255, 0.6)',
+              '&.Mui-focused': {
+                color: '#818cf8',
+              },
+            },
+          }}
+          placeholder="••••••"
         />
 
         <Button
           variant="contained"
           fullWidth
           onClick={handleVerify}
-          sx={{ mt: 2 }}
+          sx={{
+            mt: 1,
+            bgcolor: '#ffffff',
+            color: '#1e1b4b',
+            fontWeight: 'bold',
+            borderRadius: '12px',
+            py: 1.3,
+            textTransform: 'none',
+            fontSize: '0.95rem',
+            boxShadow: '0 4px 12px rgba(255, 255, 255, 0.15)',
+            '&:hover': {
+              bgcolor: '#f3f4f6',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 16px rgba(255, 255, 255, 0.25)',
+            },
+            transition: 'all 0.25s ease',
+          }}
         >
           Verify OTP
         </Button>
@@ -133,7 +209,19 @@ export default function OtpModal({
           fullWidth
           onClick={onResend}
           disabled={resending || resendCountdown > 0}
-          sx={{ mt: 1 }}
+          sx={{
+            mt: 2,
+            color: '#a5b4fc',
+            textTransform: 'none',
+            fontSize: '0.85rem',
+            '&:hover': {
+              color: '#c7d2fe',
+              background: 'rgba(255, 255, 255, 0.05)',
+            },
+            '&:disabled': {
+              color: 'rgba(255, 255, 255, 0.35)',
+            }
+          }}
         >
           {resending ? 'Resending...' : (resendCountdown > 0 ? `Resend available in ${formatTime(resendCountdown)}` : 'Resend OTP')}
         </Button>

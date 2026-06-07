@@ -12,6 +12,7 @@ import DataTable from "../DataTable";
 import SearchBarWithFilter from "../SearchBar";
 import ConfirmModal from "../../common/Confirm";
 import { adminProviderManagementService } from "../../../services/apiServices";
+import { openDocumentInNewTab } from "../../../utils/documentViewer";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const SR_FILTER_OPTIONS = [
@@ -223,9 +224,10 @@ export default function ServiceRequests() {
           <Button
             variant="text"
             size="small"
-            href={row.doc_url.replace(/^http:\/\//i, "https://")}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.preventDefault();
+              openDocumentInNewTab(row.doc_url);
+            }}
             sx={{ textTransform: "none", fontSize: "0.75rem", p: 0.5 }}
           >
             View Doc

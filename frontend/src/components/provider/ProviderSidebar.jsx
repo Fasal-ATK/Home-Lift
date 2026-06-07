@@ -7,6 +7,7 @@ import {
   Divider,
   Stack,
   Badge,
+  Avatar,
 } from "@mui/material";
 import { styled, keyframes } from "@mui/material/styles";
 import {

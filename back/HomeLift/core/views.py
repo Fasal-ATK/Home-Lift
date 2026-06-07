@@ -337,3 +337,53 @@ class AdminDashboardView(APIView):
         }
         return Response(data)
 
+
+# ─── Document Proxy ──────────────────────────────────────────────────────────
+
+import urllib.request
+from django.http import HttpResponse, HttpResponseBadRequest
+
+class DocumentProxyView(APIView):
+    """
+    GET /core/document-proxy/?url=<cloudinary_url>&mode=inline|attachment
+
+    Fetches a Cloudinary document server-side (no browser CORS restrictions)
+    and streams it back with the correct Content-Disposition header.
+
+    Security: only res.cloudinary.com URLs are permitted.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    ALLOWED_HOST = "res.cloudinary.com"
+
+    def get(self, request):
+        doc_url = request.query_params.get("url", "").strip()
+        mode    = request.query_params.get("mode", "inline")
+
+        if not doc_url:
+            return HttpResponseBadRequest("Missing 'url' parameter.")
+
+        from urllib.parse import urlparse
+        parsed = urlparse(doc_url)
+        if parsed.scheme not in ("http", "https") or parsed.netloc != self.ALLOWED_HOST:
+            return HttpResponseBadRequest("Invalid URL. Only Cloudinary URLs are permitted.")
+
+        doc_url = doc_url.replace("http://", "https://", 1)
+
+        try:
+            req = urllib.request.Request(doc_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                content      = resp.read()
+                content_type = resp.headers.get("Content-Type", "application/octet-stream")
+        except Exception as e:
+            return HttpResponseBadRequest(f"Failed to fetch document: {e}")
+
+        filename = doc_url.split("/")[-1].split("?")[0] or "document"
+
+        http_response = HttpResponse(content, content_type=content_type)
+        if mode == "inline":
+            http_response["Content-Disposition"] = "inline"
+        else:
+            http_response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        http_response["Cache-Control"] = "private, max-age=300"
+        return http_response

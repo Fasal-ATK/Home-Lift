@@ -14,8 +14,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import DescriptionIcon from "@mui/icons-material/Description";
 import ImageIcon from "@mui/icons-material/Image";
 import DownloadIcon from "@mui/icons-material/Download";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { useState, useEffect } from "react";
 import ConfirmModal from "../../common/Confirm";
+import { openDocumentInNewTab, downloadDocumentViaProxy } from "../../../utils/documentViewer";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -31,62 +33,72 @@ const isImage = (url) => {
 /** True if the URL points at a PDF */
 const isPDF = (url) => stripQuery(url).split(".").pop().toLowerCase() === "pdf";
 
+
+
 /**
- * DocLink — renders an appropriate action button for a document URL:
- *  • image  → opens in a new tab (browser handles it)
- *  • PDF    → opens in a new tab (browser PDF viewer)
- *  • other  → download link
+ * DocLink — renders action button(s) for a document URL.
+ *  • PDF  → two buttons: "View" (Google Docs Viewer) + "Download"
+ *  • Image / Doc → single "View" button (opens inline in new tab)
  */
 const DocLink = ({ url, label = "View Document" }) => {
   if (!url) return <Typography variant="body2">No document uploaded</Typography>;
 
-  // Force HTTPS
   const secureUrl = url.replace(/^http:\/\//i, "https://");
+  const ext = stripQuery(secureUrl).split(".").pop().toLowerCase();
+  const isImg = isImage(secureUrl);
+  const isPdf = isPDF(secureUrl);
 
-  if (isImage(secureUrl)) {
+  const handleView = (e) => {
+    e.preventDefault();
+    openDocumentInNewTab(url);
+  };
+
+  const handleDownload = (e) => {
+    e.preventDefault();
+    downloadDocumentViaProxy(url);
+  };
+
+  if (isPdf) {
     return (
-      <Button
-        variant="text"
-        size="small"
-        startIcon={<ImageIcon />}
-        href={secureUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        sx={{ textTransform: "none" }}
-      >
-        {label}
-      </Button>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Button
+          variant="text"
+          size="small"
+          startIcon={<OpenInNewIcon />}
+          onClick={handleView}
+          sx={{ textTransform: "none" }}
+        >
+          {label} (PDF)
+        </Button>
+        <Tooltip title="Download PDF">
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<DownloadIcon />}
+            onClick={handleDownload}
+            sx={{
+              textTransform: "none",
+              borderColor: "rgba(99,102,241,0.4)",
+              color: "#4f46e5",
+              "&:hover": { borderColor: "#4f46e5", bgcolor: "rgba(99,102,241,0.05)" },
+            }}
+          >
+            Download
+          </Button>
+        </Tooltip>
+      </Stack>
     );
   }
 
-  if (isPDF(secureUrl)) {
-    return (
-      <Button
-        variant="text"
-        size="small"
-        startIcon={<DescriptionIcon />}
-        href={secureUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        sx={{ textTransform: "none" }}
-      >
-        {label} (PDF)
-      </Button>
-    );
-  }
-
-  // Fallback: offer download
   return (
     <Button
       variant="text"
       size="small"
-      startIcon={<DownloadIcon />}
-      href={secureUrl}
-      download
-      rel="noopener noreferrer"
+      startIcon={isImg ? <ImageIcon /> : <DescriptionIcon />}
+      onClick={handleView}
       sx={{ textTransform: "none" }}
     >
-      Download Document
+      {label}{isImg ? "" : " (Doc)"}
     </Button>
   );
 };

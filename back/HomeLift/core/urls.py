@@ -7,6 +7,7 @@ from .views import (
     TicketListCreateView, TicketDetailView,
     AdminTicketListView, AdminTicketReplyView,
     AdminDashboardView,
+    DocumentProxyView,
 )
 
 urlpatterns = [
@@ -19,4 +20,6 @@ urlpatterns = [
     path('admin/tickets/<int:pk>/reply/', AdminTicketReplyView.as_view(), name='admin-ticket-reply'),
     # Dashboard
     path('admin/dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
+    # Document proxy (fetches Cloudinary docs server-side, serves with correct headers)
+    path('document-proxy/', DocumentProxyView.as_view(), name='document-proxy'),
 ]

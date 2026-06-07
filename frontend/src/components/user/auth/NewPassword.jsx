@@ -172,21 +172,91 @@ function ForgotPassword() {
     setLoading(false);
   };
 
+  const textFieldStyle = {
+    mb: 2.5,
+    '& .MuiOutlinedInput-root': {
+      color: '#ffffff',
+      '& fieldset': {
+        borderColor: 'rgba(255, 255, 255, 0.25)',
+        borderRadius: '12px',
+        transition: 'border-color 0.2s ease',
+      },
+      '&:hover fieldset': {
+        borderColor: 'rgba(255, 255, 255, 0.55)',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#818cf8',
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: 'rgba(255, 255, 255, 0.6)',
+      '&.Mui-focused': {
+        color: '#818cf8',
+      },
+    },
+    '& .MuiInputAdornment-root .MuiIconButton-root': {
+      color: 'rgba(255, 255, 255, 0.65)',
+    },
+  };
+
+  const buttonStyle = {
+    mt: 2,
+    bgcolor: '#ffffff',
+    color: '#1e1b4b',
+    fontWeight: 'bold',
+    borderRadius: '12px',
+    py: 1.5,
+    fontSize: '0.975rem',
+    textTransform: 'none',
+    boxShadow: '0 4px 12px rgba(255, 255, 255, 0.15)',
+    transition: 'all 0.25s ease',
+    '&:hover': {
+      bgcolor: '#f3f4f6',
+      transform: 'translateY(-2px)',
+      boxShadow: '0 6px 20px rgba(255, 255, 255, 0.25)',
+    },
+    '&:disabled': {
+      bgcolor: 'rgba(255, 255, 255, 0.2)',
+      color: 'rgba(255, 255, 255, 0.45)',
+    }
+  };
+
+  const linkStyle = {
+    color: '#a5b4fc',
+    fontWeight: 'bold',
+    textDecoration: 'none',
+    transition: 'color 0.2s ease',
+    '&:hover': {
+      color: '#c7d2fe',
+      textDecoration: 'underline',
+    },
+  };
+
   return (
-    <Box sx={{ bgcolor: mode === 'change' ? '#f5f5f5' : '#d9e021', minHeight: '100vh', py: 8 }}>
+    <Box sx={{
+      background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%)',
+      minHeight: '100vh',
+      py: 8,
+      display: 'flex',
+      alignItems: 'center',
+    }}>
       <Container maxWidth="sm">
         <Box
           sx={{
-            backgroundColor: 'white',
-            borderRadius: 4,
-            boxShadow: 4,
-            px: 4,
-            pt: 8,
+            background: 'rgba(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(16px)',
+            webkitBackdropFilter: 'blur(16px)',
+            borderRadius: 6,
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 20px 40px 0 rgba(0, 0, 0, 0.3)',
+            px: { xs: 3, sm: 5 },
+            pt: 6,
             pb: 5,
             textAlign: 'center',
+            color: '#ffffff',
           }}
         >
-          <Typography variant="h5" fontWeight="bold" gutterBottom>
+          <Typography variant="h5" fontWeight="bold" gutterBottom mb={2} sx={{ letterSpacing: '0.5px' }}>
             {mode === 'change'
               ? 'Change Password'
               : step === 1
@@ -194,12 +264,29 @@ function ForgotPassword() {
                 : 'Reset Password'}
           </Typography>
 
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                borderRadius: '12px',
+                bgcolor: 'rgba(239, 68, 68, 0.15)',
+                color: '#fca5a5',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                textAlign: 'left',
+                '& .MuiAlert-icon': {
+                  color: '#f87171',
+                }
+              }}
+            >
+              {error}
+            </Alert>
+          )}
 
           {/* Step 1: Enter Email (Forgot Password only - if not coming from login) */}
           {mode === 'forgot' && step === 1 && !otpVerifiedFromLogin && (
             <form onSubmit={handleSendOtp}>
-              <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+              <Typography variant="body2" sx={{ mb: 4, color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
                 Enter your email address and we'll send you an OTP to reset your password.
               </Typography>
 
@@ -209,19 +296,14 @@ function ForgotPassword() {
                 fullWidth
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                sx={textFieldStyle}
               />
 
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{
-                  mt: 3,
-                  bgcolor: '#e0dc25',
-                  color: 'black',
-                  fontWeight: 'bold',
-                  '&:hover': { bgcolor: '#d4ce1f' },
-                }}
+                sx={buttonStyle}
                 disabled={loading}
               >
                 {loading ? <CircularProgress size={24} color="inherit" /> : 'Send OTP'}
@@ -232,7 +314,7 @@ function ForgotPassword() {
           {/* Step 3: Enter New Password (Both modes) */}
           {step === 3 && (
             <form onSubmit={handlePasswordSubmit}>
-              <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+              <Typography variant="body2" sx={{ mb: 4, color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
                 {mode === 'change'
                   ? 'Enter your current password and choose a new password.'
                   : 'Enter your new password below.'}
@@ -246,7 +328,7 @@ function ForgotPassword() {
                   fullWidth
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  sx={{ mb: 2 }}
+                  sx={textFieldStyle}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
@@ -266,7 +348,7 @@ function ForgotPassword() {
                 fullWidth
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                sx={{ mb: 2 }}
+                sx={textFieldStyle}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -285,6 +367,7 @@ function ForgotPassword() {
                 fullWidth
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                sx={textFieldStyle}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -300,13 +383,7 @@ function ForgotPassword() {
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{
-                  mt: 3,
-                  bgcolor: '#e0dc25',
-                  color: 'black',
-                  fontWeight: 'bold',
-                  '&:hover': { bgcolor: '#d4ce1f' },
-                }}
+                sx={buttonStyle}
                 disabled={loading}
               >
                 {loading ? (
@@ -322,17 +399,17 @@ function ForgotPassword() {
 
           {/* Footer Links */}
           {mode === 'forgot' && (
-            <Typography variant="body2" sx={{ mt: 3 }}>
+            <Typography variant="body2" sx={{ mt: 4, color: 'rgba(255, 255, 255, 0.6)' }}>
               Remember your password?{' '}
-              <Link href="/login" underline="hover" sx={{ fontWeight: 'bold' }}>
+              <Link href="/login" sx={linkStyle}>
                 Login
               </Link>
             </Typography>
           )}
 
           {mode === 'change' && (
-            <Typography variant="body2" sx={{ mt: 3 }}>
-              <Link href="/profile" underline="hover" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="body2" sx={{ mt: 4 }}>
+              <Link href="/profile" sx={linkStyle}>
                 Back to Profile
               </Link>
             </Typography>
