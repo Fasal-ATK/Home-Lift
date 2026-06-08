@@ -32,7 +32,15 @@ def delete_old_profile_picture_on_change(sender, instance, **kwargs):
     logger.debug(f"New file: {new_file}")
 
     # If old exists and it's different from new (and not empty)
-    if old_file and old_file != new_file:
+    old_id = getattr(old_file, 'public_id', str(old_file)) if old_file else ""
+    is_same = False
+    if old_file and new_file:
+        new_str = str(new_file)
+        new_id = getattr(new_file, 'public_id', new_str)
+        if old_id == new_id or old_id in new_str:
+            is_same = True
+
+    if old_file and not is_same and old_file != new_file:
         logger.debug("Old file is different from new file. Deleting old file.")
         try:
             # Preferred: use the FieldFile delete method
