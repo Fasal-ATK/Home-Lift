@@ -13,6 +13,7 @@ Built with an enterprise-ready architecture using **React + Redux Toolkit** on t
 - **Social Login**: Integrated Google OAuth.
 - **Role-Based Access Control**: Distinct dashboards and access limits for Users, Providers, and Administrators.
 - **Aggressive Data Validation**: Real-time keystroke filtering to prevent invalid characters (spaces, special symbols) in critical fields.
+- **Password Strength UI**: Dynamic, real-time visual feedback for password strength and rules validation.
 
 ### User & Provider Workflows
 - **Service Discovery**: Browse dynamically categorized services with pricing and experience details.
@@ -31,8 +32,10 @@ Built with an enterprise-ready architecture using **React + Redux Toolkit** on t
 
 ### Core Architecture & Operations
 - **Enterprise Logging**: Fully configured rotating file loggers (`homelift.log`) tracking system events, exceptions, and analytics.
-- **Image Handling**: Cloudinary integration for scalable profile and document image storage.
+- **Image Handling**: Cloudinary integration for scalable profile and document image storage, equipped with robust Django signals to ensure safe updates and prevent accidental file deletions.
 - **Caching**: Redis-backed cache for OTPs and rapid state retrieval.
+- **Advanced Search**: High-performance backend-driven search functionality dynamically integrated with the UI.
+- **Document Viewing**: Secure proxy viewing system for identity documents and certificates.
 
 ---
 
