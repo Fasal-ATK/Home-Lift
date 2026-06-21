@@ -27,6 +27,9 @@ from .serializers import (
     ChangePasswordSerializer
 )
 
+import socket
+import traceback
+
 logger = logging.getLogger(__name__)
 
 
@@ -172,9 +175,6 @@ class RegisterView(APIView):
 # Send OTP (Updated to handle both signup and forgot password)
 # -----------------------------
 
-import socket
-import traceback
-
 class SendOtpView(APIView):
     permission_classes = [AllowAny]
 
@@ -266,31 +266,55 @@ class SendOtpView(APIView):
             print("\nSTEP 1: Testing DNS Resolution")
 
             try:
+                print("gethostbyname() test...")
                 gmail_ip = socket.gethostbyname("smtp.gmail.com")
                 print(f"DNS SUCCESS")
                 print(f"smtp.gmail.com -> {gmail_ip}")
+
+                print("\ngetaddrinfo() test...")
+                addr_info = socket.getaddrinfo(
+                    "smtp.gmail.com",
+                    465,
+                    proto=socket.IPPROTO_TCP
+                )
+
+                print("ADDR INFO:")
+                for item in addr_info:
+                    print(item)
+
             except Exception:
                 print("DNS FAILED")
                 print(traceback.format_exc())
                 raise
 
-            # Socket Test
+
+            # Socket Test (IPv4 Forced)
             print("\nSTEP 2: Testing Raw SMTP Socket Connection")
 
             try:
-                sock = socket.create_connection(
-                    ("smtp.gmail.com", 465),
-                    timeout=10
+                ipv4 = socket.gethostbyname("smtp.gmail.com")
+
+                print(f"Resolved IPv4: {ipv4}")
+
+                sock = socket.socket(
+                    socket.AF_INET,
+                    socket.SOCK_STREAM
                 )
 
-                print("SOCKET CONNECTION SUCCESS")
+                sock.settimeout(10)
+
+                print(f"Connecting to {ipv4}:465")
+
+                sock.connect((ipv4, 465))
+
+                print("IPV4 SOCKET CONNECTION SUCCESS")
+
                 sock.close()
 
             except Exception:
-                print("SOCKET CONNECTION FAILED")
+                print("IPV4 SOCKET CONNECTION FAILED")
                 print(traceback.format_exc())
                 raise
-
             # Send Mail Test
             print("\nSTEP 3: Calling send_mail()")
 
@@ -337,6 +361,8 @@ class SendOtpView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
 # -----------------------------
 # Verify OTP
 # -----------------------------
