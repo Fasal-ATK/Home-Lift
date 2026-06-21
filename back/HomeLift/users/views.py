@@ -1,4 +1,3 @@
-from chardet import universaldetector
 import random
 import logging
 import time
