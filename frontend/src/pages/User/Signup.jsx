@@ -291,6 +291,7 @@ function Signup() {
               })}
               error={!!formErrors.phone}
               helperText={formErrors.phone?.message}
+              inputProps={{ maxLength: 10 }}
               onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, ''); }}
             />
 
