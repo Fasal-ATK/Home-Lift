@@ -165,6 +165,7 @@ class RegisterView(APIView):
 # -----------------------------
 # Send OTP (Updated to handle both signup and forgot password)
 # -----------------------------
+
 class SendOtpView(APIView):
     permission_classes = [AllowAny]
 
@@ -202,12 +203,13 @@ class SendOtpView(APIView):
             f"The HomeLift Team"
         )
 
-        send_mail(
-            subject="Your HomeLift OTP Code",
-            message=email_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-        )
+        # send_mail(
+        #     subject="Your HomeLift OTP Code",
+        #     message=email_message,
+        #     from_email=settings.DEFAULT_FROM_EMAIL,
+        #     recipient_list=[email],
+        # )
+        print(f"OTP for {email}: {otp}")
 
         return Response({
             "message": "OTP sent successfully", 
