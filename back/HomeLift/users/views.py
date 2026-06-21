@@ -203,13 +203,20 @@ class SendOtpView(APIView):
             f"The HomeLift Team"
         )
 
-        # send_mail(
-        #     subject="Your HomeLift OTP Code",
-        #     message=email_message,
-        #     from_email=settings.DEFAULT_FROM_EMAIL,
-        #     recipient_list=[email],
-        # )
-        print(f"OTP for {email}: {otp}")
+        try:
+            send_mail(
+                subject="Your HomeLift OTP Code",
+                message=email_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            print(f"OTP for {email}: {otp}")
+        except Exception as e:
+            logger.error(f"Failed to send OTP email to {email}: {str(e)}")
+            return Response({"error": "Failed to send email. Please check your email address or try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        
 
         return Response({
             "message": "OTP sent successfully", 

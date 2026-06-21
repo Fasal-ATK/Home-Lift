@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   Box, Typography, Paper, Chip, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, Alert, Stack, Snackbar,
-  IconButton, Tooltip, CircularProgress, Container, Avatar, Divider,
+  IconButton, Tooltip, CircularProgress, Container, Avatar, Divider, Pagination,
 } from "@mui/material";
 import { styled, keyframes } from "@mui/material/styles";
 import { useDispatch, useSelector } from "react-redux";
@@ -96,15 +96,24 @@ const ProviderWallet = () => {
 
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount]         = useState("");
+  const [amountError, setAmountError]               = useState("");
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
 
   useEffect(() => { dispatch(fetchWallet("provider")); }, [dispatch]);
 
   const showSnack = (msg, severity = "success") => setSnack({ open: true, msg, severity });
 
   const handleWithdraw = async () => {
-    if (!withdrawAmount || isNaN(withdrawAmount) || parseFloat(withdrawAmount) <= 0) {
-      showSnack("Please enter a valid amount.", "error");
+    setAmountError("");
+    const amount = parseFloat(withdrawAmount);
+    if (!withdrawAmount || isNaN(amount) || amount <= 0) {
+      setAmountError("Please enter a valid amount.");
+      return;
+    }
+    if (amount > parseFloat(balance)) {
+      setAmountError("Insufficient balance for this withdrawal.");
       return;
     }
     const result = await dispatch(withdrawWalletThunk(withdrawAmount));
@@ -122,6 +131,9 @@ const ProviderWallet = () => {
   const debits  = (recentTransactions || []).filter((t) => t.transaction_type === "debit");
   const totalIn = credits.reduce((s, t) => s + parseFloat(t.amount || 0), 0);
   const totalOut= debits.reduce((s,  t) => s + parseFloat(t.amount || 0), 0);
+
+  const totalPages = Math.ceil((recentTransactions?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedTransactions = (recentTransactions || []).slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   if (loading && !balance) {
     return (
@@ -270,6 +282,11 @@ const ProviderWallet = () => {
                 />
               )}
             </Stack>
+            {recentTransactions?.length > 0 && (
+              <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ mt: 1, display: 'block', textAlign: 'right' }}>
+                Showing {Math.min((page - 1) * ITEMS_PER_PAGE + 1, recentTransactions.length)}–{Math.min(page * ITEMS_PER_PAGE, recentTransactions.length)} of {recentTransactions.length}
+              </Typography>
+            )}
           </Box>
 
           {/* Rows */}
@@ -284,7 +301,7 @@ const ProviderWallet = () => {
               </Box>
             ) : (
               <Stack spacing={0.5}>
-                {recentTransactions.map((tx, idx) => {
+                {paginatedTransactions.map((tx, idx) => {
                   const isCredit = tx.transaction_type === "credit";
                   return (
                     <TxRow key={tx.id} txtype={tx.transaction_type} sx={{ animationDelay: `${idx * 0.03}s` }}>
@@ -348,6 +365,23 @@ const ProviderWallet = () => {
               </Stack>
             )}
           </Box>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2, borderTop: '1px solid #f1f5f9' }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_, val) => {
+                  setPage(val);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                color="primary"
+                shape="rounded"
+                size="small"
+              />
+            </Box>
+          )}
         </Paper>
 
         {/* ── Withdrawal Dialog ────────────────────────────────────── */}
@@ -381,8 +415,13 @@ const ProviderWallet = () => {
                   type="number"
                   placeholder="e.g. 500"
                   value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  onChange={(e) => {
+                    setWithdrawAmount(e.target.value);
+                    if (amountError) setAmountError("");
+                  }}
                   disabled={withdrawLoading}
+                  error={!!amountError}
+                  helperText={amountError}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 3,
