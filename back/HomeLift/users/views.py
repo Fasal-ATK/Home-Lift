@@ -279,7 +279,7 @@ class SendOtpView(APIView):
 
             try:
                 sock = socket.create_connection(
-                    ("smtp.gmail.com", 587),
+                    ("smtp.gmail.com", 465),
                     timeout=10
                 )
 
