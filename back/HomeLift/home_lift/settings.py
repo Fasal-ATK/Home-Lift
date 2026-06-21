@@ -39,7 +39,7 @@ ALLOWED_HOSTS = config(
 )
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = [
     "https://home-lift.vercel.app",
 ]
