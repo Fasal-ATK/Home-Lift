@@ -172,64 +172,171 @@ class RegisterView(APIView):
 # Send OTP (Updated to handle both signup and forgot password)
 # -----------------------------
 
+import socket
+import traceback
+
 class SendOtpView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        logger.debug('SendOtpView: request data: %s', request.data)
-        email = request.data.get("email")
-        purpose = request.data.get("purpose", "signup") 
 
-        if not email:
-            return Response({"error": "Email is required"}, status=400)
-
-        if purpose == "signup":
-            if CustomUser.objects.filter(email=email).exists():
-                return Response({"error": "Email already registered"}, status=400)
-
-        if purpose == "forgot-password":
-            if not CustomUser.objects.filter(email=email).exists():
-                return Response({"error": "No account found with this email"}, status=400)
-
-        otp = str(random.randint(100000, 999999))
-        logger.debug('SendOtpView: OTP generated for %s (purpose=%s)', email, purpose)
-
-        expiry_timestamp = time.time() + 300
-        cache.set(
-            f"otp_{purpose}_{email}",
-            otp,
-            timeout=300
-        )
-        email_message = (
-            f"Hello,\n\n"
-            f"Your OTP code for HomeLift is: {otp}\n\n"
-            f"This code will expire in 5 minutes.\n"
-            f"If you did not request this, please ignore this email.\n\n"
-            f"Best regards,\n"
-            f"The HomeLift Team"
-        )
+        print("\n" + "=" * 70)
+        print("SEND OTP REQUEST STARTED")
+        print("=" * 70)
 
         try:
-            send_mail(
-                subject="Your HomeLift OTP Code",
-                message=email_message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=False,
+            print(f"Request Data: {request.data}")
+
+            email = request.data.get("email")
+            purpose = request.data.get("purpose", "signup")
+
+            print(f"Email: {email}")
+            print(f"Purpose: {purpose}")
+
+            if not email:
+                print("ERROR: Email missing")
+                return Response({"error": "Email is required"}, status=400)
+
+            # Validation
+            print("Checking user validation...")
+
+            if purpose == "signup":
+                exists = CustomUser.objects.filter(email=email).exists()
+                print(f"User already exists: {exists}")
+
+                if exists:
+                    return Response(
+                        {"error": "Email already registered"},
+                        status=400
+                    )
+
+            if purpose == "forgot-password":
+                exists = CustomUser.objects.filter(email=email).exists()
+                print(f"User exists: {exists}")
+
+                if not exists:
+                    return Response(
+                        {"error": "No account found with this email"},
+                        status=400
+                    )
+
+            # OTP Generation
+            print("Generating OTP...")
+            otp = str(random.randint(100000, 999999))
+            print(f"Generated OTP: {otp}")
+
+            expiry_timestamp = time.time() + 300
+
+            # Redis Cache Test
+            print("Saving OTP to Redis...")
+            cache_key = f"otp_{purpose}_{email}"
+
+            cache.set(
+                cache_key,
+                otp,
+                timeout=300
             )
-            print(f"OTP for {email}: {otp}")
+
+            cached_otp = cache.get(cache_key)
+
+            print(f"Redis Save Success: {cached_otp}")
+            print(f"Redis Working: {cached_otp == otp}")
+
+            # Email Content
+            email_message = (
+                f"Hello,\n\n"
+                f"Your OTP code for HomeLift is: {otp}\n\n"
+                f"This code will expire in 5 minutes.\n"
+                f"If you did not request this, please ignore this email.\n\n"
+                f"Best regards,\n"
+                f"The HomeLift Team"
+            )
+
+            # Email Config Debug
+            print("\nEMAIL CONFIG")
+            print("-" * 40)
+            print(f"EMAIL_HOST: {settings.EMAIL_HOST}")
+            print(f"EMAIL_PORT: {settings.EMAIL_PORT}")
+            print(f"EMAIL_USE_TLS: {settings.EMAIL_USE_TLS}")
+            print(f"EMAIL_HOST_USER: {settings.EMAIL_HOST_USER}")
+            print(f"DEFAULT_FROM_EMAIL: {settings.DEFAULT_FROM_EMAIL}")
+            print("-" * 40)
+
+            # DNS Test
+            print("\nSTEP 1: Testing DNS Resolution")
+
+            try:
+                gmail_ip = socket.gethostbyname("smtp.gmail.com")
+                print(f"DNS SUCCESS")
+                print(f"smtp.gmail.com -> {gmail_ip}")
+            except Exception:
+                print("DNS FAILED")
+                print(traceback.format_exc())
+                raise
+
+            # Socket Test
+            print("\nSTEP 2: Testing Raw SMTP Socket Connection")
+
+            try:
+                sock = socket.create_connection(
+                    ("smtp.gmail.com", 587),
+                    timeout=10
+                )
+
+                print("SOCKET CONNECTION SUCCESS")
+                sock.close()
+
+            except Exception:
+                print("SOCKET CONNECTION FAILED")
+                print(traceback.format_exc())
+                raise
+
+            # Send Mail Test
+            print("\nSTEP 3: Calling send_mail()")
+
+            try:
+                result = send_mail(
+                    subject="Your HomeLift OTP Code",
+                    message=email_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+
+                print(f"send_mail() returned: {result}")
+                print("EMAIL SENT SUCCESSFULLY")
+
+            except Exception:
+                print("send_mail() FAILED")
+                print(traceback.format_exc())
+                raise
+
+            print("\nREQUEST COMPLETED SUCCESSFULLY")
+            print("=" * 70)
+
+            return Response({
+                "message": "OTP sent successfully",
+                "expiry_timestamp": expiry_timestamp
+            }, status=200)
+
         except Exception as e:
-            logger.error(f"Failed to send OTP email to {email}: {str(e)}")
-            return Response({"error": "Failed to send email. Please check your email address or try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        
+            print("\n" + "=" * 70)
+            print("FATAL ERROR OCCURRED")
+            print(f"Exception Type: {type(e)}")
+            print(f"Exception: {str(e)}")
+            print(traceback.format_exc())
+            print("=" * 70 + "\n")
 
-        return Response({
-            "message": "OTP sent successfully", 
-            "expiry_timestamp": expiry_timestamp
-        }, status=200)
+            logger.error(traceback.format_exc())
 
-
+            return Response(
+                {
+                    "error": str(e),
+                    "exception_type": str(type(e))
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 # -----------------------------
 # Verify OTP
 # -----------------------------
