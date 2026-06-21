@@ -1,3 +1,4 @@
+from chardet import universaldetector
 import random
 import logging
 import time
@@ -155,13 +156,12 @@ class RegisterView(APIView):
                         subject="Your HomeLift OTP Code",
                         message=email_message,
                         from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[email],
+                        recipient_list=[user.email],
                         fail_silently=False,
                     )
                 except Exception:
                     logger.error(traceback.format_exc())
                     raise
-
             except Exception as e:
                 logger.error(f"Failed to send welcome email to {user.email}: {str(e)}")
 
