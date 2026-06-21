@@ -76,10 +76,11 @@ class SignupSerializer(serializers.ModelSerializer):
         return value
 
     def validate_phone(self, value):
-        if not re.match(r'^\+?\d{10,15}$', value):
+        # Enforce exactly 10 digits for Indian phone numbers, allowing optional '+91' prefix
+        if not re.match(r'^(?:\+?91)?\d{10}$', value):
             raise serializers.ValidationError({
                 "error": "invalid-phone",
-                "message": "Enter a valid phone number (10–15 digits)."
+                "message": "Enter a valid 10‑digit phone number."
             })
         if CustomUser.objects.filter(phone=value).exists():
             raise serializers.ValidationError({

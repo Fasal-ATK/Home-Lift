@@ -278,22 +278,33 @@ function Signup() {
               onInput={(e) => { e.target.value = e.target.value.replace(/\s/g, ''); }}
             />
             <TextField
-              label="Phone"
-              type="tel"
-              fullWidth
-              sx={{ mt: 2 }}
-              {...register('phone', { 
-                required: 'Phone number is required',
-                pattern: {
-                  value: /^\d{10}$/,
-                  message: 'Enter 10 digits only'
-                }
-              })}
-              error={!!formErrors.phone}
-              helperText={formErrors.phone?.message}
-              inputProps={{ maxLength: 10 }}
-              onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, ''); }}
-            />
+                label="Phone"
+                type="tel"
+                fullWidth
+                sx={{ mt: 2 }}
+                {...register('phone', {
+                  required: 'Phone number is required',
+                  pattern: {
+                    value: /^\d{10}$/,
+                    message: 'Enter exactly 10 digits'
+                  },
+                  onBlur: (e) => {
+                    // Trim any extra digits on blur
+                    const trimmed = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    e.target.value = trimmed;
+                  }
+                })}
+                error={!!formErrors.phone}
+                helperText={formErrors.phone?.message}
+                inputProps={{ maxLength: 10 }}
+                onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, ''); }}
+                onPaste={(e) => {
+                  // Allow pasting only numeric characters, truncate to 10 digits
+                  const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 10);
+                  e.preventDefault();
+                  e.target.value = paste;
+                }}
+              />
 
             <TextField
               label="Password"
