@@ -150,17 +150,13 @@ class RegisterView(APIView):
                     f"Best regards,\n"
                     f"The HomeLift Team"
                 )
-                try:
-                    send_mail(
-                        subject="Your HomeLift OTP Code",
-                        message=email_message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[user.email],
-                        fail_silently=False,
-                    )
-                except Exception:
-                    logger.error(traceback.format_exc())
-                    raise
+                send_mail(
+                    subject="Welcome to HomeLift",
+                    message=email_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
             except Exception as e:
                 logger.error(f"Failed to send welcome email to {user.email}: {str(e)}")
 
