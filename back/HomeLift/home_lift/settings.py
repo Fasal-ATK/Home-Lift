@@ -42,6 +42,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = [
     "https://home-lift.vercel.app",
+    "https://home-lift.onrender.com",
 ]
 
 SECURE_SSL_REDIRECT = False
