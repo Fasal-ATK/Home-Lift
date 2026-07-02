@@ -1,4 +1,5 @@
 """
+core/ws_middleware.py
 JWT Authentication middleware for Django Channels WebSockets.
 Reads the JWT token from the query string: ?token=<access_token>
 """

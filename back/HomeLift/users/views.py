@@ -130,6 +130,8 @@ class GoogleLoginAPIView(APIView):
 # -----------------------------
 # Register
 # -----------------------------
+import traceback
+
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -149,11 +151,11 @@ class RegisterView(APIView):
                     f"The HomeLift Team"
                 )
                 send_mail(
-                    subject="Welcome to HomeLift!",
+                    subject="Welcome to HomeLift",
                     message=email_message,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[user.email],
-                    fail_silently=True,
+                    fail_silently=False,
                 )
             except Exception as e:
                 logger.error(f"Failed to send welcome email to {user.email}: {str(e)}")
@@ -165,6 +167,7 @@ class RegisterView(APIView):
 # -----------------------------
 # Send OTP (Updated to handle both signup and forgot password)
 # -----------------------------
+
 class SendOtpView(APIView):
     permission_classes = [AllowAny]
 

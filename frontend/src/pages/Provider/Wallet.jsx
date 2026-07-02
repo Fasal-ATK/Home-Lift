@@ -96,6 +96,7 @@ const ProviderWallet = () => {
 
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount]         = useState("");
+  const [amountError, setAmountError]               = useState("");
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -105,8 +106,14 @@ const ProviderWallet = () => {
   const showSnack = (msg, severity = "success") => setSnack({ open: true, msg, severity });
 
   const handleWithdraw = async () => {
-    if (!withdrawAmount || isNaN(withdrawAmount) || parseFloat(withdrawAmount) <= 0) {
-      showSnack("Please enter a valid amount.", "error");
+    setAmountError("");
+    const amount = parseFloat(withdrawAmount);
+    if (!withdrawAmount || isNaN(amount) || amount <= 0) {
+      setAmountError("Please enter a valid amount.");
+      return;
+    }
+    if (amount > parseFloat(balance)) {
+      setAmountError("Insufficient balance for this withdrawal.");
       return;
     }
     const result = await dispatch(withdrawWalletThunk(withdrawAmount));
@@ -408,8 +415,13 @@ const ProviderWallet = () => {
                   type="number"
                   placeholder="e.g. 500"
                   value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  onChange={(e) => {
+                    setWithdrawAmount(e.target.value);
+                    if (amountError) setAmountError("");
+                  }}
                   disabled={withdrawLoading}
+                  error={!!amountError}
+                  helperText={amountError}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 3,
