@@ -36,13 +36,10 @@ ALLOWED_HOSTS = config(
     "ALLOWED_HOSTS",
     cast=lambda v: [s.strip() for s in v.split(",")]
 )
-
+FRONTEND_URL = config("FRONTEND_URL")
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
-CSRF_TRUSTED_ORIGINS = [
-    "https://home-lift.vercel.app",
-    "https://home-lift.onrender.com",
-]
+CORS_ALLOWED_ORIGINS = [ FRONTEND_URL, ]
+CSRF_TRUSTED_ORIGINS = [ FRONTEND_URL, ]
 
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
