@@ -36,10 +36,13 @@ ALLOWED_HOSTS = config(
     "ALLOWED_HOSTS",
     cast=lambda v: [s.strip() for s in v.split(",")]
 )
-FRONTEND_URL = config("FRONTEND_URL")
+FRONTEND_URLS = config(
+    "FRONTEND_URL",
+    cast=lambda v: [s.strip() for s in v.split(",")]
+)
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [ FRONTEND_URL, ]
-CSRF_TRUSTED_ORIGINS = [ FRONTEND_URL, ]
+CORS_ALLOWED_ORIGINS = [ FRONTEND_URLS, ]
+CSRF_TRUSTED_ORIGINS = [ FRONTEND_URLS, ]
 
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
