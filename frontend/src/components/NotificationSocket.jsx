@@ -16,10 +16,9 @@ const NotificationSocket = ({ userId }) => {
         const seenMessages = new Set();
 
         const connect = () => {
-            // Using window.location.hostname helps with 127.0.0.1 vs localhost mismatches
-            const host = window.location.hostname === 'localhost' ? 'localhost:8000' : '127.0.0.1:8000';
+            const wsBase = import.meta.env.VITE_WS_URL || (window.location.hostname === 'localhost' ? 'ws://localhost:8000' : 'ws://127.0.0.1:8000');
             console.log(`[${connectionId}] Attempting WebSocket connection...`);
-            socket = new WebSocket(`ws://${host}/ws/notifications/${userId}/`);
+            socket = new WebSocket(`${wsBase}/ws/notifications/${userId}/`);
 
             socket.onopen = () => {
                 console.log(`[${connectionId}] WebSocket Connected`);

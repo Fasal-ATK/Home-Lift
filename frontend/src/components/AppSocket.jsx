@@ -23,9 +23,10 @@ const AppSocket = ({ userId }) => {
                 socketRef.current.close(1000);
             }
 
-            const host = window.location.hostname === 'localhost' ? 'localhost:8000' : '127.0.0.1:8000';
+            const wsBase = import.meta.env.VITE_WS_URL || (window.location.hostname === 'localhost' ? 'ws://localhost:8000' : 'ws://127.0.0.1:8000');
             const token = localStorage.getItem('accessToken');
-            const socketPath = `ws://${host}/ws/notifications/${userId}/?token=${token}`;
+            const socketPath = `${wsBase}/ws/notifications/${userId}/?token=${token}`;
+
             
             console.log(`[Socket] Connecting to ${socketPath}`);
             const socket = new WebSocket(socketPath);
