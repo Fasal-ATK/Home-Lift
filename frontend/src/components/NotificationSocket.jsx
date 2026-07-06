@@ -16,60 +16,69 @@ const NotificationSocket = ({ userId }) => {
         const seenMessages = new Set();
 
         const connect = () => {
-            const wsBase = import.meta.env.VITE_WS_URL || (window.location.hostname === 'localhost' ? 'ws://localhost:8000' : 'ws://127.0.0.1:8000');
-            console.log(`[${connectionId}] Attempting WebSocket connection...`);
-            socket = new WebSocket(`${wsBase}/ws/notifications/${userId}/`);
+            const token = localStorage.getItem("accessToken");
+
+            const wsBase =
+                import.meta.env.VITE_WS_URL ||
+                (window.location.protocol === "https:"
+                    ? "wss://api.home-lift.online"
+                    : "ws://localhost:8000");
+
+            const socketUrl = `${wsBase}/ws/notifications/${userId}/?token=${token}`;
+
+            console.log(`[${connectionId}] Connecting to ${socketUrl}`);
+
+            socket = new WebSocket(socketUrl);
 
             socket.onopen = () => {
-                console.log(`[${connectionId}] WebSocket Connected`);
-                reconnectAttempts = 0; // Reset on successful connection
+                console.log(`[${connectionId}] Connected`);
+                reconnectAttempts = 0;
             };
 
             socket.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
+
                     if (data.message) {
                         if (seenMessages.has(data.message)) return;
+
                         seenMessages.add(data.message);
+
                         setTimeout(() => seenMessages.delete(data.message), 2000);
 
                         toast.info(data.message);
-                        dispatch(addNotification({
-                            id: Date.now(),
-                            message: data.message,
-                            created_at: new Date().toISOString(),
-                            is_read: false,
-                            type: 'system',
-                            ...data
-                        }));
+
+                        dispatch(
+                            addNotification({
+                                id: Date.now(),
+                                message: data.message,
+                                created_at: new Date().toISOString(),
+                                is_read: false,
+                                type: "system",
+                                ...data,
+                            })
+                        );
                     }
-                } catch (error) {
-                    console.error('Error parsing notification:', error);
+                } catch (e) {
+                    console.error(e);
                 }
             };
 
             socket.onclose = (e) => {
-                // Don't log or reconnect if it was a normal closure (1000) 
-                // or if the component is unmounting (handled by cleanup)
-                if (e.code === 1000) {
-                    console.log(`[${connectionId}] WebSocket Closed Normally`);
-                    return;
-                }
+                if (e.code === 1000) return;
 
-                console.log(`[${connectionId}] WebSocket Disconnected ${e.code}`);
+                const delay = Math.min(
+                    1000 * Math.pow(2, reconnectAttempts),
+                    10000
+                );
 
-                // Exponential backoff for reconnection
-                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
                 reconnectAttempts++;
+
                 reconnectTimeout = setTimeout(connect, delay);
             };
 
             socket.onerror = (e) => {
-                // Check if connection was ever established to distinguish between
-                // general errors and initial connection failures
-                if (socket.readyState === WebSocket.OPEN) {
-                    console.error(`[${connectionId}] WebSocket Runtime Error:`, e);
-                }
+                console.error(e);
                 socket.close();
             };
         };
