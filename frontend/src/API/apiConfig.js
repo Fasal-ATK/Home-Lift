@@ -57,6 +57,21 @@ api.interceptors.response.use(
     }
     const originalRequest = error.config;
 
+    // Check if response data is an HTML page (from Django debug/crash or proxy like Gunicorn/Nginx)
+    const response = error.response;
+    if (response) {
+      const contentType = response.headers?.["content-type"] || "";
+      const isHtml =
+        contentType.includes("text/html") ||
+        (typeof response.data === "string" &&
+          response.data.trim().toLowerCase().startsWith("<"));
+
+      if (isHtml) {
+        response.data = {
+          detail: `Server error (${response.status}): ${response.statusText || "Request failed"}`
+        };
+      }
+    }
 
     // Handle 401 (Unauthorized / Session Timeout)
     if (error.response?.status === 401) {

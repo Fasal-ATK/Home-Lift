@@ -16,6 +16,7 @@ import store from '../../redux/store/store';
 import { ShowToast } from '../../components/common/Toast';
 import GoogleLoginButton from '../../components/user/GoogleLoginButton';
 import OtpModal from '../../components/user/otp_modal';
+import { getErrorMessage } from '../../utils/errorHelper';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -72,20 +73,7 @@ function Login() {
 
     } catch (err) {
       console.error(err);
-
-      if (err.response) {
-        const backendError = err.response.data;
-        const backendMessage =
-          backendError?.message ||
-          backendError?.detail ||
-          backendError?.error ||
-          'Login failed. Please check your credentials.';
-        setError(backendMessage);
-      } else if (err.request) {
-        setError('Unable to connect to the server. Please try again later.');
-      } else {
-        setError('An unexpected error occurred. Please try again.');
-      }
+      setError(getErrorMessage(err, 'Login failed. Please check your credentials.'));
     } finally {
       setLoading(false);
       // dispatch(stopLoading());

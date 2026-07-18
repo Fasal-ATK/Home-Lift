@@ -43,6 +43,7 @@ import {
 } from "../../redux/slices/notificationSlice";
 import MarkEmailReadIcon from "@mui/icons-material/MarkEmailRead";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "../../utils/errorHelper";
 
 const Notifications = () => {
   const dispatch = useDispatch();
@@ -215,7 +216,7 @@ const Notifications = () => {
       ) : error ? (
         <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 4, border: '1px solid #ffcdd2', bgcolor: '#fff9f9' }}>
           <Typography color="error" fontWeight="bold">
-            Failed to load notifications: {error}
+            {getErrorMessage(error, "Failed to load notifications.")}
           </Typography>
           <Button onClick={() => dispatch(fetchNotifications())} sx={{ mt: 2 }}>Retry</Button>
         </Paper>

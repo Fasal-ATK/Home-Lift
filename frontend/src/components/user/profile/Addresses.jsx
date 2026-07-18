@@ -19,6 +19,7 @@ import {
 
 // country/state/city helper
 import { State, City } from "country-state-city";
+import { getErrorMessage } from "../../../utils/errorHelper";
 
 export default function Addresses() {
   const dispatch = useDispatch();
@@ -198,7 +199,7 @@ export default function Addresses() {
         </Button>
       </Stack>
 
-      {error && <Typography color="error" mb={2}>{error}</Typography>}
+      {error && <Typography color="error" mb={2}>{getErrorMessage(error, "Failed to load addresses.")}</Typography>}
 
       <Grid container spacing={2}>
         {(loading && addresses.length === 0) && (

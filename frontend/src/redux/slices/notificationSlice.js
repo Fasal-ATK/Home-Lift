@@ -1,6 +1,7 @@
 // redux/slices/notificationSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { notificationService } from '../../services/apiServices';
+import { getErrorMessage } from '../../utils/errorHelper';
 
 // Fetch paginated notifications
 export const fetchNotifications = createAsyncThunk(
@@ -10,7 +11,7 @@ export const fetchNotifications = createAsyncThunk(
       const data = await notificationService.list({ page });
       return { ...data, page };
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      return rejectWithValue(getErrorMessage(err, "Failed to load notifications."));
     }
   }
 );
@@ -23,7 +24,7 @@ export const markNotificationRead = createAsyncThunk(
       await notificationService.markRead(id);
       return { id };
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      return rejectWithValue(getErrorMessage(err, "Failed to update notification."));
     }
   }
 );
@@ -36,7 +37,7 @@ export const markNotificationsRead = createAsyncThunk(
       await notificationService.bulkAction(ids, 'read');
       return { ids };
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      return rejectWithValue(getErrorMessage(err, "Failed to update notifications."));
     }
   }
 );
@@ -50,7 +51,7 @@ export const deleteNotifications = createAsyncThunk(
       await notificationService.bulkAction(ids, 'delete');
       return { ids };
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      return rejectWithValue(getErrorMessage(err, "Failed to delete notifications."));
     }
   }
 );
