@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProviderDetails, ProviderService, ProviderApplication, ProviderApplicationService
+from .models import ProviderDetails, ProviderService, ProviderApplication, ProviderApplicationService, ProviderServiceRequest
 from django.utils.html import format_html
 
 
@@ -56,3 +56,16 @@ class ProviderApplicationAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'replied_at', 'expiration_date')
     list_editable = ('status',)
     inlines = [ProviderApplicationServiceInline]
+
+
+# -----------------------------
+# Provider Service Request Admin
+# -----------------------------
+@admin.register(ProviderServiceRequest)
+class ProviderServiceRequestAdmin(admin.ModelAdmin):
+    list_display = ('provider', 'service', 'price', 'experience_years', 'status', 'created_at', 'replied_at')
+    list_filter = ('status', 'created_at', 'replied_at')
+    search_fields = ('provider__user__username', 'provider__user__email', 'service__name')
+    readonly_fields = ('created_at', 'replied_at')
+    list_editable = ('status',)
+

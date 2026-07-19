@@ -110,29 +110,36 @@ export default function AdminWithdrawals() {
   const [detailItem, setDetailItem]         = useState(null);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
-  const fetchWithdrawals = async () => {
-    setLoading(true);
-    try {
-      const params = { page };
-      if (statusFilter !== "all") params.status = statusFilter;
-      if (searchTerm.trim()) params.search = searchTerm.trim();
+  const [refreshKey, setRefreshKey] = useState(0);
 
-      const res = await api.get(apiEndpoints.wallet.adminWithdrawals, { params });
-      setWithdrawals(res.data.results || []);
-      setTotalCount(res.data.count    || 0);
-    } catch {
-      toast.error("Failed to load withdrawals");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchWithdrawals(); }, [statusFilter, page]);
-
-  // search debounce — refetch when search is stable
+  // NOTE: All fetch params are read inside useEffect directly to avoid stale closures.
   useEffect(() => {
-    const timer = setTimeout(() => { setPage(1); fetchWithdrawals(); }, 400);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    const run = async () => {
+      setLoading(true);
+      try {
+        const params = { page };
+        if (statusFilter !== "all") params.status = statusFilter;
+        if (searchTerm.trim()) params.search = searchTerm.trim();
+
+        const res = await api.get(apiEndpoints.wallet.adminWithdrawals, { params });
+        if (!cancelled) {
+          setWithdrawals(res.data.results || []);
+          setTotalCount(res.data.count    || 0);
+        }
+      } catch {
+        if (!cancelled) toast.error("Failed to load withdrawals");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [page, statusFilter, searchTerm, refreshKey]);
+
+  // search debounce — reset to page 1 when search changes (useEffect above re-fetches)
+  useEffect(() => {
+    setPage(1);
   }, [searchTerm]);
 
   // ── Derived Stats ──────────────────────────────────────────────────────────
@@ -156,7 +163,7 @@ export default function AdminWithdrawals() {
     try {
       await api.patch(apiEndpoints.wallet.adminWithdrawalAction(id), { action });
       toast.success(`Withdrawal ${action}d successfully`);
-      fetchWithdrawals();
+      setRefreshKey((k) => k + 1); // trigger re-fetch
     } catch (err) {
       toast.error(err.response?.data?.detail || `Failed to ${action} withdrawal`);
     } finally {

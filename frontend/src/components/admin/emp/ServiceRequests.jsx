@@ -112,29 +112,36 @@ export default function ServiceRequests() {
   const [selectedRequest, setSelectedRequest] = useState(null);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
-  const fetchRequests = async () => {
-    setLoading(true);
-    try {
-      const params = { page };
-      if (statusFilter !== "all") params.status = statusFilter;
-      if (searchTerm.trim()) params.search = searchTerm.trim();
+  const [refreshKey, setRefreshKey] = useState(0);
 
-      const data = await adminProviderManagementService.getServiceRequests(params);
-      setRequests(data?.results || []);
-      setTotalCount(data?.count || 0);
-    } catch {
-      toast.error("Failed to load service requests.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchRequests(); }, [page, statusFilter]);
-
-  // search debounce
+  // All params read inside useEffect to avoid stale closures
   useEffect(() => {
-    const t = setTimeout(() => { setPage(1); fetchRequests(); }, 400);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    const run = async () => {
+      setLoading(true);
+      try {
+        const params = { page };
+        if (statusFilter !== "all") params.status = statusFilter;
+        if (searchTerm.trim()) params.search = searchTerm.trim();
+
+        const data = await adminProviderManagementService.getServiceRequests(params);
+        if (!cancelled) {
+          setRequests(data?.results || []);
+          setTotalCount(data?.count || 0);
+        }
+      } catch {
+        if (!cancelled) toast.error("Failed to load service requests.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [page, statusFilter, searchTerm, refreshKey]);
+
+  // search debounce — only reset page; the effect above handles the fetch
+  useEffect(() => {
+    setPage(1);
   }, [searchTerm]);
 
   // ── Derived Stats ──────────────────────────────────────────────────────────
@@ -149,7 +156,7 @@ export default function ServiceRequests() {
     try {
       await adminProviderManagementService.actionServiceRequest(pendingApprove.id, { status: "approved" });
       toast.success("Service request approved!");
-      fetchRequests();
+      setRefreshKey((k) => k + 1);
     } catch {
       toast.error("Failed to approve request.");
     } finally {
@@ -169,7 +176,7 @@ export default function ServiceRequests() {
       });
       toast.success("Request rejected.");
       setRejectOpen(false);
-      fetchRequests();
+      setRefreshKey((k) => k + 1);
     } catch {
       toast.error("Failed to reject request.");
     } finally {
