@@ -19,6 +19,20 @@ class OfferSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created_at', 'updated_at']
 
+    def validate_title(self, value):
+        """
+        Ensure the offer title is unique across all offers.
+        When editing an existing offer, exclude it from the uniqueness check.
+        """
+        qs = Offer.objects.filter(title__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                "An offer with this title already exists. Please choose a different title."
+            )
+        return value
+
     def validate(self, attrs):
         discount_type = attrs.get('discount_type', getattr(self.instance, 'discount_type', 'percentage'))
         discount_value = attrs.get('discount_value', getattr(self.instance, 'discount_value', 0))

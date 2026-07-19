@@ -486,7 +486,7 @@ class UserManageView(APIView):
             users = users.filter(
                 Q(username__icontains=search_query) |
                 Q(email__icontains=search_query) |
-                Q(phone_number__icontains=search_query) |
+                Q(phone__icontains=search_query) |
                 Q(first_name__icontains=search_query) |
                 Q(last_name__icontains=search_query)
             )

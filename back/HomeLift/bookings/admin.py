@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Booking
+from .models import Booking, Review
 
 
 @admin.register(Booking)
@@ -72,3 +72,13 @@ class BookingAdmin(admin.ModelAdmin):
         """Optimize queryset for related fields."""
         qs = super().get_queryset(request)
         return qs.select_related('user', 'service', 'provider')
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ('id', 'booking', 'user', 'provider', 'rating', 'created_at')
+    list_filter = ('rating', 'created_at')
+    search_fields = ('booking__id', 'user__email', 'provider__email', 'comment')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at',)
+

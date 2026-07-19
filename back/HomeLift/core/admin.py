@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Address
+from .models import Address, Ticket
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
@@ -69,3 +69,13 @@ class AddressAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         if obj.is_default:
             Address.objects.filter(user=obj.user).exclude(id=obj.id).update(is_default=False)
+
+
+@admin.register(Ticket)
+class TicketAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'subject', 'ticket_type', 'status', 'created_at')
+    list_filter = ('ticket_type', 'status', 'created_at')
+    search_fields = ('user__email', 'user__username', 'subject', 'description')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at', 'updated_at')
+

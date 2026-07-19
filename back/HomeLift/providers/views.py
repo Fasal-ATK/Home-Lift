@@ -141,7 +141,7 @@ class ProviderApplicationListAPIView(APIView):
                     Q(user__email__icontains=search) |
                     Q(user__first_name__icontains=search) |
                     Q(user__last_name__icontains=search) |
-                    Q(user__phone_number__icontains=search)
+                    Q(user__phone__icontains=search)
                 )
 
             paginator = StandardResultsSetPagination()
@@ -212,7 +212,7 @@ class ProvidersListAPIView(APIView):
                     Q(user__email__icontains=search_query) |
                     Q(user__first_name__icontains=search_query) |
                     Q(user__last_name__icontains=search_query) |
-                    Q(user__phone_number__icontains=search_query)
+                    Q(user__phone__icontains=search_query)
                 )
 
             status_filter = request.query_params.get('status')
@@ -642,7 +642,7 @@ class ProvidersByServiceView(APIView):
                     "id": user.id,
                     "full_name": f"{user.first_name} {user.last_name}".strip() or user.username,
                     "email": user.email,
-                    "phone": user.phone_number
+                    "phone": user.phone
                 })
 
             return Response(results)

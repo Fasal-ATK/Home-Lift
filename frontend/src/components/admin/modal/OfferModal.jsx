@@ -133,10 +133,24 @@ export default function OfferModal({ open, handleClose, offer = null }) {
             }
             handleClose();
         } catch (err) {
-            // Check if the error object has specific validation errors from the backend
+            // Show backend validation errors clearly.
+            // Prioritise field-specific errors (especially 'title' for uniqueness).
             if (err && typeof err === 'object') {
-                const firstKey = Object.keys(err)[0];
-                const msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : err[firstKey];
+                // Try the 'title' field first (unique constraint), then fall back to first field
+                const preferredKeys = ['title', 'non_field_errors', 'detail'];
+                let msg = null;
+                for (const key of preferredKeys) {
+                    if (err[key]) {
+                        msg = Array.isArray(err[key]) ? err[key][0] : err[key];
+                        break;
+                    }
+                }
+                if (!msg) {
+                    const firstKey = Object.keys(err)[0];
+                    msg = firstKey
+                        ? (Array.isArray(err[firstKey]) ? err[firstKey][0] : err[firstKey])
+                        : null;
+                }
                 toast.error(msg || "Failed to save offer");
             } else {
                 toast.error(typeof err === "string" ? err : "Failed to save offer");
