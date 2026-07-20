@@ -76,11 +76,25 @@ class ChatRoomListView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            room, created = ChatRoom.objects.get_or_create(
-                user=user_in_room,
-                provider=provider_in_room,
-                defaults={'booking': booking}
-            )
+            from django.db.models import Q
+            room = ChatRoom.objects.filter(
+                (Q(user=user_in_room) & Q(provider=provider_in_room)) |
+                (Q(user=provider_in_room) & Q(provider=user_in_room))
+            ).first()
+
+            created = False
+            if room:
+                if booking and not room.booking:
+                    room.booking = booking
+                    room.save()
+            else:
+                room = ChatRoom.objects.create(
+                    user=user_in_room,
+                    provider=provider_in_room,
+                    booking=booking
+                )
+                created = True
+
             serializer = ChatRoomSerializer(room, context={'request': request})
             return Response(
                 serializer.data,

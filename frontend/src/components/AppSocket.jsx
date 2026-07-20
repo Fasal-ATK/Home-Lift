@@ -86,7 +86,6 @@ const AppSocket = ({ userId }) => {
 
     useEffect(() => {
         let isComponentMounted = true;
-
         const connect = async () => {
             if (!userId || !isComponentMounted) return;
 
