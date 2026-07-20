@@ -53,14 +53,6 @@ class WalletWithdrawalView(APIView):
             provider_details = ProviderDetails.objects.get(user=request.user)
         except ProviderDetails.DoesNotExist:
             return Response({'detail': 'Only providers can withdraw funds.'}, status=status.HTTP_403_FORBIDDEN)
-        
-        # Ensure Stripe account is linked (Optional in DEBUG mode for simplicity)
-        if not provider_details.stripe_account_id:
-            if settings.DEBUG:
-                provider_details.stripe_account_id = "acct_MOCK_DEVELOPMENT"
-                provider_details.save()
-            else:
-                return Response({'detail': 'Please connect your Stripe account first.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # 2. Check Wallet & Available Balance (Current - Other Pending)
         try:
@@ -214,10 +206,6 @@ class AdminWithdrawalActionView(APIView):
             return Response({'detail': 'Action must be approve or reject.'}, status=status.HTTP_400_BAD_REQUEST)
 
         wallet = withdrawal.wallet
-        try:
-            provider_details = ProviderDetails.objects.get(user=withdrawal.provider)
-        except ProviderDetails.DoesNotExist:
-            return Response({'detail': 'Provider profile not found.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             with transaction.atomic():
@@ -250,23 +238,9 @@ class AdminWithdrawalActionView(APIView):
                             description=f'Withdrawal Request #{withdrawal.id} Approved'
                         )
 
-                    # 3. Admin Process (Stripe etc)
-                    if settings.DEBUG and provider_details.stripe_account_id.startswith("acct_MOCK"):
-                        withdrawal.stripe_transfer_id = "tr_MOCK_ADMIN_APPROVED"
-                        withdrawal.status = 'completed'
-                    else:
-                        try:
-                            transfer = stripe.Transfer.create(
-                                amount=int(withdrawal.amount * 100),
-                                currency='inr',
-                                destination=provider_details.stripe_account_id,
-                                description=f"Withdrawal request #{withdrawal.id} for {withdrawal.provider.email}"
-                            )
-                            withdrawal.stripe_transfer_id = transfer.id
-                            withdrawal.status = 'completed'
-                        except stripe.error.StripeError as e:
-                            # Rollback DB if Stripe fails
-                            raise Exception(f'Stripe Error: {e.user_message or str(e)}')
+                    # 3. Admin Process (Direct/Manual approval, no Stripe Transfer)
+                    withdrawal.stripe_transfer_id = "manual_admin_approved"
+                    withdrawal.status = 'completed'
                     
                     withdrawal.save()
                     send_user_notification(withdrawal.provider.id, f"Your withdrawal of ₹{withdrawal.amount} has been approved and processed!")
