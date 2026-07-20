@@ -70,12 +70,12 @@ const StatCard = ({ title, value, icon, color, subtitle }) => (
           {value}
         </Typography>
         {subtitle && (
-          <Typography 
-            variant="caption" 
-            color="text.secondary" 
-            sx={{ 
-              display: 'block', 
-              fontSize: '0.7rem', 
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              display: 'block',
+              fontSize: '0.7rem',
               mt: 0.5,
               opacity: 0.8,
               lineHeight: 1.2,
@@ -105,7 +105,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("all_time");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
-  
+
   const fetchStats = async () => {
     setLoading(true);
     try {
@@ -158,17 +158,17 @@ const Dashboard = () => {
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
           {timeRange === 'custom' && (
             <Stack direction="row" spacing={1}>
-              <TextField 
-                type="date" 
-                size="small" 
+              <TextField
+                type="date"
+                size="small"
                 value={customRange.start}
-                onChange={(e) => setCustomRange({...customRange, start: e.target.value})}
+                onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
               />
-              <TextField 
-                type="date" 
-                size="small" 
+              <TextField
+                type="date"
+                size="small"
                 value={customRange.end}
-                onChange={(e) => setCustomRange({...customRange, end: e.target.value})}
+                onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
               />
               <Button variant="contained" onClick={fetchStats} color="primary" sx={{ boxShadow: 0 }}>
                 Apply
@@ -240,10 +240,10 @@ const Dashboard = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.daily_stats}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    fontSize={12} 
-                    tickFormatter={(val) => val.split(' ')[0]} 
+                  <XAxis
+                    dataKey="date"
+                    fontSize={12}
+                    tickFormatter={(val) => val.split(' ')[0]}
                   />
                   <YAxis fontSize={12} />
                   <Tooltip />
@@ -323,8 +323,8 @@ const Dashboard = () => {
                             row.status === "completed"
                               ? "success"
                               : row.status === "pending"
-                              ? "warning"
-                              : "primary"
+                                ? "warning"
+                                : "primary"
                           }
                           sx={{ textTransform: 'capitalize', fontSize: '0.7rem' }}
                         />

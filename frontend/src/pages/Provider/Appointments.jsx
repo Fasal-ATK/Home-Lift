@@ -146,7 +146,7 @@ const getMonthDaysGrid = (date) => {
   const month = date.getMonth();
 
   const firstDay = new Date(year, month, 1);
-  let firstDayOfWeek = firstDay.getDay(); 
+  let firstDayOfWeek = firstDay.getDay();
   firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // Align Sunday to index 6 (Monday starts index 0)
 
   const totalDays = new Date(year, month + 1, 0).getDate();
@@ -192,7 +192,7 @@ export default function WeekScheduleDemo() {
   // Active dates states
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [mode, setMode] = useState("week"); // "day" | "week" | "month" | "list"
-  
+
   // Filtering & Search
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 500);
@@ -222,7 +222,7 @@ export default function WeekScheduleDemo() {
   const rowHeight = 60;
   const headerHeight = 56;
   const bodyHeight = rows * rowHeight;
-  
+
   // Calculate relative Monday for the active week start
   const weekStart = useMemo(() => startOfWeekMonday(currentDate), [currentDate]);
 
@@ -390,7 +390,7 @@ export default function WeekScheduleDemo() {
     try {
       await providerJobService.updateBookingStatus(id, newStatus);
       ShowToast(`Status updated to ${STATUS_CONFIG[newStatus]?.label || newStatus}!`, "success");
-      
+
       // Update selected drawer view state dynamically
       if (selectedEvent && selectedEvent.id === id) {
         setSelectedEvent((prev) => {
@@ -404,7 +404,7 @@ export default function WeekScheduleDemo() {
           };
         });
       }
-      
+
       await fetchAppointments();
     } catch (e) {
       ShowToast(e?.response?.data?.error || e?.message || "Failed to update status", "error");
@@ -1155,161 +1155,161 @@ export default function WeekScheduleDemo() {
                     }
                     componentsProps={{ tooltip: { sx: { bgcolor: "grey.900", borderRadius: 2, maxWidth: 260 } }, arrow: { sx: { color: "grey.900" } } }}
                   >
-                  <Paper
-                    elevation={0}
-                    onClick={() => openEventDrawer(ev)}
-                    sx={{
-                      p: { xs: 2, sm: 2.5 },
-                      borderRadius: 3,
-                      border: "1.5px solid",
-                      borderColor: "grey.100",
-                      bgcolor: "white",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                      "&:hover": {
-                        borderColor: ev.cfg.border,
-                        boxShadow: `0 6px 24px rgba(0,0,0,0.06)`,
-                        transform: "translateY(-1px)",
-                      },
-                    }}
-                  >
-                    {/* Colored left accent bar */}
-                    <Box sx={{ display: "flex", gap: 2 }}>
-                      <Box sx={{ width: 4, borderRadius: 4, flexShrink: 0, background: ev.cfg.color, minHeight: 60, opacity: 0.7 }} />
+                    <Paper
+                      elevation={0}
+                      onClick={() => openEventDrawer(ev)}
+                      sx={{
+                        p: { xs: 2, sm: 2.5 },
+                        borderRadius: 3,
+                        border: "1.5px solid",
+                        borderColor: "grey.100",
+                        bgcolor: "white",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        "&:hover": {
+                          borderColor: ev.cfg.border,
+                          boxShadow: `0 6px 24px rgba(0,0,0,0.06)`,
+                          transform: "translateY(-1px)",
+                        },
+                      }}
+                    >
+                      {/* Colored left accent bar */}
+                      <Box sx={{ display: "flex", gap: 2 }}>
+                        <Box sx={{ width: 4, borderRadius: 4, flexShrink: 0, background: ev.cfg.color, minHeight: 60, opacity: 0.7 }} />
 
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Grid container spacing={2} alignItems="center">
-                          {/* Left: Schedule stamp */}
-                          <Grid item xs={12} sm={3.5} md={3}>
-                            <Stack direction="row" spacing={1.5} alignItems="center">
-                              <Box
-                                sx={{
-                                  width: 48,
-                                  height: 48,
-                                  borderRadius: 2.5,
-                                  bgcolor: ev.cfg.bg,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flexShrink: 0,
-                                  border: `1.5px solid ${ev.cfg.border}`,
-                                }}
-                              >
-                                <CalendarTodayIcon sx={{ fontSize: 20, color: ev.cfg.color }} />
-                              </Box>
-                              <Box>
-                                <Typography variant="body2" fontWeight={800} color="text.primary">
-                                  {formattedDate}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mt: 0.1, display: "block" }}>
-                                  {ev.start} – {ev.end}
-                                </Typography>
-                              </Box>
-                            </Stack>
-                          </Grid>
-
-                          {/* Middle: Service + address */}
-                          <Grid item xs={12} sm={4.5} md={5.5}>
-                            <Box>
-                              <Typography variant="subtitle1" fontWeight={900} color="text.primary" sx={{ lineHeight: 1.2 }}>
-                                {ev.title}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mt: 0.3, display: "block" }}>
-                                Client: {ev.subtitle} · #{ev.id}
-                              </Typography>
-                              {/* Address preview */}
-                              {(b.address_details || b.address) && (
-                                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.8 }}>
-                                  <LocationOnIcon sx={{ fontSize: 13, color: "error.light", flexShrink: 0 }} />
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{
-                                      display: "-webkit-box",
-                                      WebkitLineClamp: 1,
-                                      WebkitBoxOrient: "vertical",
-                                      overflow: "hidden",
-                                      fontWeight: 500,
-                                      fontSize: "0.7rem",
-                                    }}
-                                  >
-                                    {b.address_details
-                                      ? `${b.address_details.address_line || ""}, ${b.address_details.city || ""}`
-                                      : b.address}
-                                  </Typography>
-                                </Stack>
-                              )}
-                            </Box>
-                          </Grid>
-
-                          {/* Right: Price, status & action buttons */}
-                          <Grid item xs={12} sm={4} md={3.5}>
-                            <Stack direction="row" spacing={1} alignItems="center" justifyContent={{ sm: "flex-end" }} sx={{ width: "100%" }}>
-                              <Box textAlign="right" sx={{ flex: 1 }}>
-                                {b.price && (
-                                  <Typography variant="h6" fontWeight={900} color="text.primary" sx={{ lineHeight: 1, mb: 0.5 }}>
-                                    ₹{b.price}
-                                  </Typography>
-                                )}
-                                <Chip
-                                  label={ev.cfg.label}
-                                  size="small"
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Grid container spacing={2} alignItems="center">
+                            {/* Left: Schedule stamp */}
+                            <Grid item xs={12} sm={3.5} md={3}>
+                              <Stack direction="row" spacing={1.5} alignItems="center">
+                                <Box
                                   sx={{
-                                    height: 20,
-                                    fontSize: "0.62rem",
-                                    fontWeight: 800,
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: 2.5,
                                     bgcolor: ev.cfg.bg,
-                                    color: ev.cfg.color,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
                                     border: `1.5px solid ${ev.cfg.border}`,
                                   }}
-                                />
+                                >
+                                  <CalendarTodayIcon sx={{ fontSize: 20, color: ev.cfg.color }} />
+                                </Box>
+                                <Box>
+                                  <Typography variant="body2" fontWeight={800} color="text.primary">
+                                    {formattedDate}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mt: 0.1, display: "block" }}>
+                                    {ev.start} – {ev.end}
+                                  </Typography>
+                                </Box>
+                              </Stack>
+                            </Grid>
+
+                            {/* Middle: Service + address */}
+                            <Grid item xs={12} sm={4.5} md={5.5}>
+                              <Box>
+                                <Typography variant="subtitle1" fontWeight={900} color="text.primary" sx={{ lineHeight: 1.2 }}>
+                                  {ev.title}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mt: 0.3, display: "block" }}>
+                                  Client: {ev.subtitle} · #{ev.id}
+                                </Typography>
+                                {/* Address preview */}
+                                {(b.address_details || b.address) && (
+                                  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.8 }}>
+                                    <LocationOnIcon sx={{ fontSize: 13, color: "error.light", flexShrink: 0 }} />
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{
+                                        display: "-webkit-box",
+                                        WebkitLineClamp: 1,
+                                        WebkitBoxOrient: "vertical",
+                                        overflow: "hidden",
+                                        fontWeight: 500,
+                                        fontSize: "0.7rem",
+                                      }}
+                                    >
+                                      {b.address_details
+                                        ? `${b.address_details.address_line || ""}, ${b.address_details.city || ""}`
+                                        : b.address}
+                                    </Typography>
+                                  </Stack>
+                                )}
                               </Box>
+                            </Grid>
 
-                              {/* Chat icon button */}
-                              <Tooltip title="Chat with client" placement="top">
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => { e.stopPropagation(); handleChatWithClient(b); }}
-                                  sx={{
-                                    bgcolor: "#eff6ff",
-                                    color: "#2563eb",
-                                    border: "1.5px solid #bfdbfe",
-                                    borderRadius: 2,
-                                    width: 34,
-                                    height: 34,
-                                    flexShrink: 0,
-                                    "&:hover": { bgcolor: "#dbeafe" },
-                                  }}
-                                >
-                                  <ChatIcon sx={{ fontSize: 16 }} />
-                                </IconButton>
-                              </Tooltip>
+                            {/* Right: Price, status & action buttons */}
+                            <Grid item xs={12} sm={4} md={3.5}>
+                              <Stack direction="row" spacing={1} alignItems="center" justifyContent={{ sm: "flex-end" }} sx={{ width: "100%" }}>
+                                <Box textAlign="right" sx={{ flex: 1 }}>
+                                  {b.price && (
+                                    <Typography variant="h6" fontWeight={900} color="text.primary" sx={{ lineHeight: 1, mb: 0.5 }}>
+                                      ₹{b.price}
+                                    </Typography>
+                                  )}
+                                  <Chip
+                                    label={ev.cfg.label}
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: "0.62rem",
+                                      fontWeight: 800,
+                                      bgcolor: ev.cfg.bg,
+                                      color: ev.cfg.color,
+                                      border: `1.5px solid ${ev.cfg.border}`,
+                                    }}
+                                  />
+                                </Box>
 
-                              {/* Invoice icon button */}
-                              <Tooltip title="Download invoice" placement="top">
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => { e.stopPropagation(); handleDownloadInvoice(ev.id); }}
-                                  sx={{
-                                    bgcolor: "#f5f3ff",
-                                    color: "#7c3aed",
-                                    border: "1.5px solid #ddd6fe",
-                                    borderRadius: 2,
-                                    width: 34,
-                                    height: 34,
-                                    flexShrink: 0,
-                                    "&:hover": { bgcolor: "#ede9fe" },
-                                  }}
-                                >
-                                  <DescriptionIcon sx={{ fontSize: 16 }} />
-                                </IconButton>
-                              </Tooltip>
-                            </Stack>
+                                {/* Chat icon button */}
+                                <Tooltip title="Chat with client" placement="top">
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => { e.stopPropagation(); handleChatWithClient(b); }}
+                                    sx={{
+                                      bgcolor: "#eff6ff",
+                                      color: "#2563eb",
+                                      border: "1.5px solid #bfdbfe",
+                                      borderRadius: 2,
+                                      width: 34,
+                                      height: 34,
+                                      flexShrink: 0,
+                                      "&:hover": { bgcolor: "#dbeafe" },
+                                    }}
+                                  >
+                                    <ChatIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+
+                                {/* Invoice icon button */}
+                                <Tooltip title="Download invoice" placement="top">
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => { e.stopPropagation(); handleDownloadInvoice(ev.id); }}
+                                    sx={{
+                                      bgcolor: "#f5f3ff",
+                                      color: "#7c3aed",
+                                      border: "1.5px solid #ddd6fe",
+                                      borderRadius: 2,
+                                      width: 34,
+                                      height: 34,
+                                      flexShrink: 0,
+                                      "&:hover": { bgcolor: "#ede9fe" },
+                                    }}
+                                  >
+                                    <DescriptionIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </Grid>
                           </Grid>
-                        </Grid>
+                        </Box>
                       </Box>
-                    </Box>
-                  </Paper>
+                    </Paper>
                   </Tooltip>
                 );
               })}

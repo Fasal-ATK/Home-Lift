@@ -30,10 +30,10 @@ function Login() {
     setFieldErrors({});
     setServerError('');
 
-    // ✅ Client-side validation
+    // Client-side validation
     const validationError = validateLoginForm({ email, password: pass });
     if (validationError) {
-      setFieldErrors(validationError); // expect { email: "msg", password: "msg" }
+      setFieldErrors(validationError);
       return;
     }
 
@@ -102,7 +102,7 @@ function Login() {
             Admin Login
           </Typography>
 
-          {/* 🔴 Global Server Error */}
+          {/* Global Server Error */}
           {serverError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {serverError}
