@@ -38,7 +38,6 @@ const isTokenExpired = (token) => {
 
 // Fetches or refreshes access token, handling concurrency & logouts
 const getOrRefreshAccessToken = async () => {
-    console.log("Checking token...");
     const token = localStorage.getItem('accessToken');
     if (token && !isTokenExpired(token)) {
         return token;
@@ -50,7 +49,6 @@ const getOrRefreshAccessToken = async () => {
 
     tokenRefreshPromise = (async () => {
         try {
-            console.log("Refreshing token...");
             const refreshResponse = await axios.post(
                 `${import.meta.env.VITE_API_URL}${apiEndpoints.auth.refreshAccessToken}`,
                 {},
@@ -118,7 +116,6 @@ const AppSocket = ({ userId }) => {
 
                 const socketPath = `${wsBase}/ws/notifications/${userId}/?token=${token}`;
 
-                console.log("Opening socket with token:", token);
                 const socket = new WebSocket(socketPath);
                 socketRef.current = socket;
 
@@ -219,7 +216,6 @@ const AppSocket = ({ userId }) => {
                 };
 
             } catch (err) {
-                console.error("WebSocket connection setup failed:", err);
                 
                 // If it is not a cancellation and component is still mounted, schedule a retry.
                 // Note: performLogout will trigger a redirect, but we schedule a retry in case of transient network errors.
