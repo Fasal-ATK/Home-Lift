@@ -121,7 +121,7 @@ export default function BookingDetails() {
       await dispatch(updateBooking({ id: bookingId, data: { status: "cancelled" } })).unwrap();
       await dispatch(fetchBookings());
       await dispatch(fetchBookingDetails(bookingId));
-    } catch (e) { console.error(e); }
+    } catch { /* booking cancellation failed silently */ }
     finally { setBusy(false); }
   };
 

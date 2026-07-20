@@ -118,8 +118,8 @@ const Dashboard = () => {
       }
       const res = await api.get(apiEndpoints.adminDashboard.stats, { params });
       setData(res.data);
-    } catch (err) {
-      console.error("Failed to fetch dashboard stats", err);
+    } catch {
+      // Stats fetch failed silently; UI shows no data
     } finally {
       setLoading(false);
     }

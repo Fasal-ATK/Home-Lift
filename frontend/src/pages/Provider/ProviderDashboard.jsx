@@ -168,8 +168,8 @@ export default function ProviderDashboard() {
       }
       const res = await api.get(apiEndpoints.provider.dashboardStats, { params });
       setData(res.data);
-    } catch (err) {
-      console.error("Failed to fetch provider stats", err);
+    } catch {
+      // Stats fetch failed silently; UI shows no data
     } finally {
       setLoading(false);
     }

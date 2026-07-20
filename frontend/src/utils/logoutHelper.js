@@ -8,8 +8,8 @@ export const performLogout = async (callBackend = true) => {
     if (callBackend) {
       await authService.logout(); // only if still authorized
     }
-  } catch (err) {
-    console.warn("Backend logout failed or token already invalid:", err);
+  } catch {
+    // Backend logout failed or token already invalid — clear local state anyway
   } finally {
     store.dispatch(logout());
     localStorage.removeItem('accessToken');

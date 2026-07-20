@@ -33,20 +33,16 @@ const AppSocket = ({ userId }) => {
 
             const socketPath = `${wsBase}/ws/notifications/${userId}/?token=${token}`;
 
-            console.log("[Socket] Connecting to", socketPath);
-
             const socket = new WebSocket(socketPath);
             socketRef.current = socket;
 
             socket.onopen = () => {
-                console.log(`[Socket] Connected for User ${userId}`);
                 reconnectAttemptsRef.current = 0;
             };
 
             socket.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    console.log("[Socket] Message:", data);
 
                     if (data.type === "notification" || data.message) {
                         const messageText = data.message || data.text;
@@ -109,14 +105,12 @@ const AppSocket = ({ userId }) => {
                     if (data.type === "read_receipt") {
                         dispatch(markMessagesAsRead(data.payload));
                     }
-                } catch (err) {
-                    console.error(err);
+                } catch {
+                    // Ignore malformed socket messages
                 }
             };
 
             socket.onclose = (e) => {
-                console.log("[Socket] Closed", e.code);
-
                 if (e.code === 1000) return;
 
                 const delay = Math.min(
@@ -129,8 +123,7 @@ const AppSocket = ({ userId }) => {
                 reconnectTimeoutRef.current = setTimeout(connect, delay);
             };
 
-            socket.onerror = (err) => {
-                console.error("[Socket] Error", err);
+            socket.onerror = () => {
                 socket.close();
             };
         };

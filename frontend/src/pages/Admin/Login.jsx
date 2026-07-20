@@ -49,8 +49,6 @@ function Login() {
       navigate('/admin/dashboard');
 
     } catch (err) {
-      console.error(err);
-
       if (err.response) {
         // Backend validation might return dict { email: [...], password: [...], detail: ... }
         const backendData = err.response.data;

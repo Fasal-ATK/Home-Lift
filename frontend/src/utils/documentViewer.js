@@ -84,8 +84,7 @@ const openViaProxy = async (url, mode = "inline") => {
 
     // Clean up blob URL after a delay (browser keeps the data while tab is open)
     setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-  } catch (err) {
-    console.error("Document proxy error:", err);
+  } catch {
     // Fallback: navigate directly to the original URL
     if (newWindow) {
       newWindow.location.href = url.replace(/^http:\/\//i, "https://");

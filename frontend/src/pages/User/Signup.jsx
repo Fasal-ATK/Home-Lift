@@ -99,7 +99,6 @@ function Signup() {
       }
       setShowOtpModal(true);
     } catch (err) {
-      console.error("Send OTP error:", err.response?.data || err.message);
       setBackendError(extractErrorMessage(err.response?.data) || "Failed to send OTP");
     } finally {
       setLoading(false);
@@ -117,7 +116,6 @@ function Signup() {
         setExpiryTimestamp(response.expiry_timestamp);
       }
     } catch (err) {
-      console.error("Resend OTP error:", err.response?.data || err.message);
       setBackendError(extractErrorMessage(err.response?.data) || "Failed to resend OTP");
     } finally {
       setResending(false);
@@ -148,8 +146,6 @@ function Signup() {
       ShowToast('Registration successful! Please log in.');
       setTimeout(() => navigate('/login'), 1500);
     } catch (error) {
-      console.error('Error during registration:', error.response?.data || error.message);
-      
       const backendData = error.response?.data;
       if (backendData && typeof backendData === 'object') {
         // Map backend field errors to react-hook-form

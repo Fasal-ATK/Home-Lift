@@ -161,7 +161,6 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
         handleClose();
       })
       .catch((err) => {
-        console.error('❌ Application submission error:', err);
         ShowToast(typeof err === 'object' ? 'Failed to submit application:\n' + JSON.stringify(err, null, 2) : 'Failed to submit application: ' + err, 'error');
       });
   };

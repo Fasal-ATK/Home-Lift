@@ -241,9 +241,8 @@ export default function WeekScheduleDemo() {
     try {
       const data = await providerJobService.getMyAppointments({ search: searchStr, no_pagination: true });
       setRawBookings(data?.results || data || []);
-    } catch (err) {
+    } catch {
       ShowToast("Failed to load appointments", "error");
-      console.error(err);
     } finally {
       setLoading(false);
     }

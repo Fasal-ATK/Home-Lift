@@ -30,8 +30,7 @@ const LogoutButton = ({ collapsed, color = 'red' }) => {
       await performLogout(true);
       ShowToast('Logged out successfully', 'success');
       redirectAfterLogout(isAdmin);
-    } catch (error) {
-      console.error(error);
+    } catch {
       ShowToast('Logout failed. Try again.', 'error');
     }
   };

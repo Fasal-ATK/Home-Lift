@@ -171,8 +171,8 @@ const BookingPage = () => {
             try {
               const secret = await createPaymentIntent(bookingId);
               setClientSecret(secret);
-            } catch (err) {
-              console.error("Payment Intent Error:", err);
+            } catch {
+              ShowToast("Could not initiate payment. Please try again.", "error");
             }
           } else {
             dispatch(payWithWalletThunk({ bookingId, paymentType: "advance" }))
@@ -182,14 +182,13 @@ const BookingPage = () => {
                 navigate("/bookings?payment=success");
               })
               .catch((err) => {
-                console.error("Wallet Payment Error:", err);
                 ShowToast(getErrorMessage(err, "Wallet payment failed. Please try again."), "error");
               });
           }
         }
       })
-      .catch((error) => {
-        console.error("Booking error:", error);
+      .catch(() => {
+        ShowToast("Booking failed. Please try again.", "error");
       });
   };
 

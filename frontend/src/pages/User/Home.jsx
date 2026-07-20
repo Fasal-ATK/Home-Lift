@@ -92,8 +92,7 @@ const Home = () => {
       } else {
         navigate("/provider/dashboard");
       }
-    } catch (error) {
-      console.error("Failed to check provider status:", error);
+    } catch {
       if (user?.is_provider_active === false) {
         ShowToast("Access Denied: Your provider account is currently blocked.", "error");
       } else {

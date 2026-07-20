@@ -182,8 +182,7 @@ export default function Addresses() {
         const lon = pos.coords.longitude.toFixed(6);
         setForm((f) => ({ ...f, latitude: String(lat), longitude: String(lon) }));
       },
-      (err) => {
-        console.error("Geolocation error:", err);
+      () => {
         ShowToast("Unable to fetch location. Please allow location access or enter manually.", "error");
       },
       { enableHighAccuracy: true, timeout: 10000 }

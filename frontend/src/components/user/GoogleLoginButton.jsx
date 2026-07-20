@@ -22,13 +22,13 @@ const GoogleLoginButton = () => {
       dispatch(loginSuccess({ user: data.user, access_token: data.access_token }));
 
       navigate('/dashboard'); // adjust to your app’s route
-    } catch (error) {
-      console.error('Google login error:', error?.response?.data || error.message);
+    } catch {
+      // Google login error — user already sees failure from GoogleLogin component
     }
   };
 
   const handleError = () => {
-    console.error('Google login failed');
+    // Google login failed — handled by the GoogleLogin component UI
   };
 
   return (

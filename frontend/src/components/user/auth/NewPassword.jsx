@@ -83,7 +83,6 @@ function ForgotPassword() {
       await otpService.sendOtp({ email, purpose: 'forgot-password' });
       setShowOtpModal(true);
     } catch (err) {
-      console.error("Send OTP error:", err);
       setError(extractErrorMessage(err.response?.data) || "Failed to send OTP");
     }
     setLoading(false);
@@ -96,7 +95,6 @@ function ForgotPassword() {
       await otpService.sendOtp({ email, purpose: 'forgot-password' });
       ShowToast('OTP resent successfully', 'success');
     } catch (err) {
-      console.error("Resend OTP error:", err);
       setError(extractErrorMessage(err.response?.data) || "Failed to resend OTP");
     }
     setResending(false);
@@ -110,7 +108,6 @@ function ForgotPassword() {
       setShowOtpModal(false);
       setStep(3); // Move to password reset step
     } catch (error) {
-      console.error('OTP verification error:', error);
       setError(extractErrorMessage(error.response?.data) || 'Invalid OTP');
       setShowOtpModal(false);
     }
@@ -166,7 +163,6 @@ function ForgotPassword() {
         setTimeout(() => navigate('/login'), 1500);
       }
     } catch (err) {
-      console.error('Password update error:', err);
       setError(extractErrorMessage(err.response?.data) || 'Failed to update password');
     }
     setLoading(false);

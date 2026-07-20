@@ -26,12 +26,9 @@ const NotificationSocket = ({ userId }) => {
 
             const socketUrl = `${wsBase}/ws/notifications/${userId}/?token=${token}`;
 
-            console.log(`[${connectionId}] Connecting to ${socketUrl}`);
-
             socket = new WebSocket(socketUrl);
 
             socket.onopen = () => {
-                console.log(`[${connectionId}] Connected`);
                 reconnectAttempts = 0;
             };
 
@@ -59,8 +56,8 @@ const NotificationSocket = ({ userId }) => {
                             })
                         );
                     }
-                } catch (e) {
-                    console.error(e);
+                } catch {
+                    // Ignore malformed socket messages
                 }
             };
 
@@ -77,8 +74,7 @@ const NotificationSocket = ({ userId }) => {
                 reconnectTimeout = setTimeout(connect, delay);
             };
 
-            socket.onerror = (e) => {
-                console.error(e);
+            socket.onerror = () => {
                 socket.close();
             };
         };

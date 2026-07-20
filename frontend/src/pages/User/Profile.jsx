@@ -92,8 +92,7 @@ export default function Profile() {
       } else {
         ShowToast("Failed to update profile. Please try again.", "error");
       }
-    } catch (error) {
-      console.error("Profile update failed:", error);
+    } catch {
       ShowToast("Unexpected error updating profile.", "error");
     } finally {
       setLoading(false);

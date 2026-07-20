@@ -29,7 +29,6 @@ export const applyProvider = createAsyncThunk(
 
       return await providerService.apply(formData);
     } catch (err) {
-      console.error('❌ Apply provider error:', err);
       return rejectWithValue(err.response?.data || err.message);
     }
   }
@@ -68,7 +67,6 @@ export const updateUser = createAsyncThunk(
       const response = await userService.updateProfile(data);
       return response; // { user: {...} }
     } catch (err) {
-      console.error('❌ Update user error:', err);
       return rejectWithValue(err.response?.data || err.message);
     }
   }

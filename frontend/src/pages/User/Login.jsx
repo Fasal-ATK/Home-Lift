@@ -72,7 +72,6 @@ function Login() {
       navigate('/home');
 
     } catch (err) {
-      console.error(err);
       setError(getErrorMessage(err, 'Login failed. Please check your credentials.'));
     } finally {
       setLoading(false);
@@ -104,7 +103,6 @@ function Login() {
       ShowToast('OTP sent to your email', 'success');
       setShowOtpModal(true);
     } catch (err) {
-      console.error("Send OTP error:", err);
       setError(extractErrorMessage(err.response?.data) || "Failed to send OTP");
     }
     setOtpLoading(false);
@@ -118,7 +116,6 @@ function Login() {
       await otpService.sendOtp({ email, purpose: 'forgot-password' });
       ShowToast('OTP resent successfully', 'success');
     } catch (err) {
-      console.error("Resend OTP error:", err);
       setError(extractErrorMessage(err.response?.data) || "Failed to resend OTP");
     }
     setResending(false);

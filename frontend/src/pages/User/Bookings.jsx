@@ -433,8 +433,8 @@ export default function Bookings() {
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
-    } catch (err) {
-      console.error("Invoice download failed", err);
+    } catch {
+      ShowToast("Invoice download failed. Please try again.", "error");
     }
   };
 
@@ -447,7 +447,6 @@ export default function Bookings() {
       setClientSecret(secret);
       setPayModalOpen(true);
     } catch (err) {
-      console.error("Failed to create payment intent", err);
       ShowToast("Could not initiate payment. Please try again.", "error");
     }
   };
@@ -461,7 +460,6 @@ export default function Bookings() {
       setClientSecret(secret);
       setPayModalOpen(true);
     } catch (err) {
-      console.error("Failed to create payment intent", err);
       ShowToast("Could not initiate payment. Please try again.", "error");
     }
   };
@@ -478,7 +476,6 @@ export default function Bookings() {
       setPayModalOpen(false);
       dispatch(fetchBookings({ page }));
     } catch (err) {
-      console.error("Wallet payment failed", err);
       ShowToast(getErrorMessage(err, "Wallet payment failed. Please try again."), "error");
     }
   };
@@ -492,7 +489,6 @@ export default function Bookings() {
       const response = await bookingService.initiateChat(booking.provider, booking.id);
       navigate('/chat', { state: { roomId: response.id } });
     } catch (err) {
-      console.error("Chat initiation error:", err.response?.data || err);
       ShowToast(err.response?.data?.detail || err.message || "Failed to start chat.", "error");
     }
   };
