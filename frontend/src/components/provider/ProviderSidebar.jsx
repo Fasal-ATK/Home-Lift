@@ -8,6 +8,9 @@ import {
   Stack,
   Badge,
   Avatar,
+  Drawer,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { styled, keyframes } from "@mui/material/styles";
 import {
@@ -23,6 +26,7 @@ import {
   Chat,
   ArrowBack,
   WorkHistory,
+  Close,
 } from "@mui/icons-material";
 import { useSelector } from "react-redux";
 
@@ -86,7 +90,6 @@ const NavItem = styled(Box)(({ active }) => ({
       : "rgba(0, 0, 0, 0.04)",
     transform: "translateX(3px)",
   },
-  // left accent bar when active
   "&::before": active
     ? {
         content: '""',
@@ -134,8 +137,8 @@ const BOTTOM_ITEMS = [
   { text: "Chat",    icon: <Chat         sx={{ fontSize: 18 }} />, path: "/provider/chat"    },
 ];
 
-// ─── component ────────────────────────────────────────────────────────────────
-export default function ProviderSidebar({ open, setOpen }) {
+// ─── sidebar inner content (shared between mobile Drawer and desktop fixed) ──
+function SidebarContent({ open, setOpen, onMobileClose, isMobile }) {
   const location = useLocation();
   const navigate  = useNavigate();
   const { rooms } = useSelector((state) => state.chat);
@@ -156,6 +159,10 @@ export default function ProviderSidebar({ open, setOpen }) {
     return item;
   });
 
+  const handleNav = () => {
+    if (isMobile && onMobileClose) onMobileClose();
+  };
+
   const renderItem = (item) => {
     const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
 
@@ -165,6 +172,7 @@ export default function ProviderSidebar({ open, setOpen }) {
         component={Link}
         to={item.path}
         sx={{ textDecoration: "none" }}
+        onClick={handleNav}
       >
         <IconWrap active={isActive ? 1 : 0}>
           <Box sx={{ color: isActive ? "#fff" : "rgba(0, 0, 0, 0.54)", display: "flex" }}>
@@ -172,7 +180,7 @@ export default function ProviderSidebar({ open, setOpen }) {
           </Box>
         </IconWrap>
 
-        {open && (
+        {(open || isMobile) && (
           <Typography
             variant="body2"
             fontWeight={isActive ? 800 : 500}
@@ -188,8 +196,8 @@ export default function ProviderSidebar({ open, setOpen }) {
           </Typography>
         )}
 
-        {/* Active dot when collapsed */}
-        {!open && isActive && (
+        {/* Active dot when collapsed (desktop only) */}
+        {!open && !isMobile && isActive && (
           <Box
             sx={{
               position: "absolute",
@@ -209,7 +217,7 @@ export default function ProviderSidebar({ open, setOpen }) {
     return (
       <Tooltip
         key={item.path}
-        title={!open ? item.text : ""}
+        title={!open && !isMobile ? item.text : ""}
         placement="right"
         arrow
       >
@@ -218,22 +226,33 @@ export default function ProviderSidebar({ open, setOpen }) {
     );
   };
 
-  return (
-    <SidebarWrap open={open ? 1 : 0}>
+  const innerWidth = isMobile ? 240 : (open ? 220 : 72);
 
+  return (
+    <Box
+      sx={{
+        width: innerWidth,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "#fff",
+        position: "relative",
+        transition: "width 0.3s cubic-bezier(0.4,0,0.2,1)",
+      }}
+    >
       {/* ── Brand header ──────────────────────────────────────── */}
       <Box
         sx={{
           p: 2,
           display: "flex",
           alignItems: "center",
-          justifyContent: open ? "space-between" : "center",
+          justifyContent: (open || isMobile) ? "space-between" : "center",
           borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
           minHeight: 64,
           flexShrink: 0,
         }}
       >
-        {open ? (
+        {(open || isMobile) ? (
           <>
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Avatar
@@ -258,20 +277,26 @@ export default function ProviderSidebar({ open, setOpen }) {
               </Box>
             </Stack>
 
-            <Tooltip title="Back to user side" placement="right">
-              <IconButton
-                size="small"
-                onClick={() => navigate("/home")}
-                sx={{
-                  color: "rgba(0, 0, 0, 0.54)",
-                  bgcolor: "rgba(0, 0, 0, 0.04)",
-                  "&:hover": { bgcolor: "rgba(0, 0, 0, 0.08)", color: "#000" },
-                  width: 28, height: 28,
-                }}
-              >
-                <ArrowBack sx={{ fontSize: 15 }} />
+            {isMobile ? (
+              <IconButton size="small" onClick={onMobileClose} sx={{ color: "rgba(0,0,0,0.5)" }}>
+                <Close sx={{ fontSize: 18 }} />
               </IconButton>
-            </Tooltip>
+            ) : (
+              <Tooltip title="Back to user side" placement="right">
+                <IconButton
+                  size="small"
+                  onClick={() => navigate("/home")}
+                  sx={{
+                    color: "rgba(0, 0, 0, 0.54)",
+                    bgcolor: "rgba(0, 0, 0, 0.04)",
+                    "&:hover": { bgcolor: "rgba(0, 0, 0, 0.08)", color: "#000" },
+                    width: 28, height: 28,
+                  }}
+                >
+                  <ArrowBack sx={{ fontSize: 15 }} />
+                </IconButton>
+              </Tooltip>
+            )}
           </>
         ) : (
           <Tooltip title="Back to user side" placement="right">
@@ -295,28 +320,30 @@ export default function ProviderSidebar({ open, setOpen }) {
         )}
       </Box>
 
-      {/* ── Toggle button ─────────────────────────────────────── */}
-      <IconButton
-        size="small"
-        onClick={() => setOpen(!open)}
-        sx={{
-          position: "absolute",
-          right: -14,
-          top: "50%",
-          transform: "translateY(-50%)",
-          bgcolor: "#fff",
-          border: "1px solid rgba(0, 0, 0, 0.12)",
-          color: "rgba(0, 0, 0, 0.6)",
-          width: 28,
-          height: 28,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-          "&:hover": { bgcolor: "#6366f1", color: "#fff", borderColor: "#6366f1" },
-          zIndex: 1500,
-          transition: "all 0.2s",
-        }}
-      >
-        {open ? <ChevronLeft sx={{ fontSize: 16 }} /> : <Menu sx={{ fontSize: 16 }} />}
-      </IconButton>
+      {/* ── Toggle button (desktop only) ─────────────────────────────────────── */}
+      {!isMobile && (
+        <IconButton
+          size="small"
+          onClick={() => setOpen(!open)}
+          sx={{
+            position: "absolute",
+            right: -14,
+            top: "50%",
+            transform: "translateY(-50%)",
+            bgcolor: "#fff",
+            border: "1px solid rgba(0, 0, 0, 0.12)",
+            color: "rgba(0, 0, 0, 0.6)",
+            width: 28,
+            height: 28,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            "&:hover": { bgcolor: "#6366f1", color: "#fff", borderColor: "#6366f1" },
+            zIndex: 1500,
+            transition: "all 0.2s",
+          }}
+        >
+          {open ? <ChevronLeft sx={{ fontSize: 16 }} /> : <Menu sx={{ fontSize: 16 }} />}
+        </IconButton>
+      )}
 
       {/* ── Main nav ──────────────────────────────────────────── */}
       <Box
@@ -328,7 +355,7 @@ export default function ProviderSidebar({ open, setOpen }) {
           "&::-webkit-scrollbar": { width: 0 },
         }}
       >
-        {open && (
+        {(open || isMobile) && (
           <Typography
             variant="caption"
             sx={{
@@ -352,7 +379,7 @@ export default function ProviderSidebar({ open, setOpen }) {
           <Divider sx={{ borderColor: "rgba(0, 0, 0, 0.06)" }} />
         </Box>
 
-        {open && (
+        {(open || isMobile) && (
           <Typography
             variant="caption"
             sx={{
@@ -369,9 +396,9 @@ export default function ProviderSidebar({ open, setOpen }) {
             More
           </Typography>
         )}
-          <Stack spacing={0.5} mt={2}>
-            {BOTTOM_ITEMS_WITH_BADGE.map(renderItem)}
-          </Stack>
+        <Stack spacing={0.5} mt={2}>
+          {BOTTOM_ITEMS_WITH_BADGE.map(renderItem)}
+        </Stack>
       </Box>
 
       {/* ── Footer ────────────────────────────────────────────── */}
@@ -382,7 +409,7 @@ export default function ProviderSidebar({ open, setOpen }) {
           flexShrink: 0,
         }}
       >
-        {open ? (
+        {(open || isMobile) ? (
           <Box
             sx={{
               p: 1.5,
@@ -410,6 +437,48 @@ export default function ProviderSidebar({ open, setOpen }) {
           />
         )}
       </Box>
+    </Box>
+  );
+}
+
+// ─── main export ─────────────────────────────────────────────────────────────
+export default function ProviderSidebar({ open, setOpen, mobileOpen, onMobileClose }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  if (isMobile) {
+    return (
+      <Drawer
+        anchor="left"
+        open={mobileOpen}
+        onClose={onMobileClose}
+        ModalProps={{ keepMounted: true }}
+        PaperProps={{
+          sx: {
+            width: 240,
+            border: "none",
+            boxShadow: "4px 0 24px rgba(0,0,0,0.12)",
+          }
+        }}
+      >
+        <SidebarContent
+          open={true}
+          setOpen={setOpen}
+          onMobileClose={onMobileClose}
+          isMobile={true}
+        />
+      </Drawer>
+    );
+  }
+
+  return (
+    <SidebarWrap open={open ? 1 : 0}>
+      <SidebarContent
+        open={open}
+        setOpen={setOpen}
+        onMobileClose={onMobileClose}
+        isMobile={false}
+      />
     </SidebarWrap>
   );
 }

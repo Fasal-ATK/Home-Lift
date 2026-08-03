@@ -27,12 +27,14 @@ export const fetchMessages = createAsyncThunk(
 
 export const sendMessage = createAsyncThunk(
     'chat/sendMessage',
-    async ({ roomId, content }, { rejectWithValue }) => {
+    async ({ roomId, content, tempId }, { rejectWithValue }) => {
         try {
             const response = await api.post(`/chat/rooms/${roomId}/messages/`, { content });
-            return response.data;
+            // Return tempId alongside server data so the fulfilled handler can
+            // replace the optimistic placeholder instead of appending a duplicate.
+            return { ...response.data, tempId };
         } catch (error) {
-            return rejectWithValue(error.response?.data || 'Failed to send message');
+            return rejectWithValue({ ...(error.response?.data || {}), tempId, error: 'Failed to send message' });
         }
     }
 );
@@ -50,13 +52,47 @@ const chatSlice = createSlice({
         setActiveRoom: (state, action) => {
             state.activeRoomId = action.payload;
         },
+        // Instantly add a message to the UI before server confirms (optimistic update).
+        // Pass { roomId, content, senderId, senderName, tempId } in the payload.
+        optimisticAddMessage: (state, action) => {
+            const { roomId, content, senderId, senderName, tempId } = action.payload;
+            if (!state.messages[roomId]) {
+                state.messages[roomId] = [];
+            }
+            state.messages[roomId].push({
+                id: tempId,          // replaced once server echoes back
+                tempId,
+                room_id: roomId,
+                sender_id: senderId,
+                sender_name: senderName,
+                content,
+                created_at: new Date().toISOString(),
+                is_read: false,
+                isPending: true,     // flag for optional "sending…" indicator
+            });
+        },
         receiveMessage: (state, action) => {
-            const { room_id, ...message } = action.payload;
+            const { room_id, tempId, ...message } = action.payload;
             if (!state.messages[room_id]) {
                 state.messages[room_id] = [];
             }
-            state.messages[room_id].push(message);
-            
+
+            // Replace the optimistic placeholder if it exists, otherwise append.
+            const msgs = state.messages[room_id];
+            const pendingIndex = tempId
+                ? msgs.findIndex(m => m.tempId === tempId)
+                : -1;
+
+            if (pendingIndex !== -1) {
+                msgs[pendingIndex] = { ...message, room_id, isPending: false };
+            } else {
+                // Prevent duplicate if message with same server id already present
+                const alreadyExists = msgs.some(m => m.id === message.id);
+                if (!alreadyExists) {
+                    msgs.push({ ...message, room_id, isPending: false });
+                }
+            }
+
             // Update last message in room list
             const room = state.rooms.find(r => r.id === room_id);
             if (room) {
@@ -105,9 +141,39 @@ const chatSlice = createSlice({
                 // Since fetching messages marks them as read on backend, we update local too
                 const room = state.rooms.find(r => r.id === roomId);
                 if (room) room.unread_count = 0;
+            })
+            .addCase(sendMessage.fulfilled, (state, action) => {
+                // Replace optimistic placeholder with the confirmed server message.
+                const { tempId, room_id, room, ...message } = action.payload;
+                const roomId = room_id || room;
+                if (!roomId) return;
+                const msgs = state.messages[roomId];
+                if (!msgs) return;
+                const idx = tempId ? msgs.findIndex(m => m.tempId === tempId) : -1;
+                if (idx !== -1) {
+                    msgs[idx] = { ...message, room_id: roomId, isPending: false };
+                } else {
+                    // No placeholder found — only add if not already present
+                    const alreadyExists = msgs.some(m => m.id === message.id);
+                    if (!alreadyExists) {
+                        msgs.push({ ...message, room_id: roomId, isPending: false });
+                    }
+                }
+            })
+            .addCase(sendMessage.rejected, (state, action) => {
+                // Mark the optimistic message as failed so the UI can react
+                const { tempId } = action.payload || {};
+                if (!tempId) return;
+                for (const msgs of Object.values(state.messages)) {
+                    const idx = msgs.findIndex(m => m.tempId === tempId);
+                    if (idx !== -1) {
+                        msgs[idx] = { ...msgs[idx], isPending: false, isFailed: true };
+                        break;
+                    }
+                }
             });
     }
 });
 
-export const { setActiveRoom, receiveMessage, clearActiveRoom, markMessagesAsRead } = chatSlice.actions;
+export const { setActiveRoom, optimisticAddMessage, receiveMessage, clearActiveRoom, markMessagesAsRead } = chatSlice.actions;
 export default chatSlice.reducer;

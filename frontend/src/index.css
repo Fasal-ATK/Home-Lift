@@ -1,12 +1,55 @@
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-body, html {
+html {
   margin: 0;
   padding: 0;
+  /* Prevent horizontal scroll on all pages */
+  overflow-x: hidden;
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
 }
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  /* Improve touch scroll on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Prevent text size inflation on orientation change */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Ensure all images are responsive by default */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Minimum touch target size for interactive elements */
+button,
+[role="button"],
+a,
+input,
+select,
+textarea {
+  min-height: 40px;
+  touch-action: manipulation;
+}
+
+/* Prevent overflowing text from breaking layouts */
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Scrollable table container for mobile */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}

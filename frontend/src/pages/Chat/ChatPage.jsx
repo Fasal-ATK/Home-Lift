@@ -23,6 +23,7 @@ import {
   fetchMessages,
   sendMessage,
   setActiveRoom,
+  optimisticAddMessage,
 } from "../../redux/slices/chatSlice";
 import { Done, DoneAll } from "@mui/icons-material";
 
@@ -62,8 +63,23 @@ export default function ChatPage() {
 
   const handleSendMessage = () => {
     if (!messageInput.trim() || !activeRoomId) return;
-    dispatch(sendMessage({ roomId: activeRoomId, content: messageInput }));
+    const content = messageInput.trim();
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
     setMessageInput("");
+
+    // Show the message instantly (optimistic update)
+    dispatch(
+      optimisticAddMessage({
+        roomId: activeRoomId,
+        content,
+        senderId: user?.id,
+        senderName: user?.full_name || user?.username || "Me",
+        tempId,
+      })
+    );
+
+    // Persist to server in background; WebSocket echo will be deduplicated
+    dispatch(sendMessage({ roomId: activeRoomId, content, tempId }));
   };
 
   const handleKeyDown = (e) => {
@@ -164,8 +180,10 @@ export default function ChatPage() {
                 messages[activeRoomId].map((msg, index) => {
                   const senderId = msg?.sender?.id || msg?.sender || msg?.sender_id;
                   const isMe = String(senderId) === String(user?.id);
-                  const msgId = msg.id || `msg-${index}`;
-                  
+                  const msgId = msg.tempId || msg.id || `msg-${index}`;
+                  const isPending = msg.isPending;
+                  const isFailed = msg.isFailed;
+
                   return (
                     <Box
                       key={msgId}
@@ -173,6 +191,8 @@ export default function ChatPage() {
                         display: "flex",
                         justifyContent: isMe ? "flex-end" : "flex-start",
                         mb: 2,
+                        opacity: isPending ? 0.65 : 1,
+                        transition: "opacity 0.2s ease",
                       }}
                     >
                       <Box
@@ -180,20 +200,32 @@ export default function ChatPage() {
                           maxWidth: "75%",
                           p: 1.5,
                           borderRadius: isMe ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                          bgcolor: isMe ? "primary.main" : "#ffffff",
-                          color: isMe ? "#ffffff" : "text.primary",
+                          bgcolor: isFailed
+                            ? "#ffebee"
+                            : isMe
+                            ? "primary.main"
+                            : "#ffffff",
+                          color: isFailed
+                            ? "#c62828"
+                            : isMe
+                            ? "#ffffff"
+                            : "text.primary",
                           boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                          border: isMe ? "none" : "1px solid #e0e0e0",
+                          border: isFailed
+                            ? "1px solid #ef9a9a"
+                            : isMe
+                            ? "none"
+                            : "1px solid #e0e0e0",
                         }}
                       >
                         <Typography variant="body2" sx={{ wordBreak: "break-word", fontSize: "0.95rem" }}>
                           {msg.content}
                         </Typography>
                         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", mt: 0.5, gap: 0.4 }}>
-                          <Typography variant="caption" sx={{ fontSize: "0.7rem", color: isMe ? "rgba(255,255,255,0.7)" : "text.secondary" }}>
-                            {formatTime(msg.created_at)}
+                          <Typography variant="caption" sx={{ fontSize: "0.7rem", color: isFailed ? "#ef9a9a" : isMe ? "rgba(255,255,255,0.7)" : "text.secondary" }}>
+                            {isFailed ? "Failed to send" : isPending ? "Sending…" : formatTime(msg.created_at)}
                           </Typography>
-                          {isMe && (
+                          {isMe && !isPending && !isFailed && (
                             msg.is_read ? (
                               <DoneAll sx={{ fontSize: 13, color: "rgba(255,255,255,0.9)" }} />
                             ) : (
