@@ -151,7 +151,9 @@ const chatSlice = createSlice({
     extraReducers: (builder) => {
         builder
             .addCase(fetchChatRooms.pending, (state) => {
-                state.loading = true;
+                if (!state.rooms || state.rooms.length === 0) {
+                    state.loading = true;
+                }
             })
             .addCase(fetchChatRooms.fulfilled, (state, action) => {
                 state.loading = false;

@@ -37,16 +37,21 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
 
+  const navRoomId = location.state?.roomId;
+
   // Focus effect for initial navigation from other pages
   useEffect(() => {
     dispatch(fetchChatRooms());
-    if (location.state?.roomId) {
-      dispatch(setActiveRoom(location.state.roomId));
-      dispatch(fetchMessages(location.state.roomId));
+    if (navRoomId) {
+      dispatch(setActiveRoom(navRoomId));
+      dispatch(fetchMessages(navRoomId));
     }
-  }, [dispatch, location.state]);
+  }, [dispatch, navRoomId]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages in active room
+  const activeRoomMessages = messages[activeRoomId];
+  const messageCount = activeRoomMessages?.length || 0;
+
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTo({
@@ -54,7 +59,7 @@ export default function ChatPage() {
         behavior: "smooth"
       });
     }
-  }, [messages, activeRoomId]);
+  }, [messageCount, activeRoomId]);
 
   const handleRoomClick = (roomId) => {
     dispatch(setActiveRoom(roomId));
