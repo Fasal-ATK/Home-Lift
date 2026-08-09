@@ -29,7 +29,11 @@ export const sendMessage = createAsyncThunk(
     'chat/sendMessage',
     async ({ roomId, content, tempId }, { rejectWithValue }) => {
         try {
-            const response = await api.post(`/chat/rooms/${roomId}/messages/`, { content });
+            const response = await api.post(
+                `/chat/rooms/${roomId}/messages/`,
+                { content },
+                { useLoader: false }
+            );
             // Return tempId alongside server data so the fulfilled handler can
             // replace the optimistic placeholder instead of appending a duplicate.
             return { ...response.data, tempId };
