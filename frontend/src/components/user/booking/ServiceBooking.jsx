@@ -1,6 +1,6 @@
 // src/components/user/booking/ServiceBookingPage.jsx
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm, Controller } from "react-hook-form";
 import {
@@ -19,11 +19,21 @@ import {
   FormControl,
   FormLabel,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Tooltip,
+  Stack,
 } from "@mui/material";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import { LocationOn } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createBooking } from "../../../redux/slices/bookingSlice";
 import Autocomplete from "@mui/material/Autocomplete";
-import { fetchAddresses } from "../../../redux/slices/user/userSlice";
+import { fetchAddresses, createAddress, updateAddress as updateAddressThunk } from "../../../redux/slices/user/userSlice";
 import { fetchWallet, payWithWalletThunk } from "../../../redux/slices/walletSlice";
 import { Elements } from "@stripe/react-stripe-js";
 import { stripePromise } from "../../../../stripe/stripe";
@@ -31,6 +41,8 @@ import CheckoutForm from "../../common/payment";
 import { createPaymentIntent } from "../../../services/apiServices";
 import { ShowToast } from "../../common/Toast";
 import { getErrorMessage } from "../../../utils/errorHelper";
+import { State, City } from "country-state-city";
+
 
 const calcAdvance = (p) => {
   const price = Number(p) || 0;
@@ -61,6 +73,178 @@ const getDiscountedPrice = (price, offer) => {
   return Math.max(discounted, 0);
 };
 
+// Stable constant outside the component — prevents stale closure / re-render issues
+const EMPTY_ADDRESS_FORM = {
+  title: "", address_line: "", city: "", state: "",
+  postal_code: "", country: "India", latitude: "", longitude: "",
+};
+
+
+/* ─────────────────────────────────────────────────────────────────
+   AddEditAddressDialog  –  handles both Add AND Edit in one dialog.
+   Pass  initialData={address}  to edit an existing address.
+   Leave initialData undefined/null to open in "Add" mode.
+   ───────────────────────────────────────────────────────────────── */
+function AddEditAddressDialog({ open, onClose, onSaved, initialData }) {
+  const dispatch = useDispatch();
+  const isEditing = Boolean(initialData?.id);
+
+  const states = useMemo(() => State.getStatesOfCountry("IN"), []);
+  const [cities, setCities] = useState([]);
+  const [form, setForm] = useState(EMPTY_ADDRESS_FORM);
+  const [saving, setSaving] = useState(false);
+
+  // Populate/reset form when the dialog opens or the target address changes
+  // NOTE: depend on initialData?.id (primitive), NOT the object itself — avoids
+  //       infinite re-render loops caused by a new object reference each render.
+  useEffect(() => {
+    if (!open) return;
+    if (initialData) {
+      setForm({
+        title:        initialData.title        || "",
+        address_line: initialData.address_line || "",
+        city:         initialData.city         || "",
+        state:        initialData.state        || "",
+        postal_code:  initialData.postal_code  || "",
+        country:      initialData.country      || "India",
+        latitude:     initialData.latitude  ?? "",
+        longitude:    initialData.longitude ?? "",
+      });
+      const savedState = states.find((s) => s.name === initialData.state);
+      setCities(savedState ? City.getCitiesOfState("IN", savedState.isoCode) : []);
+    } else {
+      setForm(EMPTY_ADDRESS_FORM);
+      setCities([]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialData?.id]);  // use the id primitive, not the full object
+
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const handleStateChange = (_e, value) => {
+    setForm((f) => ({ ...f, state: value ? value.name : "", city: "" }));
+    setCities(value ? City.getCitiesOfState("IN", value.isoCode) : []);
+  };
+
+  const handleCityChange = (_e, value) => setForm((f) => ({ ...f, city: value || "" }));
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) return ShowToast("Geolocation not supported", "error");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setForm((f) => ({
+        ...f,
+        latitude:  pos.coords.latitude.toFixed(6),
+        longitude: pos.coords.longitude.toFixed(6),
+      })),
+      () => ShowToast("Could not get location. Please allow access or enter manually.", "error"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleSave = async () => {
+    if (!form.title || !form.address_line || !form.city || !form.state || !form.postal_code) {
+      ShowToast("Please fill in all required fields.", "error");
+      return;
+    }
+    const payload = {
+      ...form,
+      latitude:  form.latitude  || null,
+      longitude: form.longitude || null,
+    };
+    setSaving(true);
+    try {
+      let result;
+      if (isEditing) {
+        result = await dispatch(updateAddressThunk({ id: initialData.id, data: payload })).unwrap();
+        ShowToast("Address updated!", "success");
+      } else {
+        result = await dispatch(createAddress(payload)).unwrap();
+        ShowToast("Address added!", "success");
+      }
+      onSaved(result);
+      onClose();
+    } catch (err) {
+      ShowToast(getErrorMessage(err, "Failed to save address."), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle sx={{ fontWeight: 700 }}>
+        {isEditing ? "Edit Address" : "Add New Address"}
+      </DialogTitle>
+
+      <DialogContent dividers>
+        <Stack spacing={2} sx={{ pt: 0.5 }}>
+          <TextField label="Title (e.g. Home, Office)" value={form.title}
+            onChange={set("title")} fullWidth required />
+
+          <TextField label="Address Line" value={form.address_line}
+            onChange={set("address_line")} fullWidth required />
+
+          {/* State autocomplete */}
+          <Autocomplete
+            options={states}
+            getOptionLabel={(o) => o?.name || ""}
+            value={states.find((s) => s.name === form.state) || null}
+            onChange={handleStateChange}
+            renderInput={(params) => <TextField {...params} label="State" required fullWidth />}
+            disableClearable={false}
+            fullWidth
+          />
+
+          {/* City autocomplete (depends on chosen state) */}
+          <Autocomplete
+            options={cities.map((c) => c.name)}
+            getOptionLabel={(o) => o || ""}
+            value={form.city || null}
+            onChange={handleCityChange}
+            renderInput={(params) => <TextField {...params} label="City" required fullWidth />}
+            disabled={!form.state}
+            disableClearable={false}
+            fullWidth
+          />
+
+          <TextField
+            label="Postal Code" value={form.postal_code} required fullWidth
+            inputProps={{ maxLength: 6, inputMode: "numeric" }}
+            onChange={(e) => setForm((f) => ({ ...f, postal_code: e.target.value.replace(/\D/g, "") }))}
+          />
+
+          <TextField label="Country" value={form.country} disabled fullWidth />
+
+          {/* Optional GPS */}
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Button variant="outlined" size="small" startIcon={<LocationOn />} onClick={useCurrentLocation}>
+              Use My Location
+            </Button>
+            <Typography variant="caption" color="text.secondary">(optional)</Typography>
+          </Stack>
+
+          <Stack direction="row" spacing={2}>
+            <TextField label="Latitude" value={form.latitude}
+              onChange={set("latitude")} fullWidth helperText="e.g. 12.971599" />
+            <TextField label="Longitude" value={form.longitude}
+              onChange={set("longitude")} fullWidth helperText="e.g. 77.594566" />
+          </Stack>
+        </Stack>
+      </DialogContent>
+
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose} color="inherit">Cancel</Button>
+        <Button onClick={handleSave} variant="contained" disabled={saving}>
+          {saving
+            ? <CircularProgress size={20} color="inherit" />
+            : isEditing ? "Save Changes" : "Save Address"
+          }
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 const BookingPage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -86,9 +270,13 @@ const BookingPage = () => {
   const userAddresses = useSelector(state => state.user.addresses);
   const addressesLoading = useSelector(state => state.user.addressesLoading);
   const navigate = useNavigate();
-  const [clientSecret, setClientSecret] = React.useState("");
-  const [paymentMethod, setPaymentMethod] = React.useState("card"); // "card" or "wallet"
+  const [clientSecret, setClientSecret] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("card"); // "card" or "wallet"
   const { balance: walletBalance } = useSelector((state) => state.wallet);
+
+  // ── Add / Edit Address dialog state ──
+  const [addAddrOpen, setAddAddrOpen]   = useState(false);
+  const [editingAddr, setEditingAddr]   = useState(null); // address object being edited
 
   useEffect(() => {
     dispatch(fetchWallet());
@@ -354,36 +542,102 @@ const BookingPage = () => {
                 />
               </Box>
 
+              {/* ── Service Address + Add / Edit address buttons ── */}
               <Box sx={{ mb: 2 }}>
                 <Controller
                   name="address"
                   control={control}
                   rules={{ required: "Pick a service address" }}
                   defaultValue=""
-                  render={({ field, fieldState }) => (
-                    <Autocomplete
-                      options={userAddresses}
-                      getOptionLabel={opt =>
-                        opt
-                          ? `${opt.title}: ${opt.address_line}, ${opt.city}, ${opt.state} ${opt.postal_code}`
-                          : ""
-                      }
-                      loading={addressesLoading}
-                      value={userAddresses.find(a => a.id === field.value) || null}
-                      onChange={(_e, val) => field.onChange(val ? val.id : "")}
-                      renderInput={params => (
-                        <TextField
-                          {...params}
-                          label="Service Address"
-                          fullWidth
-                          error={!!fieldState.error}
-                          helperText={fieldState.error?.message}
-                        />
-                      )}
-                      disabled={addressesLoading}
-                      isOptionEqualToValue={(opt, val) => opt.id === val.id}
-                    />
-                  )}
+                  render={({ field, fieldState }) => {
+                    // the currently selected address object (or null)
+                    const selectedAddr = userAddresses.find(a => a.id === field.value) || null;
+
+                    return (
+                      <Stack direction="row" spacing={1} alignItems="flex-start">
+                        {/* Address dropdown */}
+                        <Box sx={{ flex: 1 }}>
+                          <Autocomplete
+                            options={userAddresses}
+                            // plain string shown in the input box once selected
+                            getOptionLabel={opt =>
+                              opt ? `${opt.title}: ${opt.address_line}, ${opt.city}, ${opt.state} ${opt.postal_code}` : ""
+                            }
+                            // custom dropdown rows: bold title + secondary detail line
+                            renderOption={(props, opt) => (
+                              <Box component="li" {...props} key={opt.id}>
+                                <Box>
+                                  <Typography variant="body2" fontWeight={700} lineHeight={1.3}>
+                                    {opt.title}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {opt.address_line}, {opt.city}, {opt.state} {opt.postal_code}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            )}
+                            loading={addressesLoading}
+                            value={selectedAddr}
+                            onChange={(_e, val) => field.onChange(val ? val.id : "")}
+                            renderInput={params => (
+                              <TextField
+                                {...params}
+                                label="Service Address"
+                                fullWidth
+                                error={!!fieldState.error}
+                                helperText={
+                                  fieldState.error?.message ||
+                                  (userAddresses.length === 0 && !addressesLoading
+                                    ? "No addresses yet — click + to add one"
+                                    : undefined)
+                                }
+                              />
+                            )}
+                            disabled={addressesLoading}
+                            isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                          />
+                        </Box>
+
+                        {/* ➕ Add button */}
+                        <Tooltip title="Add new address" placement="top">
+                          <IconButton
+                            onClick={() => setAddAddrOpen(true)}
+                            color="primary"
+                            sx={{ mt: 0.5 }}
+                            aria-label="add new address"
+                          >
+                            <AddCircleOutlineIcon />
+                          </IconButton>
+                        </Tooltip>
+
+                        {/* ✏️ Edit button — only shown when an address is selected */}
+                        {selectedAddr && (
+                          <Tooltip title="Edit selected address" placement="top">
+                            <IconButton
+                              onClick={() => setEditingAddr(selectedAddr)}
+                              color="secondary"
+                              sx={{ mt: 0.5 }}
+                              aria-label="edit selected address"
+                            >
+                              <EditOutlinedIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Stack>
+                    );
+                  }}
+                />
+
+                {/* Shared Add / Edit dialog */}
+                <AddEditAddressDialog
+                  open={addAddrOpen || Boolean(editingAddr)}
+                  onClose={() => { setAddAddrOpen(false); setEditingAddr(null); }}
+                  initialData={editingAddr}
+                  onSaved={(savedAddr) => {
+                    dispatch(fetchAddresses());
+                    // keep the same address selected (add → select new; edit → keep same id)
+                    setValue("address", savedAddr.id);
+                  }}
                 />
               </Box>
 

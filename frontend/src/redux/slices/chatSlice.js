@@ -68,39 +68,63 @@ const chatSlice = createSlice({
                 content,
                 created_at: new Date().toISOString(),
                 is_read: false,
-                isPending: true,     // flag for optional "sending…" indicator
+                isPending: true,     // flag for "sending…" indicator
             });
+
+            // Update last_message in room list immediately for snappy feel
+            const room = state.rooms.find(r => r.id === roomId);
+            if (room) {
+                room.last_message = {
+                    content,
+                    created_at: new Date().toISOString(),
+                };
+            }
         },
         receiveMessage: (state, action) => {
-            const { room_id, tempId, ...message } = action.payload;
-            if (!state.messages[room_id]) {
-                state.messages[room_id] = [];
+            const payload = action.payload || {};
+            const roomId = payload.room_id || payload.room;
+            if (!roomId) return;
+
+            const { tempId, ...message } = payload;
+            if (!state.messages[roomId]) {
+                state.messages[roomId] = [];
             }
 
-            // Replace the optimistic placeholder if it exists, otherwise append.
-            const msgs = state.messages[room_id];
-            const pendingIndex = tempId
-                ? msgs.findIndex(m => m.tempId === tempId)
-                : -1;
+            const msgs = state.messages[roomId];
+            const senderId = message.sender_id || message.sender?.id || message.sender;
 
-            if (pendingIndex !== -1) {
-                msgs[pendingIndex] = { ...message, room_id, isPending: false };
+            // 1. Check if this exact server message ID is already in state
+            const existingIdx = message.id ? msgs.findIndex(m => m.id === message.id) : -1;
+
+            if (existingIdx !== -1) {
+                // Update existing message in place
+                msgs[existingIdx] = { ...msgs[existingIdx], ...message, room_id: roomId, isPending: false };
             } else {
-                // Prevent duplicate if message with same server id already present
-                const alreadyExists = msgs.some(m => m.id === message.id);
-                if (!alreadyExists) {
-                    msgs.push({ ...message, room_id, isPending: false });
+                // 2. Check if there's a pending optimistic message matching tempId OR matching (isPending && sender && content)
+                const pendingIdx = msgs.findIndex(m => {
+                    if (!m.isPending) return false;
+                    if (tempId && m.tempId === tempId) return true;
+                    const mSenderId = m.sender_id || m.sender?.id || m.sender;
+                    return String(mSenderId) === String(senderId) && m.content === message.content;
+                });
+
+                if (pendingIdx !== -1) {
+                    // Replace pending message with confirmed message
+                    msgs[pendingIdx] = { ...message, room_id: roomId, isPending: false };
+                } else {
+                    // New incoming message from another user or another tab
+                    msgs.push({ ...message, room_id: roomId, isPending: false });
                 }
             }
 
-            // Update last message in room list
-            const room = state.rooms.find(r => r.id === room_id);
+            // Update last message & unread count in rooms list
+            const room = state.rooms.find(r => r.id === roomId);
             if (room) {
                 room.last_message = {
                     content: message.content,
-                    created_at: message.created_at
+                    created_at: message.created_at || new Date().toISOString()
                 };
-                if (state.activeRoomId !== room_id) {
+                if (state.activeRoomId !== roomId) {
                     room.unread_count = (room.unread_count || 0) + 1;
                 }
             }
@@ -109,16 +133,18 @@ const chatSlice = createSlice({
             state.activeRoomId = null;
         },
         markMessagesAsRead: (state, action) => {
-            const { room_id } = action.payload;
-            if (state.messages[room_id]) {
-                state.messages[room_id] = state.messages[room_id].map(msg => ({
+            const { room_id, room } = action.payload || {};
+            const roomId = room_id || room;
+            if (!roomId) return;
+            if (state.messages[roomId]) {
+                state.messages[roomId] = state.messages[roomId].map(msg => ({
                     ...msg,
                     is_read: true
                 }));
             }
-            const room = state.rooms.find(r => r.id === room_id);
-            if (room) {
-                room.unread_count = 0;
+            const roomObj = state.rooms.find(r => r.id === roomId);
+            if (roomObj) {
+                roomObj.unread_count = 0;
             }
         },
     },
@@ -143,25 +169,40 @@ const chatSlice = createSlice({
                 if (room) room.unread_count = 0;
             })
             .addCase(sendMessage.fulfilled, (state, action) => {
-                // Replace optimistic placeholder with the confirmed server message.
-                const { tempId, room_id, room, ...message } = action.payload;
+                const { tempId, room_id, room, ...message } = action.payload || {};
                 const roomId = room_id || room;
                 if (!roomId) return;
                 const msgs = state.messages[roomId];
                 if (!msgs) return;
-                const idx = tempId ? msgs.findIndex(m => m.tempId === tempId) : -1;
-                if (idx !== -1) {
-                    msgs[idx] = { ...message, room_id: roomId, isPending: false };
-                } else {
-                    // No placeholder found — only add if not already present
-                    const alreadyExists = msgs.some(m => m.id === message.id);
-                    if (!alreadyExists) {
-                        msgs.push({ ...message, room_id: roomId, isPending: false });
+
+                const existingIdx = message.id ? msgs.findIndex(m => m.id === message.id) : -1;
+                const tempIdx = tempId ? msgs.findIndex(m => m.tempId === tempId) : -1;
+
+                if (existingIdx !== -1 && tempIdx !== -1 && existingIdx !== tempIdx) {
+                    // WS message arrived first and inserted at existingIdx. Remove the temporary placeholder.
+                    msgs.splice(tempIdx, 1);
+                    const freshExistingIdx = msgs.findIndex(m => m.id === message.id);
+                    if (freshExistingIdx !== -1) {
+                        msgs[freshExistingIdx] = { ...message, room_id: roomId, isPending: false };
                     }
+                } else if (tempIdx !== -1) {
+                    msgs[tempIdx] = { ...message, room_id: roomId, isPending: false };
+                } else if (existingIdx !== -1) {
+                    msgs[existingIdx] = { ...message, room_id: roomId, isPending: false };
+                } else {
+                    msgs.push({ ...message, room_id: roomId, isPending: false });
+                }
+
+                // Update last message in room list
+                const roomObj = state.rooms.find(r => r.id === roomId);
+                if (roomObj) {
+                    roomObj.last_message = {
+                        content: message.content,
+                        created_at: message.created_at || new Date().toISOString()
+                    };
                 }
             })
             .addCase(sendMessage.rejected, (state, action) => {
-                // Mark the optimistic message as failed so the UI can react
                 const { tempId } = action.payload || {};
                 if (!tempId) return;
                 for (const msgs of Object.values(state.messages)) {
