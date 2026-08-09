@@ -240,38 +240,180 @@ function Services() {
           </IconButton>
         </Box>
 
-        {/* ── Category Grid ───────────────────────────── */}
+        {/* ── Category Filter ──────────────────────────── */}
         <Fade in={showFilters} unmountOnExit>
-          <Box
-            sx={{
-              mb: 4,
-              p: 2.5,
-              borderRadius: "20px",
-              background: "white",
-              boxShadow: "0 2px 16px rgba(99,102,241,0.07)",
-              border: "1.5px solid rgba(99,102,241,0.08)",
-            }}
-          >
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 4, sm: 3, md: 2 }}>
-                <ServiceCard
-                  name="All Services"
-                  icon={allCategory}
-                  onClick={() => handleCategorySelect(null)}
-                  selected={selectedCategory === null}
-                />
-              </Grid>
+          <Box sx={{ mb: 4 }}>
+
+            {/* ── Mobile / Tablet: horizontal scroll chips ── */}
+            <Box
+              sx={{
+                display: { xs: "flex", md: "none" },
+                overflowX: "auto",
+                gap: 1.5,
+                pb: 1,
+                px: 0.5,
+                /* hide scrollbar but allow scrolling */
+                "&::-webkit-scrollbar": { display: "none" },
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
+            >
+              {/* All Services chip */}
+              <Box
+                onClick={() => handleCategorySelect(null)}
+                sx={{
+                  flexShrink: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 0.8,
+                  cursor: "pointer",
+                  minWidth: 72,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 58,
+                    height: 58,
+                    borderRadius: "16px",
+                    background: selectedCategory === null
+                      ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                      : "linear-gradient(135deg, #f1f5f9, #e2e8f0)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: selectedCategory === null
+                      ? "0 6px 18px rgba(99,102,241,0.4)"
+                      : "0 2px 8px rgba(0,0,0,0.08)",
+                    border: selectedCategory === null
+                      ? "2px solid #6366f1"
+                      : "1.5px solid rgba(0,0,0,0.07)",
+                    transition: "all 0.25s ease",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={allCategory}
+                    alt="All"
+                    sx={{ width: 36, height: 36, objectFit: "contain" }}
+                  />
+                </Box>
+                <Typography
+                  sx={{
+                    fontSize: "0.7rem",
+                    fontWeight: selectedCategory === null ? 800 : 600,
+                    color: selectedCategory === null ? "#4f46e5" : "#1e293b",
+                    textAlign: "center",
+                    lineHeight: 1.2,
+                    maxWidth: 72,
+                    wordBreak: "break-word",
+                  }}
+                >
+                  All
+                </Typography>
+              </Box>
+
               {categories.map((cat) => (
-                <Grid size={{ xs: 4, sm: 3, md: 2 }} key={cat.id}>
+                <Box
+                  key={cat.id}
+                  onClick={() => handleCategorySelect(cat.id)}
+                  sx={{
+                    flexShrink: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 0.8,
+                    cursor: "pointer",
+                    minWidth: 72,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 58,
+                      height: 58,
+                      borderRadius: "16px",
+                      background: selectedCategory === cat.id
+                        ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                        : "linear-gradient(135deg, #f1f5f9, #e2e8f0)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: selectedCategory === cat.id
+                        ? "0 6px 18px rgba(99,102,241,0.4)"
+                        : "0 2px 8px rgba(0,0,0,0.08)",
+                      border: selectedCategory === cat.id
+                        ? "2px solid #6366f1"
+                        : "1.5px solid rgba(0,0,0,0.07)",
+                      transition: "all 0.25s ease",
+                      overflow: "hidden",
+                      "&:active": { transform: "scale(0.94)" },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={cat.icon || ""}
+                      alt={cat.name}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        objectFit: "contain",
+                        opacity: cat.icon ? 1 : 0.25,
+                      }}
+                    />
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontSize: "0.7rem",
+                      fontWeight: selectedCategory === cat.id ? 800 : 600,
+                      color: selectedCategory === cat.id ? "#4f46e5" : "#1e293b",
+                      textAlign: "center",
+                      lineHeight: 1.2,
+                      maxWidth: 72,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {cat.name}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+
+            {/* ── Desktop: icon-card grid ─────────────────── */}
+            <Box
+              sx={{
+                display: { xs: "none", md: "block" },
+                p: 2.5,
+                borderRadius: "20px",
+                background: "white",
+                boxShadow: "0 2px 16px rgba(99,102,241,0.07)",
+                border: "1.5px solid rgba(99,102,241,0.08)",
+              }}
+            >
+              <Grid container spacing={2}>
+                <Grid size={{ md: 2 }}>
                   <ServiceCard
-                    name={cat.name}
-                    icon={cat.icon}
-                    onClick={() => handleCategorySelect(cat.id)}
-                    selected={selectedCategory === cat.id}
+                    name="All Services"
+                    icon={allCategory}
+                    onClick={() => handleCategorySelect(null)}
+                    selected={selectedCategory === null}
                   />
                 </Grid>
-              ))}
-            </Grid>
+                {categories.map((cat) => (
+                  <Grid size={{ md: 2 }} key={cat.id}>
+                    <ServiceCard
+                      name={cat.name}
+                      icon={cat.icon}
+                      onClick={() => handleCategorySelect(cat.id)}
+                      selected={selectedCategory === cat.id}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
           </Box>
         </Fade>
 

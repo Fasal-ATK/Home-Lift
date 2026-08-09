@@ -54,7 +54,7 @@ const ServiceCard = ({
       sx={{
         position: "relative",
         cursor: "pointer",
-        borderRadius: "18px",
+        borderRadius: { xs: "14px", sm: "18px" },
         overflow: "hidden",
         transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
         background: selected
@@ -70,11 +70,13 @@ const ServiceCard = ({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: isServiceCard ? "flex-start" : "center",
-        p: isServiceCard ? 0 : 1.5,
-        pb: isServiceCard ? 0 : 2,
-        minHeight: isServiceCard ? 200 : 140,
+        p: isServiceCard ? 0 : { xs: 1, sm: 1.5 },
+        pb: isServiceCard ? 0 : { xs: 1.5, sm: 2 },
+        minHeight: isServiceCard
+          ? { xs: 155, sm: 175, md: 200 }
+          : { xs: 100, sm: 120, md: 140 },
         "&:hover": {
-          transform: "translateY(-8px) scale(1.02)",
+          transform: "translateY(-6px) scale(1.02)",
           boxShadow: selected
             ? "0 20px 40px rgba(99, 102, 241, 0.3)"
             : "0 16px 36px rgba(0,0,0,0.14)",
@@ -84,6 +86,7 @@ const ServiceCard = ({
             : "linear-gradient(145deg, #fafafa, #f5f5ff)",
           zIndex: 10,
         },
+        "&:active": { transform: "scale(0.97)" },
         ...sx,
       }}
     >
@@ -122,15 +125,23 @@ const ServiceCard = ({
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          pt: isServiceCard ? (offer ? 3.5 : 2) : 1,
-          pb: isServiceCard ? 1.5 : 1,
+          pt: isServiceCard
+            ? (offer ? { xs: 2.5, sm: 3.5 } : { xs: 1.5, sm: 2 })
+            : { xs: 0.8, sm: 1 },
+          pb: isServiceCard ? { xs: 1, sm: 1.5 } : { xs: 0.8, sm: 1 },
         }}
       >
         <Box
           sx={{
-            width: isServiceCard ? 72 : 58,
-            height: isServiceCard ? 72 : 58,
-            borderRadius: isServiceCard ? "20px" : "16px",
+            width: isServiceCard
+              ? { xs: 52, sm: 62, md: 72 }
+              : { xs: 44, sm: 52, md: 58 },
+            height: isServiceCard
+              ? { xs: 52, sm: 62, md: 72 }
+              : { xs: 44, sm: 52, md: 58 },
+            borderRadius: isServiceCard
+              ? { xs: "14px", sm: "18px", md: "20px" }
+              : { xs: "12px", sm: "14px", md: "16px" },
             background: selected
               ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
               : "linear-gradient(135deg, #f1f5f9, #e2e8f0)",
@@ -149,8 +160,12 @@ const ServiceCard = ({
             src={icon || ""}
             alt={name}
             sx={{
-              width: isServiceCard ? 48 : 38,
-              height: isServiceCard ? 48 : 38,
+              width: isServiceCard
+                ? { xs: 32, sm: 40, md: 48 }
+                : { xs: 28, sm: 34, md: 38 },
+              height: isServiceCard
+                ? { xs: 32, sm: 40, md: 48 }
+                : { xs: 28, sm: 34, md: 38 },
               objectFit: "contain",
               opacity: icon ? 1 : 0.25,
             }}
@@ -164,9 +179,11 @@ const ServiceCard = ({
         sx={{
           textAlign: "center",
           fontWeight: selected ? 800 : 600,
-          fontSize: isServiceCard ? "0.88rem" : "0.8rem",
+          fontSize: isServiceCard
+            ? { xs: "0.75rem", sm: "0.82rem", md: "0.88rem" }
+            : { xs: "0.68rem", sm: "0.75rem", md: "0.8rem" },
           color: selected ? "#4f46e5" : "#1e293b",
-          px: 1.5,
+          px: { xs: 0.8, sm: 1.5 },
           lineHeight: 1.3,
           display: "-webkit-box",
           WebkitLineClamp: 2,
@@ -184,8 +201,8 @@ const ServiceCard = ({
           sx={{
             mt: "auto",
             width: "100%",
-            px: 1.5,
-            pb: 1.5,
+            px: { xs: 0.8, sm: 1.5 },
+            pb: { xs: 1, sm: 1.5 },
             display: "flex",
             flexDirection: "column",
             alignItems: "center",

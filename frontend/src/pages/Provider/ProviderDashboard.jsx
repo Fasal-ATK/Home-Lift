@@ -28,10 +28,13 @@ const shimmer = keyframes`
 `;
 
 // ─── styled ──────────────────────────────────────────────────────────────────
-const HeroBanner = styled(Box)(() => ({
+const HeroBanner = styled(Box)(({ theme }) => ({
   background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
   borderRadius: 24,
-  padding: "40px 36px",
+  padding: "32px 24px",
+  [theme.breakpoints.up("sm")]: {
+    padding: "40px 36px",
+  },
   marginBottom: 32,
   position: "relative",
   overflow: "hidden",
@@ -67,7 +70,7 @@ const StatCard = ({ title, value, icon, color, subtitle, delay = 0 }) => (
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 2.5, sm: 3 },
         borderRadius: 4,
         border: "1px solid #e8ecf0",
         height: "100%",
@@ -94,12 +97,12 @@ const StatCard = ({ title, value, icon, color, subtitle, delay = 0 }) => (
         {icon}
       </Box>
 
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-        <Box sx={{ zIndex: 1 }}>
-          <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1, fontSize: 10 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+        <Box sx={{ zIndex: 1, minWidth: 0, flex: 1 }}>
+          <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1, fontSize: 10, display: "block" }} noWrap>
             {title}
           </Typography>
-          <Typography variant="h3" fontWeight={900} sx={{ my: 0.5, color: "#0f172a", letterSpacing: "-1px" }}>
+          <Typography variant="h3" fontWeight={900} sx={{ my: 0.5, color: "#0f172a", letterSpacing: "-1px", fontSize: { xs: "1.75rem", sm: "2.25rem" } }} noWrap>
             {value}
           </Typography>
           {subtitle && (
@@ -109,7 +112,7 @@ const StatCard = ({ title, value, icon, color, subtitle, delay = 0 }) => (
             </Stack>
           )}
         </Box>
-        <Avatar sx={{ bgcolor: `${color}18`, color, width: 52, height: 52, borderRadius: 3 }}>
+        <Avatar sx={{ bgcolor: `${color}18`, color, width: { xs: 44, sm: 52 }, height: { xs: 44, sm: 52 }, borderRadius: 3, flexShrink: 0 }}>
           {icon}
         </Avatar>
       </Stack>
@@ -117,8 +120,11 @@ const StatCard = ({ title, value, icon, color, subtitle, delay = 0 }) => (
   </motion.div>
 );
 
-const SectionCard = styled(Paper)(() => ({
-  padding: 32,
+const SectionCard = styled(Paper)(({ theme }) => ({
+  padding: 20,
+  [theme.breakpoints.up("sm")]: {
+    padding: 32,
+  },
   borderRadius: 24,
   border: "1px solid #e8ecf0",
   boxShadow: "0 4px 24px rgba(0,0,0,0.03)",
@@ -186,28 +192,28 @@ export default function ProviderDashboard() {
     );
   }
 
-  if (!data) return <Typography>Error loading dashboard.</Typography>;
+  if (!data) return <Typography sx={{ p: 4 }}>Error loading dashboard.</Typography>;
 
   const { stats, monthly_data: bookingData, status_data: roleData } = data;
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, minHeight: "100vh", bgcolor: "#f8f9fc" }}>
+    <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, minHeight: "100vh", bgcolor: "#f8f9fc" }}>
 
       {/* ── Hero Banner ─────────────────────────────────────────────── */}
       <HeroBanner>
-        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={3}>
+        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "stretch", sm: "center" }} spacing={2.5}>
           <Box>
-            <Typography variant="h3" fontWeight={900} color="#fff" letterSpacing="-1px" mb={0.5}>
+            <Typography variant="h3" fontWeight={900} color="#fff" letterSpacing="-1px" mb={0.5} sx={{ fontSize: { xs: "1.75rem", sm: "2.5rem" } }}>
               Dashboard
             </Typography>
-            <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.55)" }}>
+            <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.55)", fontSize: { xs: "0.9rem", sm: "1rem" } }}>
               Welcome back! Here's how{" "}
               <Box component="span" sx={{ color: "#cddc39", fontWeight: 800 }}>Home Lift</Box>{" "}
               is performing for you.
             </Typography>
           </Box>
 
-          <FormControl size="small" sx={{ minWidth: 200, bgcolor: "rgba(255,255,255,0.08)", borderRadius: 3 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 }, bgcolor: "rgba(255,255,255,0.08)", borderRadius: 3 }}>
             <Select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
@@ -240,19 +246,19 @@ export default function ProviderDashboard() {
                   InputLabelProps={{ shrink: true, sx: { color: "rgba(255,255,255,0.7)" } }}
                   value={customRange.start}
                   onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
-                  sx={{ flex: 1, "& input": { color: "#fff" }, "& fieldset": { borderColor: "rgba(255,255,255,0.3)" } }}
+                  sx={{ width: "100%", flex: 1, "& input": { color: "#fff" }, "& fieldset": { borderColor: "rgba(255,255,255,0.3)" } }}
                 />
                 <TextField
                   type="date" label="End Date" size="small"
                   InputLabelProps={{ shrink: true, sx: { color: "rgba(255,255,255,0.7)" } }}
                   value={customRange.end}
                   onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
-                  sx={{ flex: 1, "& input": { color: "#fff" }, "& fieldset": { borderColor: "rgba(255,255,255,0.3)" } }}
+                  sx={{ width: "100%", flex: 1, "& input": { color: "#fff" }, "& fieldset": { borderColor: "rgba(255,255,255,0.3)" } }}
                 />
                 <Button
                   variant="contained"
                   onClick={fetchStats}
-                  sx={{ bgcolor: "#6366f1", color: "#fff", fontWeight: 700, borderRadius: 3, textTransform: "none", px: 4, "&:hover": { bgcolor: "#4f46e5" } }}
+                  sx={{ width: { xs: "100%", sm: "auto" }, bgcolor: "#6366f1", color: "#fff", fontWeight: 700, borderRadius: 3, textTransform: "none", px: 4, "&:hover": { bgcolor: "#4f46e5" } }}
                 >
                   Apply
                 </Button>
@@ -263,7 +269,7 @@ export default function ProviderDashboard() {
       </HeroBanner>
 
       {/* ── Stat Cards ──────────────────────────────────────────────── */}
-      <Grid container spacing={3} mb={4}>
+      <Grid container spacing={{ xs: 2, sm: 3 }} mb={4}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard title="Total Bookings" value={stats.total_bookings} icon={<BookOnline sx={{ fontSize: 40 }} />} color="#6366f1" delay={0} />
         </Grid>
@@ -279,7 +285,7 @@ export default function ProviderDashboard() {
       </Grid>
 
       {/* ── Charts ──────────────────────────────────────────────────── */}
-      <Grid container spacing={3} mb={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }} mb={3}>
         {/* Area Chart */}
         <Grid item xs={12} xl={8}>
           <SectionCard elevation={0}>
@@ -287,7 +293,7 @@ export default function ProviderDashboard() {
               <Box sx={{ width: 4, height: 24, bgcolor: "#6366f1", borderRadius: 4 }} />
               <Typography variant="h6" fontWeight={800} color="#0f172a">Revenue & Performance</Typography>
             </Stack>
-            <Box sx={{ height: 380 }}>
+            <Box sx={{ height: { xs: 260, sm: 360 } }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={bookingData}>
                   <defs>
@@ -297,8 +303,8 @@ export default function ProviderDashboard() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 600 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 600 }} dx={-10} />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }} dx={-10} />
                   <Tooltip content={<CustomTooltip />} />
                   <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#gradRev)" dot={{ fill: "#6366f1", r: 4, strokeWidth: 2, stroke: "#fff" }} />
                 </AreaChart>
@@ -316,7 +322,7 @@ export default function ProviderDashboard() {
             </Stack>
 
             {/* Donut */}
-            <Box sx={{ width: "100%", height: 260 }}>
+            <Box sx={{ width: "100%", height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                   <Pie
@@ -371,7 +377,7 @@ export default function ProviderDashboard() {
                       "&:hover": { bgcolor: "#f1f5f9" },
                     }}
                   >
-                    <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flex: 1, mr: 1 }}>
                       <Box
                         sx={{
                           width: 10,
@@ -386,7 +392,7 @@ export default function ProviderDashboard() {
                         {entry.name}
                       </Typography>
                     </Stack>
-                    <Stack direction="row" spacing={1} alignItems="center">
+                    <Stack direction="row" spacing={1} alignItems="center" flexShrink={0}>
                       <Typography variant="body2" fontWeight={800} color="#0f172a">
                         {entry.value}
                       </Typography>
@@ -408,15 +414,15 @@ export default function ProviderDashboard() {
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 4, md: 6 },
+          p: { xs: 3, sm: 4, md: 6 },
           borderRadius: 6,
           background: "linear-gradient(135deg, #0f0c29 0%, #302b63 100%)",
           color: "#fff",
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
-          alignItems: "center",
+          alignItems: { xs: "stretch", md: "center" },
           justifyContent: "space-between",
-          gap: 4,
+          gap: 3,
           boxShadow: "0 24px 48px rgba(15,12,41,0.2)",
           position: "relative",
           overflow: "hidden",
@@ -432,8 +438,10 @@ export default function ProviderDashboard() {
         }}
       >
         <Box sx={{ zIndex: 1 }}>
-          <Typography variant="h4" fontWeight={900} mb={0.5}>Maximize your earnings!</Typography>
-          <Typography variant="body1" sx={{ opacity: 0.7 }}>
+          <Typography variant="h4" fontWeight={900} mb={0.5} sx={{ fontSize: { xs: "1.5rem", sm: "2.125rem" } }}>
+            Maximize your earnings!
+          </Typography>
+          <Typography variant="body1" sx={{ opacity: 0.7, fontSize: { xs: "0.9rem", sm: "1rem" } }}>
             Review and accept new job requests to expand your reach today.
           </Typography>
         </Box>
@@ -444,7 +452,7 @@ export default function ProviderDashboard() {
           sx={{
             bgcolor: "#cddc39",
             color: "#1a2400",
-            px: 5, py: 2,
+            px: { xs: 3, sm: 5 }, py: 1.8,
             borderRadius: 4,
             textTransform: "none",
             fontSize: "1rem",
@@ -454,6 +462,7 @@ export default function ProviderDashboard() {
             transition: "all 0.3s",
             zIndex: 1,
             flexShrink: 0,
+            width: { xs: "100%", md: "auto" },
           }}
         >
           Go to Job Requests

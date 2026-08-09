@@ -114,7 +114,7 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
   return (
     <Paper elevation={0} sx={{
       mb: 2,
-      borderRadius: 2.5,
+      borderRadius: { xs: 2, sm: 2.5 },
       overflow: "hidden",
       border: "1px solid",
       borderColor: "grey.200",
@@ -123,39 +123,38 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
     }}>
       {/* Header bar */}
       <Box sx={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        gap: 2, px: 2.5, py: 1.2,
+        px: { xs: 1.5, sm: 2.5 }, py: 1.2,
         bgcolor: "grey.50", borderBottom: "1px solid", borderColor: "grey.100",
-        flexWrap: "wrap",
       }}>
-        <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
+        {/* Meta row: Placed / Total / Order # */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mb: 1 }}>
           <Box>
-            <Typography variant="caption" color="text.disabled" fontWeight={700} sx={{ letterSpacing: 0.8, fontSize: '0.6rem' }}>PLACED</Typography>
-            <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.8rem' }}>{fmtDate(booking.created_at || booking.booking_date)}</Typography>
+            <Typography variant="caption" color="text.disabled" fontWeight={700} sx={{ letterSpacing: 0.8, fontSize: '0.58rem', display: 'block' }}>PLACED</Typography>
+            <Typography variant="body2" fontWeight={600} sx={{ fontSize: { xs: '0.72rem', sm: '0.8rem' }, whiteSpace: 'nowrap' }}>{fmtDate(booking.created_at || booking.booking_date)}</Typography>
           </Box>
           <Box>
-            <Typography variant="caption" color="text.disabled" fontWeight={700} sx={{ letterSpacing: 0.8, fontSize: '0.6rem' }}>TOTAL</Typography>
+            <Typography variant="caption" color="text.disabled" fontWeight={700} sx={{ letterSpacing: 0.8, fontSize: '0.58rem', display: 'block' }}>TOTAL</Typography>
             {hasDiscount ? (
-              <Stack direction="row" spacing={0.8} alignItems="center">
-                <Typography variant="caption" color="text.disabled" sx={{ textDecoration: 'line-through' }}>₹{booking.original_price}</Typography>
-                <Typography variant="body2" fontWeight={700} color="success.main" sx={{ fontSize: '0.8rem' }}>₹{booking.price}</Typography>
+              <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
+                <Typography variant="caption" color="text.disabled" sx={{ textDecoration: 'line-through', fontSize: '0.68rem' }}>₹{booking.original_price}</Typography>
+                <Typography variant="body2" fontWeight={700} color="success.main" sx={{ fontSize: { xs: '0.72rem', sm: '0.8rem' } }}>₹{booking.price}</Typography>
               </Stack>
             ) : (
-              <Typography variant="body2" fontWeight={700} sx={{ fontSize: '0.8rem' }}>₹{booking.price}</Typography>
+              <Typography variant="body2" fontWeight={700} sx={{ fontSize: { xs: '0.72rem', sm: '0.8rem' } }}>₹{booking.price}</Typography>
             )}
           </Box>
           <Box>
-            <Typography variant="caption" color="text.disabled" fontWeight={700} sx={{ letterSpacing: 0.8, fontSize: '0.6rem' }}>ORDER #</Typography>
-            <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.8rem' }}>{booking.id}</Typography>
+            <Typography variant="caption" color="text.disabled" fontWeight={700} sx={{ letterSpacing: 0.8, fontSize: '0.58rem', display: 'block' }}>ORDER #</Typography>
+            <Typography variant="body2" fontWeight={600} sx={{ fontSize: { xs: '0.72rem', sm: '0.8rem' } }}>{booking.id}</Typography>
           </Box>
-        </Stack>
+        </Box>
 
+        {/* Action buttons row */}
         <Stack direction="row" spacing={0.8} alignItems="center">
           <Button
-            size="small"
-            variant="outlined"
+            size="small" variant="outlined"
             onClick={() => onView(booking.id)}
-            sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 700, fontSize: '0.75rem', py: 0.4 }}
+            sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 700, fontSize: { xs: '0.7rem', sm: '0.75rem' }, py: 0.4, flex: 1 }}
           >
             Details
           </Button>
@@ -163,7 +162,7 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
             <Button
               size="small" variant="outlined" color="primary"
               onClick={() => onChat(booking)}
-              sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 700, fontSize: '0.75rem', py: 0.4 }}
+              sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 700, fontSize: { xs: '0.7rem', sm: '0.75rem' }, py: 0.4, flex: 1 }}
             >
               Chat
             </Button>
@@ -171,7 +170,7 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
           <Button
             size="small" variant="outlined" color="inherit"
             onClick={() => onInvoice(booking.id)}
-            sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 700, fontSize: '0.75rem', py: 0.4, borderColor: 'grey.300', color: 'text.secondary' }}
+            sx={{ textTransform: "none", borderRadius: 1.5, fontWeight: 700, fontSize: { xs: '0.7rem', sm: '0.75rem' }, py: 0.4, borderColor: 'grey.300', color: 'text.secondary', flex: 1 }}
             disabled={booking.status === 'pending' || booking.status === 'cancelled'}
           >
             Invoice
@@ -180,18 +179,18 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
       </Box>
 
       {/* Body */}
-      <Box sx={{ px: 2.5, py: 2, display: 'flex', gap: 2.5, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Box sx={{ px: { xs: 1.5, sm: 2.5 }, py: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { sm: 'flex-start' } }}>
         {/* Service image + info */}
-        <Box sx={{ display: "flex", gap: 1.8, alignItems: "center", flex: 1.5, minWidth: 240 }}>
-          <Box sx={{ width: 60, height: 60, flexShrink: 0, borderRadius: 2, overflow: "hidden", bgcolor: "grey.100" }}>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start", flex: 1.5 }}>
+          <Box sx={{ width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, flexShrink: 0, borderRadius: 2, overflow: "hidden", bgcolor: "grey.100" }}>
             {thumb ? (
               <Box component="img" src={thumb} alt="thumb" sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
-              <Avatar sx={{ width: 60, height: 60, bgcolor: "primary.light", fontWeight: 700, borderRadius: 2, fontSize: '1rem' }}>{initials}</Avatar>
+              <Avatar sx={{ width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, bgcolor: "primary.light", fontWeight: 700, borderRadius: 2, fontSize: { xs: '0.85rem', sm: '1rem' } }}>{initials}</Avatar>
             )}
           </Box>
-          <Box>
-            <Typography variant="subtitle2" fontWeight={800} sx={{ lineHeight: 1.2, mb: 0.5 }}>{svcName}</Typography>
+          <Box flex={1}>
+            <Typography variant="subtitle2" fontWeight={800} sx={{ lineHeight: 1.2, mb: 0.5, fontSize: { xs: '0.82rem', sm: '0.875rem' } }}>{svcName}</Typography>
             <Chip
               label={statusCfg.label || booking.status}
               size="small"
@@ -201,14 +200,27 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
                 border: `1px solid ${statusCfg.border || 'transparent'}`,
               }}
             />
-            <Typography variant="caption" color="text.secondary" display="block">
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: { xs: '0.68rem', sm: '0.75rem' } }}>
               {booking.full_name} · {booking.phone}
             </Typography>
+
+            {/* Schedule & Address — shown inline on mobile below service info */}
+            <Box sx={{ mt: 0.8, display: { xs: 'block', sm: 'none' } }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.7rem' }}>
+                📅 {booking.booking_date || fmtDate(booking.created_at)} · {fmtTime(booking.booking_time)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{
+                mt: 0.4, fontSize: '0.7rem',
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+              }}>
+                📍 {addr ? `${addr.address_line}, ${addr.city}` : booking.address}
+              </Typography>
+            </Box>
           </Box>
         </Box>
 
-        {/* Schedule & Address */}
-        <Box sx={{ flex: 1.5, minWidth: 230, borderLeft: { md: "1px solid #f1f5f9" }, pl: { md: 2.5 } }}>
+        {/* Schedule & Address — desktop only */}
+        <Box sx={{ flex: 1.5, display: { xs: 'none', sm: 'block' }, borderLeft: "1px solid #f1f5f9", pl: 2.5 }}>
           <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.72rem' }}>
             📅 {booking.booking_date || fmtDate(booking.created_at)} · {fmtTime(booking.booking_time)}
           </Typography>
@@ -226,11 +238,11 @@ function OrderCard({ booking, onView, onInvoice, onPayRemaining, onPayAdvance, o
         </Box>
 
         {/* Payment status & quick-pay */}
-        <Box sx={{ flex: 1, minWidth: 170, borderLeft: { md: "1px solid #f1f5f9" }, pl: { md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 0.8, alignItems: { xs: 'flex-start', md: 'flex-end' } }}>
+        <Box sx={{ flex: 1, borderTop: { xs: '1px solid #f1f5f9', sm: 'none' }, borderLeft: { sm: "1px solid #f1f5f9" }, pt: { xs: 1.5, sm: 0 }, pl: { sm: 2.5 }, display: 'flex', flexDirection: 'column', gap: 0.8 }}>
           {booking.is_refunded ? (
-            <Chip label="Advance Refunded" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#eff6ff', color: '#0369a1' }} />
+            <Chip label="Advance Refunded" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#eff6ff', color: '#0369a1', alignSelf: 'flex-start' }} />
           ) : booking.is_advance_paid ? (
-            <Chip icon={<CheckCircleIcon sx={{ fontSize: '12px !important' }} />} label="Advance Paid" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#f0fdf4', color: '#15803d', '& .MuiChip-icon': { fontSize: 12 } }} />
+            <Chip icon={<CheckCircleIcon sx={{ fontSize: '12px !important' }} />} label="Advance Paid" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#f0fdf4', color: '#15803d', '& .MuiChip-icon': { fontSize: 12 }, alignSelf: 'flex-start' }} />
           ) : (
             <Stack direction="row" spacing={0.8} alignItems="center">
               <Chip label="Advance Due" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#fffbeb', color: '#b45309' }} />
@@ -527,68 +539,68 @@ export default function Bookings() {
       </Snackbar>
 
       {/* Filter bar */}
-      <Paper elevation={0} sx={{ p: 2, mb: 2.5, borderRadius: 2.5, border: '1px solid', borderColor: 'grey.200' }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems="center" justifyContent="space-between" mb={1.5}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-            <FormControl size="small">
-              <Select value={pastRange} onChange={(e) => setPastRange(e.target.value)} displayEmpty
-                sx={{ minWidth: 130, fontSize: '0.82rem', fontWeight: 600, borderRadius: 1.5 }}
-              >
-                <MenuItem value="all">All time</MenuItem>
-                <MenuItem value="today">Today</MenuItem>
-                <MenuItem value="this_week">This week</MenuItem>
-                <MenuItem value="this_month">This month</MenuItem>
-                <MenuItem value="past3m">Past 3 months</MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel sx={{ fontSize: '0.82rem' }}>Category</InputLabel>
-              <Select
-                value={selectedCategory} label="Category"
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                sx={{ fontSize: '0.82rem', borderRadius: 1.5 }}
-                renderValue={(val) => {
-                  if (!val) return "All categories";
-                  const cat = categories.find(c => String(c.id) === String(val));
-                  return cat ? cat.name : "Selected";
-                }}
-              >
-                <MenuItem value="">All categories</MenuItem>
-                {categories.map((c) => (
-                  <MenuItem key={c.id} value={String(c.id)}>
-                    <ListItemIcon>
-                      {c.icon ? <Avatar src={c.icon} sx={{ width: 24, height: 24 }} /> : <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>{(c.name || "C")[0]}</Avatar>}
-                    </ListItemIcon>
-                    <ListItemText primary={c.name} primaryTypographyProps={{ fontSize: '0.82rem' }} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel sx={{ fontSize: '0.82rem' }}>Sort</InputLabel>
-              <Select value={sortBy} label="Sort" onChange={(e) => setSortBy(e.target.value)} sx={{ fontSize: '0.82rem', borderRadius: 1.5 }}>
-                <MenuItem value="date_desc">Newest first</MenuItem>
-                <MenuItem value="date_asc">Oldest first</MenuItem>
-                <MenuItem value="price_desc">Price: High → Low</MenuItem>
-                <MenuItem value="price_asc">Price: Low → High</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
-
-          <Stack direction="row" spacing={1} alignItems="center">
-            {selectedCategory && (
-              <Tooltip title="Clear category">
-                <IconButton size="small" onClick={() => setSelectedCategory("")} sx={{ bgcolor: 'grey.100' }}><ClearIcon fontSize="small" /></IconButton>
-              </Tooltip>
-            )}
-            <Button size="small" variant="outlined" onClick={clearFilters}
-              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 1.5, fontSize: '0.78rem', borderColor: 'grey.300', color: 'text.secondary' }}
+      <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2.5, borderRadius: 2.5, border: '1px solid', borderColor: 'grey.200' }}>
+        {/* Row 1: dropdowns */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, auto)' }, gap: 1, mb: 1.5 }}>
+          <FormControl size="small" fullWidth>
+            <Select value={pastRange} onChange={(e) => setPastRange(e.target.value)} displayEmpty
+              sx={{ fontSize: '0.82rem', fontWeight: 600, borderRadius: 1.5 }}
             >
-              Reset All
-            </Button>
-          </Stack>
+              <MenuItem value="all">All time</MenuItem>
+              <MenuItem value="today">Today</MenuItem>
+              <MenuItem value="this_week">This week</MenuItem>
+              <MenuItem value="this_month">This month</MenuItem>
+              <MenuItem value="past3m">Past 3 months</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" fullWidth>
+            <InputLabel sx={{ fontSize: '0.82rem' }}>Category</InputLabel>
+            <Select
+              value={selectedCategory} label="Category"
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              sx={{ fontSize: '0.82rem', borderRadius: 1.5 }}
+              renderValue={(val) => {
+                if (!val) return "All categories";
+                const cat = categories.find(c => String(c.id) === String(val));
+                return cat ? cat.name : "Selected";
+              }}
+            >
+              <MenuItem value="">All categories</MenuItem>
+              {categories.map((c) => (
+                <MenuItem key={c.id} value={String(c.id)}>
+                  <ListItemIcon>
+                    {c.icon ? <Avatar src={c.icon} sx={{ width: 24, height: 24 }} /> : <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>{(c.name || "C")[0]}</Avatar>}
+                  </ListItemIcon>
+                  <ListItemText primary={c.name} primaryTypographyProps={{ fontSize: '0.82rem' }} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }} fullWidth>
+            <InputLabel sx={{ fontSize: '0.82rem' }}>Sort</InputLabel>
+            <Select value={sortBy} label="Sort" onChange={(e) => setSortBy(e.target.value)} sx={{ fontSize: '0.82rem', borderRadius: 1.5 }}>
+              <MenuItem value="date_desc">Newest first</MenuItem>
+              <MenuItem value="date_asc">Oldest first</MenuItem>
+              <MenuItem value="price_desc">Price: High → Low</MenuItem>
+              <MenuItem value="price_asc">Price: Low → High</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* Row 2: reset button */}
+        <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end" mb={1.5}>
+          {selectedCategory && (
+            <Tooltip title="Clear category">
+              <IconButton size="small" onClick={() => setSelectedCategory("")} sx={{ bgcolor: 'grey.100' }}><ClearIcon fontSize="small" /></IconButton>
+            </Tooltip>
+          )}
+          <Button size="small" variant="outlined" onClick={clearFilters}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 1.5, fontSize: '0.78rem', borderColor: 'grey.300', color: 'text.secondary' }}
+          >
+            Reset All
+          </Button>
         </Stack>
 
         {/* Status filter chips */}

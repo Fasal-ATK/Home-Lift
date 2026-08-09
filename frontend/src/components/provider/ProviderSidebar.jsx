@@ -407,8 +407,57 @@ function SidebarContent({ open, setOpen, onMobileClose, isMobile }) {
           p: 2,
           borderTop: "1px solid rgba(0, 0, 0, 0.06)",
           flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.5,
         }}
       >
+        {/* Back to Home button */}
+        <Tooltip title={(!open && !isMobile) ? "Back to Home" : ""} placement="right" arrow>
+          <Box
+            onClick={() => { navigate("/home"); if (isMobile && onMobileClose) onMobileClose(); }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              p: 1.5,
+              borderRadius: 3,
+              cursor: "pointer",
+              bgcolor: "rgba(0,0,0,0.03)",
+              border: "1px solid rgba(0,0,0,0.07)",
+              transition: "all 0.2s",
+              justifyContent: (open || isMobile) ? "flex-start" : "center",
+              "&:hover": {
+                bgcolor: "rgba(99,102,241,0.08)",
+                borderColor: "rgba(99,102,241,0.25)",
+                "& .back-icon": { color: "#6366f1" },
+                "& .back-text": { color: "#6366f1" },
+              },
+            }}
+          >
+            <ArrowBack
+              className="back-icon"
+              sx={{
+                fontSize: 17,
+                color: "rgba(0,0,0,0.5)",
+                transition: "color 0.2s",
+                flexShrink: 0,
+              }}
+            />
+            {(open || isMobile) && (
+              <Typography
+                className="back-text"
+                variant="body2"
+                fontWeight={600}
+                sx={{ color: "rgba(0,0,0,0.6)", fontSize: 13, transition: "color 0.2s" }}
+              >
+                Back to Home
+              </Typography>
+            )}
+          </Box>
+        </Tooltip>
+
+        {/* Provider Mode badge */}
         {(open || isMobile) ? (
           <Box
             sx={{

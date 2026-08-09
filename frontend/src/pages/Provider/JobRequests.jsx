@@ -150,10 +150,10 @@ export default function ProviderRequestsWithServices() {
   }, [jobs]);
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, minHeight: "100vh", bgcolor: "#f8f9fc" }}>
+    <Box sx={{ p: { xs: 2, sm: 3, md: 3 }, minHeight: "100vh", bgcolor: "#f8f9fc" }}>
       <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
 
-        {/* ── Sidebar ─────────────────────────────────────────────── */}
+        {/* ── Sidebar / Filter Bar ─────────────────────────────────────────────── */}
         <Box
           component="aside"
           sx={{
@@ -166,7 +166,7 @@ export default function ProviderRequestsWithServices() {
             sx={{
               background: "linear-gradient(135deg, #0f0c29 0%, #302b63 100%)",
               borderRadius: 4,
-              p: 3,
+              p: { xs: 2.5, sm: 3 },
               mb: 2,
               color: "#fff",
             }}
@@ -180,14 +180,14 @@ export default function ProviderRequestsWithServices() {
             </Typography>
           </Box>
 
-          {/* Service filter list */}
+          {/* Service filter list (Horizontal scroll on mobile, Vertical stack on desktop) */}
           <Paper
             elevation={0}
             sx={{
               bgcolor: "#fff",
               border: "1px solid #e8ecf0",
               borderRadius: 4,
-              p: 2,
+              p: { xs: 1.5, sm: 2 },
               overflow: "hidden",
             }}
           >
@@ -198,7 +198,16 @@ export default function ProviderRequestsWithServices() {
               </Typography>
             </Stack>
 
-            <Stack spacing={0.5}>
+            <Stack
+              direction={{ xs: "row", md: "column" }}
+              spacing={1}
+              sx={{
+                overflowX: { xs: "auto", md: "visible" },
+                pb: { xs: 1, md: 0 },
+                "&::-webkit-scrollbar": { height: 4 },
+                "&::-webkit-scrollbar-thumb": { bgcolor: "#cbd5e1", borderRadius: 4 },
+              }}
+            >
               {serviceList.map((svc) => {
                 const active = svc === selectedService;
                 const count  = svc === "All Services" ? totalItems : (svcCount[svc] || 0);
@@ -216,13 +225,15 @@ export default function ProviderRequestsWithServices() {
                       cursor: "pointer",
                       bgcolor: active ? "#0f172a" : "transparent",
                       transition: "all 0.2s",
+                      flexShrink: { xs: 0, md: 1 },
+                      gap: 1,
                       "&:hover": { bgcolor: active ? "#0f172a" : "#f1f5f9" },
                     }}
                   >
                     <Typography
                       variant="body2"
                       fontWeight={700}
-                      sx={{ color: active ? "#a78bfa" : "#374151", fontSize: 13 }}
+                      sx={{ color: active ? "#a78bfa" : "#374151", fontSize: 13, whiteSpace: "nowrap" }}
                     >
                       {svc}
                     </Typography>
@@ -289,7 +300,7 @@ export default function ProviderRequestsWithServices() {
           ) : paginated.length === 0 ? (
             <Paper
               elevation={0}
-              sx={{ p: 8, textAlign: "center", borderRadius: 4, border: "2px dashed #e2e8f0", bgcolor: "#fff" }}
+              sx={{ p: { xs: 4, sm: 8 }, textAlign: "center", borderRadius: 4, border: "2px dashed #e2e8f0", bgcolor: "#fff" }}
             >
               <WorkIcon sx={{ fontSize: 52, color: "#cbd5e1", mb: 2 }} />
               <Typography variant="h6" color="text.secondary" fontWeight={600}>No requests found</Typography>
@@ -333,7 +344,7 @@ export default function ProviderRequestsWithServices() {
                         {/* Top accent line */}
                         <Box sx={{ height: 3, background: hasOverlap ? "linear-gradient(90deg,#ef4444,#f97316)" : "linear-gradient(90deg,#6366f1,#8b5cf6)" }} />
 
-                        <Box sx={{ p: 3 }}>
+                        <Box sx={{ p: { xs: 2, sm: 3 } }}>
                           <Stack
                             direction={{ xs: "column", sm: "row" }}
                             spacing={2.5}
@@ -341,13 +352,13 @@ export default function ProviderRequestsWithServices() {
                             justifyContent="space-between"
                           >
                             {/* Left: info */}
-                            <Stack direction="row" spacing={2} alignItems="flex-start" flex={1}>
+                            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-start" flex={1} width="100%">
                               <Avatar
                                 sx={{
                                   bgcolor: bg,
                                   color: text,
-                                  width: 52,
-                                  height: 52,
+                                  width: { xs: 44, sm: 52 },
+                                  height: { xs: 44, sm: 52 },
                                   fontWeight: 800,
                                   fontSize: "1.1rem",
                                   flexShrink: 0,
@@ -357,8 +368,8 @@ export default function ProviderRequestsWithServices() {
                                 {name.charAt(0).toUpperCase()}
                               </Avatar>
 
-                              <Box flex={1}>
-                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                              <Box flex={1} width="100%">
+                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" gap={0.5}>
                                   <Typography variant="subtitle1" fontWeight={800} sx={{ color: "#0f172a" }}>
                                     {name}
                                   </Typography>
@@ -384,7 +395,7 @@ export default function ProviderRequestsWithServices() {
                                 </Stack>
 
                                 {/* Meta row */}
-                                <Stack direction="row" spacing={2} mt={0.8} flexWrap="wrap">
+                                <Stack direction="row" spacing={1.5} mt={0.8} flexWrap="wrap" gap={1}>
                                   {(r.city || r.address?.city) && (
                                     <Stack direction="row" spacing={0.5} alignItems="center">
                                       <MapIcon sx={{ fontSize: 14, color: "#94a3b8" }} />
@@ -483,7 +494,7 @@ export default function ProviderRequestsWithServices() {
                             <Stack
                               direction={{ xs: "row", sm: "column" }}
                               spacing={1.5}
-                              sx={{ width: { xs: "100%", sm: "auto" }, minWidth: 140 }}
+                              sx={{ width: { xs: "100%", sm: "auto" }, minWidth: { sm: 140 } }}
                             >
                               <Button
                                 variant="outlined"

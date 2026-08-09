@@ -200,21 +200,21 @@ export default function BookingDetails() {
           <Grid container spacing={2.5}>
           {/* Left Column: Details (Service, Schedule, Location, Provider, Review) */}
           <Grid item xs={12} md={7.5}>
-            <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'grey.200', bgcolor: 'white', display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
+            <Paper elevation={0} sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 3, border: '1px solid', borderColor: 'grey.200', bgcolor: 'white', display: 'flex', flexDirection: 'column', height: { xs: 'auto', md: '100%' }, boxSizing: 'border-box' }}>
               {/* Header */}
-              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+              <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ mb: 2 }}>
                 {booking.service_image && (
                   <Box
                     component="img"
                     src={booking.service_image}
-                    sx={{ width: 52, height: 52, borderRadius: 2, objectFit: "cover", flexShrink: 0 }}
+                    sx={{ width: { xs: 44, sm: 52 }, height: { xs: 44, sm: 52 }, borderRadius: 2, objectFit: "cover", flexShrink: 0 }}
                   />
                 )}
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                   <Typography variant="subtitle2" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.65rem' }}>
                     {booking.category_name} · #{booking.id}
                   </Typography>
-                  <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2, mt: 0.2 }}>
+                  <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2, mt: 0.2, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                     {booking.service_name || booking.service}
                   </Typography>
                 </Box>
@@ -353,7 +353,7 @@ export default function BookingDetails() {
 
           {/* Right Column: Payment & Action Buttons */}
           <Grid item xs={12} md={4.5}>
-            <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'grey.200', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box' }}>
+            <Paper elevation={0} sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 3, border: '1px solid', borderColor: 'grey.200', bgcolor: 'grey.50', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: { xs: 'auto', md: '100%' }, boxSizing: 'border-box' }}>
               <Box>
                 <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.65rem', display: 'block', mb: 2 }}>
                   Payment Summary
