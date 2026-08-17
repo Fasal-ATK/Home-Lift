@@ -16,7 +16,7 @@ Built with an enterprise-ready architecture using **React + Redux Toolkit** on t
 - **Password Strength UI**: Dynamic, real-time visual feedback for password strength and rules validation.
 
 ### User & Provider Workflows
-- **Service Discovery**: Browse dynamically categorized services with pricing and experience details.
+- **Service Discovery**: Browse dynamically categorized services with pricing and experience details.r
 - **Provider Application System**: Users can upload identity documents and apply for provider status, subject to Admin approval.
 - **Booking Management**: Book services, track statuses, and view complete history.
 - **Dynamic Dashboards**: Responsive, distinct layouts with collapsable sidebars for Admin, Provider, and User modes.

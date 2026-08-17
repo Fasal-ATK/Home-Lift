@@ -45,6 +45,7 @@ export const sendMessage = createAsyncThunk(
 
 const chatSlice = createSlice({
     name: 'chat',
+
     initialState: {
         rooms: [],
         messages: {}, // { [roomId]: [messages] }

@@ -66,6 +66,7 @@ export default function ChatPage() {
     dispatch(fetchMessages(roomId));
   };
 
+
   const handleSendMessage = () => {
     if (!messageInput.trim() || !activeRoomId) return;
     const content = messageInput.trim();

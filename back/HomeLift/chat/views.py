@@ -222,3 +222,4 @@ class ChatMessageListView(APIView):
             )
         except Exception as e:
             logger.warning("Failed to broadcast read receipt for room %s: %s", room_id, e)
+

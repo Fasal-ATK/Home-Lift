@@ -82,6 +82,10 @@ class MainConsumer(AsyncWebsocketConsumer):
             content = data.get('content', '').strip()
             if room_id and content:
                 await self.handle_outbound_chat(room_id, content)
+        elif msg_type == 'read' or msg_type == 'mark_read':
+            room_id = data.get('room_id')
+            if room_id:
+                await self.handle_read_receipt(room_id)
 
     async def handle_outbound_chat(self, room_id, content):
         """Save message to DB and broadcast to both participants."""
@@ -111,6 +115,33 @@ class MainConsumer(AsyncWebsocketConsumer):
             logger.exception("MainConsumer.handle_outbound_chat failed for room %s user %s: %s",
                              room_id, self.user_id, e)
 
+    async def handle_read_receipt(self, room_id):
+        """Mark unread messages in room as read and broadcast receipt to the other participant."""
+        try:
+            room = await self.get_room(room_id)
+            if not room:
+                return
+
+            if room.user_id != self.user_id and room.provider_id != self.user_id:
+                return
+
+            updated = await self.mark_messages_read(room)
+            if updated:
+                other_user_id = room.provider_id if room.user_id == self.user_id else room.user_id
+                await self.channel_layer.group_send(
+                    f"user_{other_user_id}",
+                    {
+                        "type": "read_receipt",
+                        "payload": {
+                            "room_id": room.id,
+                            "reader_id": self.user_id,
+                        }
+                    }
+                )
+        except Exception as e:
+            logger.exception("MainConsumer.handle_read_receipt failed for room %s user %s: %s",
+                             room_id, self.user_id, e)
+
     # ─── DB helpers ───────────────────────────────────────────────────────────
 
     @database_sync_to_async
@@ -125,3 +156,9 @@ class MainConsumer(AsyncWebsocketConsumer):
     def save_message(self, room, content):
         from chat.models import ChatMessage
         return ChatMessage.objects.create(room=room, sender=self.user, content=content)
+
+    @database_sync_to_async
+    def mark_messages_read(self, room):
+        """Mark all unread messages not sent by this user as read. Returns count updated."""
+        return room.messages.filter(is_read=False).exclude(sender_id=self.user_id).update(is_read=True)
+

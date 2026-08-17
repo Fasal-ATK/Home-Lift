@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import apiEndpoints from '../API/apiEndpoints';
@@ -77,12 +77,18 @@ const AppSocket = ({ userId }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
+    const { activeRoomId } = useSelector((state) => state.chat);
     
     const socketRef = useRef(null);
     const reconnectAttemptsRef = useRef(0);
     const reconnectTimeoutRef = useRef(null);
     const seenMessagesRef = useRef(new Set());
     const activeConnectIdRef = useRef(0);
+    const activeRoomIdRef = useRef(activeRoomId);
+
+    useEffect(() => {
+        activeRoomIdRef.current = activeRoomId;
+    }, [activeRoomId]);
 
     useEffect(() => {
         let isComponentMounted = true;
@@ -159,6 +165,14 @@ const AppSocket = ({ userId }) => {
 
                             const isChatPage = location.pathname.includes("/chat");
                             const isMe = String(payload.sender_id) === String(userId);
+                            const msgRoomId = payload.room_id || payload.room;
+
+                            // If recipient is currently active in this chat room, send read receipt back immediately
+                            if (!isMe && isChatPage && String(activeRoomIdRef.current) === String(msgRoomId)) {
+                                if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+                                    socketRef.current.send(JSON.stringify({ type: "read", room_id: msgRoomId }));
+                                }
+                            }
 
                             if (!isChatPage && !isMe) {
                                 const senderName = payload.sender_name || "New Message";
@@ -191,6 +205,7 @@ const AppSocket = ({ userId }) => {
                         if (data.type === "read_receipt") {
                             dispatch(markMessagesAsRead(data.payload));
                         }
+
                     } catch {
                         // Ignore malformed socket messages
                     }
