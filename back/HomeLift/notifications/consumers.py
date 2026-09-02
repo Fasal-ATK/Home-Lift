@@ -31,6 +31,9 @@ class MainConsumer(AsyncWebsocketConsumer):
             else:
                 logger.error("MainConsumer: Channel layer not configured!")
 
+            # Broadcast online presence to all chat partners
+            await self.broadcast_presence("user_online")
+
         except Exception as e:
             logger.exception("MainConsumer.connect error: %s", e)
             await self.close()
@@ -39,6 +42,8 @@ class MainConsumer(AsyncWebsocketConsumer):
         logger.info("MainConsumer: Disconnected user %s (code %s)",
                     getattr(self, 'user_id', 'unknown'), close_code)
         if hasattr(self, 'group_name') and self.channel_layer:
+            # Broadcast offline presence before leaving the group
+            await self.broadcast_presence("user_offline")
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     # ─── Channel event handlers ───────────────────────────────────────────────
@@ -64,6 +69,22 @@ class MainConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'read_receipt',
             'payload': event.get('payload', {}),
+        }))
+
+    async def user_online(self, event):
+        """Handles: presence – a chat partner just connected."""
+        await self.send(text_data=json.dumps({
+            'type': 'user_online',
+            'user_id': event.get('user_id'),
+            'user_name': event.get('user_name', ''),
+        }))
+
+    async def user_offline(self, event):
+        """Handles: presence – a chat partner just disconnected."""
+        await self.send(text_data=json.dumps({
+            'type': 'user_offline',
+            'user_id': event.get('user_id'),
+            'user_name': event.get('user_name', ''),
         }))
 
     # ─── Incoming from client ─────────────────────────────────────────────────
@@ -143,6 +164,39 @@ class MainConsumer(AsyncWebsocketConsumer):
                              room_id, self.user_id, e)
 
     # ─── DB helpers ───────────────────────────────────────────────────────────
+
+    async def broadcast_presence(self, event_type):
+        """Notify all of this user's chat partners that they came online/offline."""
+        try:
+            if not self.channel_layer:
+                return
+            partner_ids = await self.get_chat_partner_ids()
+            user_name = self.user.get_full_name() or self.user.username
+            for partner_id in partner_ids:
+                await self.channel_layer.group_send(
+                    f"user_{partner_id}",
+                    {
+                        "type": event_type,  # "user_online" or "user_offline"
+                        "user_id": self.user_id,
+                        "user_name": user_name,
+                    }
+                )
+        except Exception as e:
+            logger.exception("MainConsumer.broadcast_presence failed for user %s: %s", self.user_id, e)
+
+    @database_sync_to_async
+    def get_chat_partner_ids(self):
+        """Return IDs of all users who share a chat room with the current user."""
+        from chat.models import ChatRoom
+        from django.db.models import Q
+        rooms = ChatRoom.objects.filter(
+            Q(user_id=self.user_id) | Q(provider_id=self.user_id)
+        ).values('user_id', 'provider_id')
+        partner_ids = set()
+        for room in rooms:
+            other = room['provider_id'] if room['user_id'] == self.user_id else room['user_id']
+            partner_ids.add(other)
+        return list(partner_ids)
 
     @database_sync_to_async
     def get_room(self, room_id):

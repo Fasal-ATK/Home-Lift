@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Badge,
   ListItemButton,
+  Chip,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import {
@@ -25,13 +26,13 @@ import {
   setActiveRoom,
   optimisticAddMessage,
 } from "../../redux/slices/chatSlice";
-import { Done, DoneAll } from "@mui/icons-material";
+import { Done, DoneAll, ArrowBack } from "@mui/icons-material";
 
 export default function ChatPage() {
   const dispatch = useDispatch();
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
-  const { rooms, messages, activeRoomId, loading } = useSelector((state) => state.chat);
+  const { rooms, messages, activeRoomId, loading, onlineUsers } = useSelector((state) => state.chat);
 
   const [messageInput, setMessageInput] = useState("");
   const messagesEndRef = useRef(null);
@@ -117,6 +118,7 @@ export default function ChatPage() {
               // Determine other user details
               const otherName = room.other_user_name || "Unknown";
               const isActive = room.id === activeRoomId;
+              const isOnline = onlineUsers.includes(String(room.other_user_id));
 
               return (
                 <React.Fragment key={room.id}>
@@ -133,10 +135,17 @@ export default function ChatPage() {
                         py: 1,
                       }}
                     >
-                      <ListItemAvatar>
+                    <ListItemAvatar sx={{ position: 'relative' }}>
                         <Avatar sx={{ bgcolor: isActive ? "primary.main" : "grey.400" }}>
                           {otherName.charAt(0).toUpperCase()}
                         </Avatar>
+                        {isOnline && (
+                          <Box sx={{
+                            position: 'absolute', bottom: 2, right: 2,
+                            width: 10, height: 10, borderRadius: '50%',
+                            bgcolor: '#4caf50', border: '2px solid #fff',
+                          }} />
+                        )}
                       </ListItemAvatar>
                       <ListItemText
                         primary={
@@ -169,12 +178,27 @@ export default function ChatPage() {
           <>
             {/* Chat Header */}
             <Box sx={{ p: 2, bgcolor: "#fff", display: "flex", alignItems: "center", borderBottom: "1px solid #e0e0e0" }}>
+              {/* Back button: only visible on mobile to return to room list */}
+              <IconButton
+                onClick={() => dispatch(setActiveRoom(null))}
+                sx={{ display: { xs: "inline-flex", md: "none" }, mr: 1 }}
+                aria-label="Back to chats"
+              >
+                <ArrowBack />
+              </IconButton>
               <Avatar sx={{ mr: 2, bgcolor: "primary.main" }}>
                 {(rooms.find(r => r.id === activeRoomId)?.other_user_name || '?').charAt(0).toUpperCase()}
               </Avatar>
-              <Typography variant="subtitle1" fontWeight="bold">
-                {rooms.find(r => r.id === activeRoomId)?.other_user_name || 'Loading...'}
-              </Typography>
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold" sx={{ lineHeight: 1.2 }}>
+                  {rooms.find(r => r.id === activeRoomId)?.other_user_name || 'Loading...'}
+                </Typography>
+                {onlineUsers.includes(String(rooms.find(r => r.id === activeRoomId)?.other_user_id)) && (
+                  <Typography variant="caption" sx={{ color: '#4caf50', fontWeight: 600 }}>
+                    ● Online
+                  </Typography>
+                )}
+              </Box>
             </Box>
 
             {/* Messages Box */}
