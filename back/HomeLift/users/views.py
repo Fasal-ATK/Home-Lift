@@ -189,6 +189,9 @@ class SendOtpView(APIView):
 
         otp = str(random.randint(100000, 999999))
         logger.debug('SendOtpView: OTP generated for %s (purpose=%s)', email, purpose)
+        
+        # otp print for dev 
+        print(otp)
 
         expiry_timestamp = time.time() + 300
         cache.set(

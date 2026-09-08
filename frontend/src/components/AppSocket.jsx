@@ -208,12 +208,7 @@ const AppSocket = ({ userId }) => {
 
                         if (data.type === "user_online") {
                             dispatch(setUserOnline(data.user_id));
-                            const name = data.user_name || "Someone";
-                            toast.success(`🟢 ${name} is now online`, {
-                                toastId: `online-${data.user_id}`,
-                                autoClose: 3000,
-                                position: "bottom-right",
-                            });
+                            // Online status is shown in the chat UI — no global toast needed
                         }
 
                         if (data.type === "user_offline") {
