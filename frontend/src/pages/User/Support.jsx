@@ -13,6 +13,7 @@ import { useLocation } from "react-router-dom";
 import api from "../../API/apiConfig";
 import apiEndpoints from "../../API/apiEndpoints";
 import { ShowToast } from "../../components/common/Toast";
+import { getErrorMessage } from "../../utils/errorHelper";
 
 const STATUS_COLOR = { open: "warning", resolved: "success", closed: "default" };
 
@@ -30,6 +31,7 @@ export default function Support() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [expanded, setExpanded]     = useState({});
+  const [errors, setErrors]         = useState({});
 
   const [form, setForm] = useState({ subject: "", description: "", ticket_type: "general" });
 
@@ -48,8 +50,8 @@ export default function Support() {
     try {
       const { data } = await api.get(apiEndpoints.tickets.list);
       setTickets(data);
-    } catch {
-      ShowToast("Failed to load tickets", "error");
+    } catch (err) {
+      ShowToast(getErrorMessage(err, "Failed to load tickets"), "error");
     } finally {
       setLoading(false);
     }
@@ -57,20 +59,61 @@ export default function Support() {
 
   useEffect(() => { fetchTickets(); }, []);
 
+  const validateField = (name, value) => {
+    const trimmed = (value || "").trim();
+    if (name === "subject") {
+      if (!trimmed) return "Subject is required.";
+      if (trimmed.length < 5) return "Subject must be at least 5 characters.";
+      if (trimmed.length > 255) return "Subject cannot exceed 255 characters.";
+    }
+    if (name === "description") {
+      if (!trimmed) return "Description is required.";
+      if (trimmed.length < 10) return "Description must be at least 10 characters.";
+    }
+    return "";
+  };
+
+  const handleFieldChange = (name, value) => {
+    setForm(prev => ({ ...prev, [name]: value }));
+    // Always validate on change so warnings show in real-time while typing
+    const errorMsg = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: errorMsg }));
+  };
+
+  const handleFieldBlur = (name, value) => {
+    const errorMsg = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: errorMsg }));
+  };
+
+  const validateForm = () => {
+    const subjectErr = validateField("subject", form.subject);
+    const descErr = validateField("description", form.description);
+    const newErrors = {};
+    if (subjectErr) newErrors.subject = subjectErr;
+    if (descErr) newErrors.description = descErr;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async () => {
-    if (!form.subject.trim() || !form.description.trim()) {
-      ShowToast("Subject and description are required", "error");
+    if (!validateForm()) {
+      ShowToast("Please fix the errors before submitting.", "error");
       return;
     }
     setSubmitting(true);
     try {
-      await api.post(apiEndpoints.tickets.list, form);
+      await api.post(apiEndpoints.tickets.list, {
+        ...form,
+        subject: form.subject.trim(),
+        description: form.description.trim()
+      });
       ShowToast("Ticket submitted successfully!", "success");
       setDialogOpen(false);
       setForm({ subject: "", description: "", ticket_type: "general" });
+      setErrors({});
       fetchTickets();
-    } catch {
-      ShowToast("Failed to submit ticket", "error");
+    } catch (err) {
+      ShowToast(getErrorMessage(err, "Failed to submit ticket"), "error");
     } finally {
       setSubmitting(false);
     }
@@ -183,8 +226,12 @@ export default function Support() {
               label="Subject"
               size="small"
               fullWidth
+              required
               value={form.subject}
-              onChange={(e) => setForm(f => ({ ...f, subject: e.target.value }))}
+              onChange={(e) => handleFieldChange("subject", e.target.value)}
+              onBlur={(e) => handleFieldBlur("subject", e.target.value)}
+              error={!!errors.subject}
+              helperText={errors.subject || `${form.subject.length}/255 (minimum 5 characters)`}
               inputProps={{ maxLength: 255 }}
             />
 
@@ -193,13 +240,25 @@ export default function Support() {
               multiline
               rows={5}
               fullWidth
+              required
               value={form.description}
-              onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
+              onChange={(e) => handleFieldChange("description", e.target.value)}
+              onBlur={(e) => handleFieldBlur("description", e.target.value)}
+              error={!!errors.description}
+              helperText={errors.description || "Please provide at least 10 characters describing the issue."}
             />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={() => setDialogOpen(false)} disabled={submitting}>Cancel</Button>
+          <Button 
+            onClick={() => {
+              setDialogOpen(false);
+              setErrors({});
+            }} 
+            disabled={submitting}
+          >
+            Cancel
+          </Button>
           <Button variant="contained" onClick={handleSubmit} disabled={submitting} sx={{ borderRadius: 2.5, textTransform: "none", fontWeight: 600 }}>
             {submitting ? <CircularProgress size={20} color="inherit" /> : "Submit Ticket"}
           </Button>

@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 
 import OtpModal from '../../components/user/otp_modal';
 import { ShowToast } from '../../components/common/Toast';
+import { getErrorMessage } from '../../utils/errorHelper';
 import { useDispatch } from 'react-redux';
 import GoogleLoginButton from '../../components/user/GoogleLoginButton';
 
@@ -50,29 +51,6 @@ function Signup() {
   
   const watchedEmail = watch('email');
 
-  const extractErrorMessage = (data) => {
-    if (!data) return "Something went wrong";
-    if (typeof data === "string") return data;
-    if (data.message) return data.message;
-    if (data.error) return data.error;
-
-    if (typeof data === "object") {
-      // If it's a nested object (DRF field errors)
-      const firstKey = Object.keys(data)[0];
-      const val = data[firstKey];
-      
-      if (Array.isArray(val) && val.length > 0) {
-        return extractErrorMessage(val[0]);
-      }
-      if (typeof val === "object") {
-        return extractErrorMessage(val);
-      }
-      if (typeof val === "string") return val;
-    }
-
-    return "An unknown error occurred";
-  };
-
   const getPasswordStrength = (pass) => {
     if (!pass) return 0;
     let strength = 0;
@@ -99,7 +77,7 @@ function Signup() {
       }
       setShowOtpModal(true);
     } catch (err) {
-      setBackendError(extractErrorMessage(err.response?.data) || "Failed to send OTP");
+      setBackendError(getErrorMessage(err, "Failed to send OTP"));
     } finally {
       setLoading(false);
     }
@@ -116,7 +94,7 @@ function Signup() {
         setExpiryTimestamp(response.expiry_timestamp);
       }
     } catch (err) {
-      setBackendError(extractErrorMessage(err.response?.data) || "Failed to resend OTP");
+      setBackendError(getErrorMessage(err, "Failed to resend OTP"));
     } finally {
       setResending(false);
     }
@@ -178,7 +156,7 @@ function Signup() {
         }
       }
 
-      const msg = extractErrorMessage(backendData) || 'Invalid OTP or Registration failed';
+      const msg = getErrorMessage(error, 'Invalid OTP or Registration failed');
       throw new Error(msg);
     }
   };
