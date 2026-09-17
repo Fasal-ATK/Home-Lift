@@ -223,7 +223,7 @@ export default function ProviderJobDetail() {
       if (acceptJob.fulfilled.match(action)) {
         setSnack({ open: true, message: "Job accepted successfully!", severity: "success" });
         if (action.payload?.data) setBooking(action.payload.data);
-        setTimeout(() => { window.location.href = "/provider/job-requests"; }, 1200);
+        setTimeout(() => { navigate("/provider/job-requests"); }, 1200);
       } else {
         const msg = action.payload?.error || action.payload?.message || (typeof action.payload === "string" ? action.payload : "Failed to accept job");
         setSnack({ open: true, message: msg, severity: "error" });

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box, Grid, Typography, CircularProgress, Stack, FormControl,
   Select, MenuItem, TextField, Button, Paper, Avatar, Fade,
@@ -157,6 +158,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 const COLORS = ["#6366f1", "#cddc39", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 export default function ProviderDashboard() {
+  const navigate                    = useNavigate();
   const [data, setData]             = useState(null);
   const [loading, setLoading]       = useState(true);
   const [timeRange, setTimeRange]   = useState("all_time");
@@ -447,7 +449,7 @@ export default function ProviderDashboard() {
         </Box>
         <Button
           variant="contained"
-          onClick={() => window.location.href = "/provider/job-requests"}
+          onClick={() => navigate("/provider/job-requests")}
           endIcon={<ArrowForward />}
           sx={{
             bgcolor: "#cddc39",
