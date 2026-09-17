@@ -1,14 +1,20 @@
 from rest_framework import serializers
 from users.models import CustomUser
+from users.validators import validate_email_format, validate_login_password
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-
 class AdminLoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True)
+
+    def validate_email(self, value):
+        return validate_email_format(value)
+
+    def validate_password(self, value):
+        return validate_login_password(value)
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -41,5 +47,4 @@ class AdminLoginSerializer(serializers.Serializer):
                 "message": "You are not authorized to access admin login."
             })
         attrs['user'] = user
-        return attrs 
- 
+        return attrs

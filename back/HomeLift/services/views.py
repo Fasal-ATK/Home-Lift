@@ -60,14 +60,14 @@ class CategoryDetailView(APIView):
     def get(self, request, pk):
         category = self.get_object(pk)
         if not category:
-            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Category with the specified ID was not found."}, status=status.HTTP_404_NOT_FOUND)
         serializer = CategorySerializer(category)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
         category = self.get_object(pk)
         if not category:
-            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Category with the specified ID was not found."}, status=status.HTTP_404_NOT_FOUND)
         serializer = CategorySerializer(category, data=request.data , partial=True) 
         if serializer.is_valid():
             serializer.save()
@@ -77,7 +77,7 @@ class CategoryDetailView(APIView):
     def delete(self, request, pk):
         category = self.get_object(pk)
         if not category:
-            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Category with the specified ID was not found."}, status=status.HTTP_404_NOT_FOUND)
         category.delete()
         return Response({"message": "Category deleted"}, status=status.HTTP_204_NO_CONTENT)
 
@@ -144,14 +144,14 @@ class ServiceDetailView(APIView):
     def get(self, request, pk):
         service = self.get_object(pk)
         if not service:
-            return Response({"error": "Service not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Service with the specified ID was not found."}, status=status.HTTP_404_NOT_FOUND)
         serializer = ServiceSerializer(service)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
         service = self.get_object(pk)
         if not service:
-            return Response({"error": "Service not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Service with the specified ID was not found."}, status=status.HTTP_404_NOT_FOUND)
         serializer = ServiceSerializer(service, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -161,6 +161,6 @@ class ServiceDetailView(APIView):
     def delete(self, request, pk):
         service = self.get_object(pk)
         if not service:
-            return Response({"error": "Service not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Service with the specified ID was not found."}, status=status.HTTP_404_NOT_FOUND)
         service.delete()
         return Response({"message": "Service deleted"}, status=status.HTTP_204_NO_CONTENT)

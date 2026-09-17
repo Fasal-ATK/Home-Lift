@@ -48,36 +48,28 @@ export const getErrorMessage = (err, defaultMsg = "An error occurred.") => {
   }
 
   if (typeof err === "object" && err !== null) {
-    // Check common error fields
-    if (err.error && typeof err.error === "string") {
-      return getErrorMessage(err.error, defaultMsg);
-    }
-    if (err.detail && typeof err.detail === "string") {
-      return getErrorMessage(err.detail, defaultMsg);
-    }
-    if (err.message && typeof err.message === "string") {
+    // 1. Check user-friendly message or detail first (whether string, array, or object)
+    if (err.message !== undefined && err.message !== null) {
       return getErrorMessage(err.message, defaultMsg);
     }
+    if (err.detail !== undefined && err.detail !== null) {
+      return getErrorMessage(err.detail, defaultMsg);
+    }
     
-    if (err.non_field_errors) {
-      return Array.isArray(err.non_field_errors)
-        ? err.non_field_errors.map(e => getErrorMessage(e, defaultMsg)).join(", ")
-        : getErrorMessage(err.non_field_errors, defaultMsg);
+    if (err.non_field_errors !== undefined && err.non_field_errors !== null) {
+      return getErrorMessage(err.non_field_errors, defaultMsg);
     }
 
-    // Handle field validation errors (e.g. { amount: ["This field is required"] })
+    // 2. Check error field (if no separate message is provided)
+    if (err.error !== undefined && err.error !== null) {
+      return getErrorMessage(err.error, defaultMsg);
+    }
+
+    // 3. Handle field validation errors (e.g. { amount: ["This field is required"] })
     const values = Object.values(err);
     if (values.length > 0) {
       const firstVal = values[0];
-      if (Array.isArray(firstVal)) {
-        return firstVal.map(e => getErrorMessage(e, defaultMsg)).join(", ");
-      }
-      if (typeof firstVal === "object") {
-        return getErrorMessage(firstVal, defaultMsg);
-      }
-      if (typeof firstVal === "string") {
-        return getErrorMessage(firstVal, defaultMsg);
-      }
+      return getErrorMessage(firstVal, defaultMsg);
     }
   }
 

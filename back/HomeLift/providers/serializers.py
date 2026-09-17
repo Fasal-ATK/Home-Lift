@@ -16,7 +16,7 @@ from cloudinary import utils
 class ProviderApplicationServiceSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source='service.name', read_only=True)
     price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
-    experience_years = serializers.IntegerField(required=False, min_value=0)
+    experience_years = serializers.IntegerField(required=False)
     id_doc = serializers.FileField(required=False, allow_null=True, write_only=True)
     id_doc_url = serializers.SerializerMethodField(read_only=True)
 
@@ -31,6 +31,19 @@ class ProviderApplicationServiceSerializer(serializers.ModelSerializer):
             return obj.id_doc.url
         except AttributeError:
             return None
+
+    def validate_price(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError("Proposed service price must be greater than zero.")
+        return value
+
+    def validate_experience_years(self, value):
+        if value is not None:
+            if value < 0:
+                raise serializers.ValidationError("Experience years cannot be negative.")
+            if value > 50:
+                raise serializers.ValidationError("Experience years must be between 0 and 50 years.")
+        return value
 
 
 
@@ -115,6 +128,21 @@ class ProviderServiceSerializer(serializers.ModelSerializer):
             'doc': {'required': False, 'allow_null': True},
         }
 
+    def validate_price(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError(
+                "Service price must be greater than zero."
+            )
+        return value
+
+    def validate_experience_years(self, value):
+        if value is not None:
+            if value < 0:
+                raise serializers.ValidationError("Experience years cannot be negative.")
+            if value > 50:
+                raise serializers.ValidationError("Experience years must be between 0 and 50 years.")
+        return value
+
 
 class ProviderDetailsSerializer(serializers.ModelSerializer):
     services = ProviderServiceSerializer(many=True, read_only=True)
@@ -160,3 +188,18 @@ class ProviderServiceRequestSerializer(serializers.ModelSerializer):
             return obj.doc.url
         except AttributeError:
             return None
+
+    def validate_price(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError(
+                "Service price must be greater than zero."
+            )
+        return value
+
+    def validate_experience_years(self, value):
+        if value is not None:
+            if value < 0:
+                raise serializers.ValidationError("Experience years cannot be negative.")
+            if value > 50:
+                raise serializers.ValidationError("Experience years must be between 0 and 50 years.")
+        return value

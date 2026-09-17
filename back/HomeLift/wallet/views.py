@@ -22,7 +22,7 @@ class WalletView(APIView):
     def get(self, request):
         wallet_type = request.query_params.get('type', 'user')
         if wallet_type not in dict(Wallet.WALLET_TYPES):
-            return Response({'detail': 'Invalid wallet type.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': f"Invalid wallet type '{wallet_type}'. Allowed types are: user, provider."}, status=status.HTTP_400_BAD_REQUEST)
             
         wallet, created = Wallet.objects.get_or_create(
             user=request.user, 
@@ -38,27 +38,27 @@ class WalletWithdrawalView(APIView):
     def post(self, request):
         amount_str = request.data.get('amount')
         if not amount_str:
-            return Response({'detail': 'Amount is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Withdrawal amount is required.'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             amount = Decimal(str(amount_str))
         except:
-            return Response({'detail': 'Invalid amount format.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Invalid amount format. Please enter a valid number.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if amount <= 0:
-            return Response({'detail': 'Amount must be positive.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Withdrawal amount must be greater than zero.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # 1. Verify Provider Profile
         try:
             provider_details = ProviderDetails.objects.get(user=request.user)
         except ProviderDetails.DoesNotExist:
-            return Response({'detail': 'Only providers can withdraw funds.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'detail': 'Withdrawals are only permitted for registered service providers.'}, status=status.HTTP_403_FORBIDDEN)
 
         # 2. Check Wallet & Available Balance (Current - Other Pending)
         try:
             wallet = Wallet.objects.get(user=request.user, wallet_type='provider')
         except Wallet.DoesNotExist:
-            return Response({'detail': 'Provider wallet not found.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Provider wallet could not be found for your account.'}, status=status.HTTP_400_BAD_REQUEST)
 
         from django.db.models import Sum
         pending_total = WithdrawalRequest.objects.filter(
@@ -67,7 +67,7 @@ class WalletWithdrawalView(APIView):
         ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         if (wallet.balance - pending_total) < amount:
-            return Response({'detail': f'Insufficient available balance. (Pending: ₹{pending_total})'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': f'Insufficient available balance. You currently have ₹{pending_total} locked in pending withdrawals.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # 3. Process Withdrawal Request (Atomic)
         try:
@@ -114,7 +114,7 @@ class StripeConnectLinkView(APIView):
         try:
             provider_details = ProviderDetails.objects.get(user=request.user)
         except ProviderDetails.DoesNotExist:
-            return Response({"detail": "Only providers can connect Stripe."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "Only approved service providers can connect a Stripe payout account."}, status=status.HTTP_403_FORBIDDEN)
 
         # 1. Create a Connected Account if one doesn't exist
         if not provider_details.stripe_account_id:
@@ -196,14 +196,14 @@ class AdminWithdrawalActionView(APIView):
         try:
             withdrawal = WithdrawalRequest.objects.get(pk=pk)
         except WithdrawalRequest.DoesNotExist:
-            return Response({'detail': 'Withdrawal record not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': 'Withdrawal request not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         if withdrawal.status != 'pending':
-            return Response({'detail': 'Can only modify pending withdrawals.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Only pending withdrawal requests can be approved or rejected.'}, status=status.HTTP_400_BAD_REQUEST)
 
         action = request.data.get('action') # 'approve' or 'reject'
         if action not in ['approve', 'reject']:
-            return Response({'detail': 'Action must be approve or reject.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Invalid action specified. Must be either "approve" or "reject".'}, status=status.HTTP_400_BAD_REQUEST)
 
         wallet = withdrawal.wallet
 
@@ -212,7 +212,7 @@ class AdminWithdrawalActionView(APIView):
                 if action == 'approve':
                     # 1. Deduct balance ONLY now
                     if wallet.balance < withdrawal.amount:
-                         return Response({'detail': 'Insufficient balance at time of approval.'}, status=status.HTTP_400_BAD_REQUEST)
+                         return Response({'detail': 'Cannot approve withdrawal: Provider wallet has insufficient balance.'}, status=status.HTTP_400_BAD_REQUEST)
                     
                     wallet.balance -= withdrawal.amount
                     wallet.save()

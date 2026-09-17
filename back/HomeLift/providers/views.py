@@ -167,7 +167,7 @@ class ProviderApplicationUpdateStatusAPIView(APIView):
             try:
                 application = ProviderApplication.objects.get(id=id)
             except ProviderApplication.DoesNotExist:
-                return Response({'detail': 'Application not found'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'detail': 'Provider application not found.'}, status=status.HTTP_404_NOT_FOUND)
 
             status_value = request.data.get('status')
             rejection_reason = request.data.get('rejection_reason', '')
@@ -176,7 +176,7 @@ class ProviderApplicationUpdateStatusAPIView(APIView):
                 return Response({'detail': 'Invalid status. Must be "approved" or "rejected".'}, status=status.HTTP_400_BAD_REQUEST)
 
             if status_value == 'rejected' and not rejection_reason.strip():
-                return Response({'detail': 'rejection_reason is required when rejecting.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': 'Please provide a reason for rejecting the application.'}, status=status.HTTP_400_BAD_REQUEST)
 
             application.status = status_value
             application.rejection_reason = rejection_reason if status_value == 'rejected' else ''
@@ -342,20 +342,20 @@ class ProviderMyServiceRequestsView(APIView):
         try:
             service_id = request.data.get('service')
             if not service_id:
-                return Response({"detail": "service field is required."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "Service ID is required to submit a service request."}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
                 service_obj = Service.objects.get(pk=service_id, is_active=True)
             except Service.DoesNotExist:
-                return Response({"detail": "Service not found or inactive."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"detail": "The requested service does not exist or is currently inactive."}, status=status.HTTP_404_NOT_FOUND)
 
             if ProviderService.objects.filter(provider=provider, service=service_obj).exists():
-                return Response({"detail": "You already offer this service."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "You already offer this service in your profile."}, status=status.HTTP_400_BAD_REQUEST)
 
             if ProviderServiceRequest.objects.filter(
                 provider=provider, service=service_obj, status='pending'
             ).exists():
-                return Response({"detail": "You already have a pending request for this service."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "You already have a pending request awaiting approval for this service."}, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = ProviderServiceRequestSerializer(data=request.data)
             if serializer.is_valid():
@@ -386,11 +386,11 @@ class ProviderMyServiceRequestDetailView(APIView):
         try:
             sr = self._get_request(pk, request.user)
             if not sr:
-                return Response({"detail": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"detail": "Service request not found."}, status=status.HTTP_404_NOT_FOUND)
             if sr.status != 'pending':
-                return Response({"detail": "Only pending requests can be cancelled."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "Only pending service requests can be cancelled."}, status=status.HTTP_400_BAD_REQUEST)
             sr.delete()
-            return Response({"detail": "Request cancelled."}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"detail": "Request cancelled successfully."}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             logger.exception("ProviderMyServiceRequestDetailView.delete failed for pk %s user %s: %s",
                              pk, request.user.id, e)
@@ -486,15 +486,15 @@ class AdminServiceRequestActionView(APIView):
             try:
                 sr = ProviderServiceRequest.objects.select_related('provider', 'service').get(pk=pk)
             except ProviderServiceRequest.DoesNotExist:
-                return Response({"detail": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"detail": "Service request not found."}, status=status.HTTP_404_NOT_FOUND)
 
             action = request.data.get('status')
             if action not in ('approved', 'rejected'):
-                return Response({"detail": "status must be 'approved' or 'rejected'."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "Invalid status. Must be 'approved' or 'rejected'."}, status=status.HTTP_400_BAD_REQUEST)
 
             rejection_reason = request.data.get('rejection_reason', '')
             if action == 'rejected' and not rejection_reason.strip():
-                return Response({"detail": "rejection_reason is required when rejecting."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "Please provide a reason for rejecting the service request."}, status=status.HTTP_400_BAD_REQUEST)
 
             sr.status = action
             sr.replied_at = timezone.now()

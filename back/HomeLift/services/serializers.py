@@ -11,6 +11,19 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'description', 'icon', 'is_active']
 
+    def validate_name(self, value):
+        value = value.strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("Category name must be at least 2 characters.")
+        qs = Category.objects.filter(name__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                "A category with this name already exists."
+            )
+        return value
+
 
 
 
@@ -33,6 +46,27 @@ class ServiceSerializer(serializers.ModelSerializer):
             'icon',
             'active_offer',
         ]
+
+    def validate_name(self, value):
+        value = value.strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("Service name must be at least 2 characters.")
+        qs = Service.objects.filter(name__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("A service with this name already exists.")
+        return value
+
+    def validate_price(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError("Service price must be greater than zero.")
+        return value
+
+    def validate_duration(self, value):
+        if value is not None and value < 1:
+            raise serializers.ValidationError("Service duration must be at least 1 minute.")
+        return value
 
     def get_active_offer(self, obj):
         from offers.models import Offer

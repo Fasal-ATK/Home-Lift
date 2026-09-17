@@ -12,6 +12,18 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'booking', 'user', 'user_name', 'provider', 'provider_name', 'rating', 'comment', 'created_at']
         read_only_fields = ['id', 'booking', 'user', 'user_name', 'provider', 'provider_name', 'created_at']
 
+    def validate_rating(self, value):
+        if value is None:
+            raise serializers.ValidationError("Rating is required.")
+        if not (1 <= value <= 5):
+            raise serializers.ValidationError("Rating must be between 1 and 5.")
+        return value
+
+    def validate_comment(self, value):
+        if value and len(value) > 1000:
+            raise serializers.ValidationError("Comment cannot exceed 1000 characters.")
+        return value
+
 
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.id')
@@ -57,6 +69,35 @@ class BookingSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ('advance', 'created_at', 'updated_at', 'is_owner', 'is_assigned_to_user', 'is_refunded', 'remaining_payment', 'review')
 
+    def validate_full_name(self, value):
+        import re
+        value = value.strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("Full name must be at least 2 characters.")
+        if len(value) > 100:
+            raise serializers.ValidationError("Full name cannot exceed 100 characters.")
+        if not re.match(r"^[A-Za-z][A-Za-z\s'-]*$", value):
+            raise serializers.ValidationError(
+                "Full name can only contain letters, spaces, hyphens, or apostrophes."
+            )
+        return value
+
+    def validate_phone(self, value):
+        import re
+        if not value or not value.strip():
+            raise serializers.ValidationError("Contact phone number is required.")
+        value = value.strip()
+        if not re.match(r'^(?:\+?91)?\d{10}$', value):
+            raise serializers.ValidationError(
+                "Enter a valid 10-digit phone number (e.g. 9876543210 or +919876543210)."
+            )
+        return value
+
+    def validate_notes(self, value):
+        if value and len(value) > 500:
+            raise serializers.ValidationError("Booking notes cannot exceed 500 characters.")
+        return value
+
     def validate(self, attrs):
         from django.utils import timezone
         
@@ -66,12 +107,12 @@ class BookingSerializer(serializers.ModelSerializer):
         if booking_date:
             now_date = timezone.localtime(timezone.now()).date()
             if booking_date < now_date:
-                raise serializers.ValidationError({"booking_date": "Booking date cannot be in the past."})
+                raise serializers.ValidationError({"booking_date": "Booking date cannot be in the past. Please select today or a future date."})
             
             if booking_date == now_date and booking_time:
                 now_time = timezone.localtime(timezone.now()).time()
                 if booking_time < now_time:
-                    raise serializers.ValidationError({"booking_time": "Booking time cannot be in the past."})
+                    raise serializers.ValidationError({"booking_time": "Booking time cannot be in the past. Please select an upcoming time."})
                     
         return attrs
 

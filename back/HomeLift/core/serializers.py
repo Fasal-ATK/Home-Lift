@@ -53,12 +53,47 @@ class AddressSerializer(serializers.ModelSerializer):
 
         return data
 
+    def validate_title(self, value):
+        value = value.strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("Address title must be at least 2 characters.")
+        if len(value) > 50:
+            raise serializers.ValidationError("Address title cannot exceed 50 characters.")
+        return value
+
+    def validate_postal_code(self, value):
+        import re
+        value = value.strip()
+        if not re.match(r'^[1-9][0-9]{5}$', value):
+            raise serializers.ValidationError(
+                "Enter a valid 6-digit Indian PIN code (e.g. 682001)."
+            )
+        return value
+
+    def validate_city(self, value):
+        import re
+        value = value.strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("City must be at least 2 characters.")
+        if not re.match(r'^[A-Za-z][A-Za-z\s.-]*$', value):
+            raise serializers.ValidationError("City name can only contain letters, spaces, hyphens, or dots.")
+        return value
+
+    def validate_state(self, value):
+        import re
+        value = value.strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("State must be at least 2 characters.")
+        if not re.match(r'^[A-Za-z][A-Za-z\s.-]*$', value):
+            raise serializers.ValidationError("State name can only contain letters, spaces, hyphens, or dots.")
+        return value
+
     def create(self, validated_data):
         user = self.context["request"].user
 
         # Enforce address limit per user
         if Address.objects.filter(user=user).count() >= 10:
-            raise serializers.ValidationError("You can only have up to 10 addresses.")
+            raise serializers.ValidationError("Address limit reached. You can save a maximum of 10 addresses.")
 
         # Ensure user is always set server-side (ignore any client-sent user)
         validated_data["user"] = user
@@ -93,3 +128,19 @@ class TicketSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'user', 'user_name', 'user_email', 'admin_reply', 'status', 'created_at', 'updated_at']
+
+    def validate_subject(self, value):
+        value = value.strip()
+        if len(value) < 5:
+            raise serializers.ValidationError("Subject must be at least 5 characters.")
+        if len(value) > 255:
+            raise serializers.ValidationError("Subject cannot exceed 255 characters.")
+        return value
+
+    def validate_ticket_type(self, value):
+        valid_types = {choice[0] for choice in Ticket.TICKET_TYPES}
+        if value not in valid_types:
+            raise serializers.ValidationError(
+                f"Invalid ticket type. Must be one of: {', '.join(sorted(valid_types))}."
+            )
+        return value

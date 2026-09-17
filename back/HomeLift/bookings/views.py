@@ -155,7 +155,7 @@ class ProviderBookingsView(APIView):
         try:
             provider_details = provider.provider_details
         except Exception:
-            return Response({"error": "Provider profile not found."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Provider profile not found for your account."}, status=status.HTTP_400_BAD_REQUEST)
 
         # list of service ids the provider is approved for
         allowed_services = list(provider_details.services.values_list("service_id", flat=True))
@@ -207,25 +207,25 @@ class ProviderAcceptBookingView(APIView):
         try:
             booking = Booking.objects.select_for_update().get(pk=pk)
         except Booking.DoesNotExist:
-            return Response({"error": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Booking record not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if booking.status != "pending":
-            return Response({"error": "Only pending bookings can be accepted."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Only bookings in 'pending' status can be accepted."}, status=status.HTTP_400_BAD_REQUEST)
 
         provider = request.user
         try:
             provider_details = provider.provider_details
         except Exception:
-            return Response({"error": "Provider profile not found."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Provider profile not found for your account."}, status=status.HTTP_400_BAD_REQUEST)
 
         # eligibility check
         if not provider_details.services.filter(service_id=booking.service_id).exists():
-            return Response({"error": "You are not approved to accept this service."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "You have not been approved to provide this service."}, status=status.HTTP_403_FORBIDDEN)
 
         # ✅ Overlap Check
         # Generate the start and end datetime for the incoming booking
         if not booking.booking_date or not booking.booking_time:
-            return Response({"error": "Booking is missing date or time."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "The booking cannot be accepted because the scheduled date or time is missing."}, status=status.HTTP_400_BAD_REQUEST)
 
         incoming_start = datetime.combine(booking.booking_date, booking.booking_time)
         try:
@@ -257,7 +257,7 @@ class ProviderAcceptBookingView(APIView):
             # Check for overlap: new_start < existing_end AND new_end > existing_start
             if incoming_start < existing_end and incoming_end > existing_start:
                 return Response(
-                    {"error": "You already have a confirmed or in-progress booking at this time."},
+                    {"error": "Schedule conflict: You already have another confirmed or in-progress booking during this time slot."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -386,11 +386,11 @@ class BookingDetailUpdateView(APIView):
         booking = self._get_object(pk, request.user)
 
         if booking.status == "completed":
-            return Response({"error": "Completed bookings cannot be cancelled."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Completed bookings cannot be cancelled. Please contact support if you need assistance."}, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user
         if not (user.is_staff or user.is_superuser or booking.user == user or booking.provider == user):
-            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "You do not have permission to cancel this booking."}, status=status.HTTP_403_FORBIDDEN)
 
         booking.status = "cancelled"
         booking.save(update_fields=["status", "updated_at"])
@@ -416,17 +416,18 @@ class BookingStatusUpdateView(APIView):
 
         # Only assigned provider OR admin can update
         if not (user.is_staff or user.is_superuser or booking.provider == user):
-            return Response({"error": "Not allowed."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "You do not have permission to update the status of this booking."}, status=status.HTTP_403_FORBIDDEN)
 
         new_status = (request.data.get("status") or "").strip()
         provider_id = request.data.get("provider_id")
         allowed = {"pending", "confirmed", "in_progress", "completed", "cancelled"}
 
         if new_status not in allowed:
-            return Response({"error": f"Invalid status. Allowed: {sorted(list(allowed))}"}, status=status.HTTP_400_BAD_REQUEST)
+            allowed_list = ", ".join(sorted(list(allowed)))
+            return Response({"error": f"Invalid status '{new_status}'. Allowed statuses are: {allowed_list}."}, status=status.HTTP_400_BAD_REQUEST)
 
         if booking.status == "completed" and new_status != "completed":
-            return Response({"error": "Cannot move out of completed status."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "A booking marked as completed cannot have its status changed."}, status=status.HTTP_400_BAD_REQUEST)
 
         if new_status == "completed" and booking.status != "completed":
             # 💰 Credit provider's wallet
@@ -465,7 +466,7 @@ class BookingStatusUpdateView(APIView):
                 booking.provider = new_provider
                 save_fields.append("provider")
             except CustomUser.DoesNotExist:
-                return Response({"error": "Selected provider not found or not a provider."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "The selected provider was not found or is not registered as an active provider."}, status=status.HTTP_400_BAD_REQUEST)
 
         if hasattr(booking, 'is_provider_paid') and booking.is_provider_paid:
             save_fields.append("is_provider_paid")
@@ -501,7 +502,7 @@ class DownloadInvoiceView(APIView):
         is_admin = user.is_staff or user.is_superuser
 
         if not (is_owner or is_provider or is_admin):
-            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "You do not have permission to view or download this invoice."}, status=status.HTTP_403_FORBIDDEN)
 
         # Generate PDF
         try:
@@ -534,10 +535,10 @@ class BookingReviewCreateView(APIView):
         booking = get_object_or_404(Booking, pk=pk, user=request.user)
         
         if booking.status != "completed":
-            return Response({"error": "You can only review completed bookings."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Reviews can only be submitted for bookings that have been completed."}, status=status.HTTP_400_BAD_REQUEST)
             
         if hasattr(booking, 'review'):
-            return Response({"error": "You have already reviewed this booking."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "You have already submitted a review for this booking."}, status=status.HTTP_400_BAD_REQUEST)
             
         serializer = ReviewSerializer(data=request.data)
         if serializer.is_valid():

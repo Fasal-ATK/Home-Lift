@@ -227,7 +227,11 @@ class AdminTicketReplyView(APIView):
         new_status = request.data.get('status', ticket.status)
 
         if new_status not in dict(Ticket.STATUS_CHOICES):
-            return Response({"error": "Invalid status."}, status=status.HTTP_400_BAD_REQUEST)
+            allowed = ", ".join(dict(Ticket.STATUS_CHOICES).keys())
+            return Response(
+                {"error": f"Invalid ticket status '{new_status}'. Allowed options are: {allowed}."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         ticket.admin_reply = reply
         ticket.status = new_status

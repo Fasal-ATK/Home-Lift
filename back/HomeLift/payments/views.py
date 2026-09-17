@@ -20,7 +20,7 @@ class CreatePaymentIntent(APIView):
         payment_type = request.data.get("payment_type", "advance") # "advance" or "remaining"
         
         if not booking_id:
-            return Response({"error": "booking_id is required"}, status=400)
+            return Response({"error": "Booking ID is required to create a payment intent."}, status=400)
             
         from bookings.models import Booking
         # Secure the lookup by ensuring the booking belongs to the current user
@@ -28,23 +28,23 @@ class CreatePaymentIntent(APIView):
         
         if payment_type == "advance":
             if booking.is_advance_paid:
-                return Response({"error": "Advance already paid."}, status=400)
+                return Response({"error": "The advance payment has already been completed for this booking."}, status=400)
             amount = int(booking.advance * 100)
         elif payment_type == "remaining":
             if not booking.is_advance_paid:
-                return Response({"error": "Advance must be paid first."}, status=400)
+                return Response({"error": "The advance payment must be completed before paying the remaining balance."}, status=400)
             # 1. First check if it's already paid by looking for a successful payment
             from payments.models import Payment
             if Payment.objects.filter(booking=booking, status='succeeded', metadata__payment_type='remaining').exists():
-                return Response({"error": "Remaining balance already paid."}, status=400)
+                return Response({"error": "The remaining balance for this booking has already been paid."}, status=400)
             
             # 2. Check price vs advance edge case
             if booking.price and booking.advance and (booking.price - booking.advance) <= 0:
-                return Response({"error": "No remaining balance to pay."}, status=400)
+                return Response({"error": "There is no remaining balance due for this booking."}, status=400)
             remaining = booking.price - booking.advance
             amount = int(remaining * 100)
         else:
-            return Response({"error": "Invalid payment_type."}, status=400)
+            return Response({"error": f"Invalid payment type '{payment_type}'. Must be 'advance' or 'remaining'."}, status=400)
 
         intent = stripe.PaymentIntent.create(
             amount=amount,
@@ -70,31 +70,31 @@ class WalletPay(APIView):
         payment_type = request.data.get("payment_type", "advance")
         
         if not booking_id:
-            return Response({"error": "booking_id is required"}, status=400)
+            return Response({"error": "Booking ID is required to process wallet payment."}, status=400)
             
         # Securely fetch the booking
         booking = get_object_or_404(Booking, id=booking_id, user=request.user)
         
         if payment_type == "advance":
             if booking.is_advance_paid:
-                return Response({"error": "Advance already paid for this booking."}, status=400)
+                return Response({"error": "The advance payment has already been completed for this booking."}, status=400)
             amount_to_deduct = booking.advance
         elif payment_type == "remaining":
             if not booking.is_advance_paid:
-                return Response({"error": "Advance must be paid first."}, status=400)
+                return Response({"error": "The advance payment must be completed before paying the remaining balance."}, status=400)
             
             from payments.models import Payment
             if Payment.objects.filter(booking=booking, status='succeeded', metadata__payment_type='remaining').exists():
-                return Response({"error": "Remaining balance already paid."}, status=400)
+                return Response({"error": "The remaining balance for this booking has already been paid."}, status=400)
             
             amount_to_deduct = booking.price - booking.advance
         else:
-            return Response({"error": "Invalid payment_type."}, status=400)
+            return Response({"error": f"Invalid payment type '{payment_type}'. Must be 'advance' or 'remaining'."}, status=400)
             
         wallet, created = Wallet.objects.get_or_create(user=request.user, wallet_type='user')
         
         if wallet.balance < amount_to_deduct:
-            return Response({"error": f"Insufficient wallet balance. Need ₹{amount_to_deduct}."}, status=400)
+            return Response({"error": f"Insufficient wallet balance. Your balance is ₹{wallet.balance}, but ₹{amount_to_deduct} is required."}, status=400)
 
         # Proceed with payment
         wallet.balance -= amount_to_deduct

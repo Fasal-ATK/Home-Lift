@@ -42,14 +42,20 @@ class ChatRoomListView(APIView):
             booking_id = request.data.get('booking_id')
 
             if not other_user_id:
-                return Response({'detail': 'provider_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'detail': 'Provider ID is required to start or open a chat room.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             from django.contrib.auth import get_user_model
             User = get_user_model()
             try:
                 other_user = User.objects.get(id=other_user_id)
             except User.DoesNotExist:
-                return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {'detail': 'The specified service provider or user could not be found.'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
             booking = None
             if booking_id:
@@ -72,7 +78,7 @@ class ChatRoomListView(APIView):
 
             if provider_in_room is None:
                 return Response(
-                    {'detail': 'Cannot create a chat room: provider is not assigned yet.'},
+                    {'detail': 'Cannot start a chat room: A service provider has not been assigned to this booking yet.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -120,9 +126,9 @@ class ChatMessageListView(APIView):
         try:
             room = ChatRoom.objects.get(id=room_id)
         except ChatRoom.DoesNotExist:
-            return None, Response({'detail': 'Room not found.'}, status=status.HTTP_404_NOT_FOUND)
+            return None, Response({'detail': 'The requested chat room does not exist.'}, status=status.HTTP_404_NOT_FOUND)
         if room.user != user and room.provider != user:
-            return None, Response({'detail': 'Not authorized.'}, status=status.HTTP_403_FORBIDDEN)
+            return None, Response({'detail': 'You do not have permission to access or send messages in this chat room.'}, status=status.HTTP_403_FORBIDDEN)
         return room, None
 
     def get(self, request, room_id):
@@ -161,7 +167,7 @@ class ChatMessageListView(APIView):
 
             content = (request.data.get('content') or '').strip()
             if not content:
-                return Response({'detail': 'Content is required.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': 'Message content cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
 
             message = ChatMessage.objects.create(room=room, sender=request.user, content=content)
             serializer = ChatMessageSerializer(message)
