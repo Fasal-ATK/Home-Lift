@@ -6,7 +6,7 @@ import axios from 'axios';
 import apiEndpoints from '../API/apiEndpoints';
 import { performLogout, redirectAfterLogout } from '../utils/logoutHelper';
 import { addNotification } from '../redux/slices/notificationSlice';
-import { receiveMessage, markMessagesAsRead } from '../redux/slices/chatSlice';
+import { receiveMessage, markMessagesAsRead, setUserOnline, setUserOffline } from '../redux/slices/chatSlice';
 
 // Shared promise to avoid duplicate token refresh requests
 let tokenRefreshPromise = null;
@@ -215,6 +215,16 @@ const AppSocket = ({ userId }) => {
 
                         if (data.type === "read_receipt") {
                             dispatch(markMessagesAsRead(data.payload));
+                        }
+
+                        if (data.type === "user_online") {
+                            dispatch(setUserOnline(data.user_id));
+                            // Online status is shown in the chat UI — no global toast needed
+                        }
+
+                        if (data.type === "user_offline") {
+                            dispatch(setUserOffline(data.user_id));
+                            // Silently update state; no toast for offline to avoid spam
                         }
 
                     } catch {

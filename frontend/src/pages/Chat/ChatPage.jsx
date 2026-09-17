@@ -144,7 +144,7 @@ const MessageBubble = ({ msg, isMe, formatTime }) => {
 };
 
 // ─── Room list item ──────────────────────────────────────────────────────────
-const RoomItem = ({ room, isActive, onClick, currentUserId }) => {
+const RoomItem = ({ room, isActive, onClick, currentUserId, isOnline }) => {
   const otherName = room.other_user_name || "Unknown";
   const lastMsg = room.last_message?.content || "No messages yet";
   const unread = room.unread_count || 0;
@@ -177,21 +177,37 @@ const RoomItem = ({ room, isActive, onClick, currentUserId }) => {
             overlap="circular"
             sx={{ mr: 2 }}
           >
-            <Avatar
-              src={avatar}
-              sx={{
-                width: 46,
-                height: 46,
-                bgcolor: avatar ? "transparent" : (isActive ? "#1976d2" : "#e2e8f0"),
-                color: isActive ? "#fff" : "#475569",
-                fontWeight: 700,
-                fontSize: "1rem",
-                boxShadow: isActive ? "0 4px 12px rgba(25,118,210,0.3)" : "none",
-                transition: "all 0.25s",
-              }}
-            >
-              {!avatar && initial}
-            </Avatar>
+            <Box sx={{ position: "relative" }}>
+              <Avatar
+                src={avatar}
+                sx={{
+                  width: 46,
+                  height: 46,
+                  bgcolor: avatar ? "transparent" : (isActive ? "#1976d2" : "#e2e8f0"),
+                  color: isActive ? "#fff" : "#475569",
+                  fontWeight: 700,
+                  fontSize: "1rem",
+                  boxShadow: isActive ? "0 4px 12px rgba(25,118,210,0.3)" : "none",
+                  transition: "all 0.25s",
+                }}
+              >
+                {!avatar && initial}
+              </Avatar>
+              {isOnline && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: 1,
+                    right: 1,
+                    width: 11,
+                    height: 11,
+                    borderRadius: "50%",
+                    bgcolor: "#22c55e",
+                    border: "2px solid #fff",
+                  }}
+                />
+              )}
+            </Box>
           </Badge>
           <ListItemText
             primary={
@@ -228,7 +244,7 @@ export default function ChatPage() {
   const dispatch = useDispatch();
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
-  const { rooms, messages, activeRoomId, loading } = useSelector(
+  const { rooms, messages, activeRoomId, loading, onlineUsers = [] } = useSelector(
     (state) => state.chat
   );
 
@@ -390,6 +406,7 @@ export default function ChatPage() {
                 isActive={room.id === activeRoomId}
                 onClick={() => handleRoomClick(room.id)}
                 currentUserId={user?.id}
+                isOnline={onlineUsers.includes(String(room.other_user_id))}
               />
             </motion.div>
           ))
@@ -452,14 +469,18 @@ export default function ChatPage() {
               <Typography fontWeight={700} sx={{ color: "#101828", lineHeight: 1.3 }}>
                 {otherName}
               </Typography>
-              {isTyping && (
+              {isTyping ? (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                   <TypingDots />
                   <Typography variant="caption" sx={{ color: "#64748b" }}>
                     typing…
                   </Typography>
                 </Box>
-              )}
+              ) : onlineUsers.includes(String(activeRoom?.other_user_id)) ? (
+                <Typography variant="caption" sx={{ color: "#16a34a", fontWeight: 600 }}>
+                  ● Online
+                </Typography>
+              ) : null}
             </Box>
           </Box>
 

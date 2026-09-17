@@ -52,6 +52,7 @@ const chatSlice = createSlice({
         activeRoomId: null,
         loading: false,
         error: null,
+        onlineUsers: [],  // array of user IDs currently online
     },
     reducers: {
         setActiveRoom: (state, action) => {
@@ -136,6 +137,16 @@ const chatSlice = createSlice({
         },
         clearActiveRoom: (state) => {
             state.activeRoomId = null;
+        },
+        setUserOnline: (state, action) => {
+            const userId = String(action.payload);
+            if (!state.onlineUsers.includes(userId)) {
+                state.onlineUsers.push(userId);
+            }
+        },
+        setUserOffline: (state, action) => {
+            const userId = String(action.payload);
+            state.onlineUsers = state.onlineUsers.filter(id => id !== userId);
         },
         markMessagesAsRead: (state, action) => {
             const { room_id, room } = action.payload || {};
@@ -223,5 +234,5 @@ const chatSlice = createSlice({
     }
 });
 
-export const { setActiveRoom, optimisticAddMessage, receiveMessage, clearActiveRoom, markMessagesAsRead } = chatSlice.actions;
+export const { setActiveRoom, optimisticAddMessage, receiveMessage, clearActiveRoom, markMessagesAsRead, setUserOnline, setUserOffline } = chatSlice.actions;
 export default chatSlice.reducer;
