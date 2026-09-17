@@ -143,12 +143,30 @@ function AddEditAddressDialog({ open, onClose, onSaved, initialData }) {
   };
 
   const handleSave = async () => {
-    if (!form.title || !form.address_line || !form.city || !form.state || !form.postal_code) {
+    if (!form.title?.trim() || !form.address_line?.trim() || !form.city?.trim() || !form.state?.trim() || !form.postal_code?.trim()) {
       ShowToast("Please fill in all required fields.", "error");
+      return;
+    }
+    if (form.title.trim().length < 2) {
+      ShowToast("Address title must be at least 2 characters.", "error");
+      return;
+    }
+    if (form.title.trim().length > 50) {
+      ShowToast("Address title cannot exceed 50 characters.", "error");
+      return;
+    }
+    const pinRegex = /^[1-9][0-9]{5}$/;
+    if (!pinRegex.test(form.postal_code.trim())) {
+      ShowToast("Enter a valid 6-digit Indian PIN code (e.g. 682001).", "error");
       return;
     }
     const payload = {
       ...form,
+      title: form.title.trim(),
+      address_line: form.address_line.trim(),
+      city: form.city.trim(),
+      state: form.state.trim(),
+      postal_code: form.postal_code.trim(),
       latitude:  form.latitude  || null,
       longitude: form.longitude || null,
     };
