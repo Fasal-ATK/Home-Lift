@@ -29,6 +29,7 @@ import {
   Close,
 } from "@mui/icons-material";
 import { useSelector } from "react-redux";
+import logoImg from "../../assets/user/homelift_logo.png";
 
 // ─── animations ──────────────────────────────────────────────────────────────
 const slideIn = keyframes`
@@ -255,18 +256,18 @@ function SidebarContent({ open, setOpen, onMobileClose, isMobile }) {
         {(open || isMobile) ? (
           <>
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Avatar
+              <Box
+                component="img"
+                src={logoImg}
+                alt="HomeLift Logo"
                 sx={{
                   width: 34,
                   height: 34,
-                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                  fontSize: 14,
-                  fontWeight: 900,
-                  boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
+                  borderRadius: 2,
+                  objectFit: "contain",
+                  boxShadow: "0 4px 12px rgba(99,102,241,0.25)",
                 }}
-              >
-                HL
-              </Avatar>
+              />
               <Box>
                 <Typography variant="body2" fontWeight={800} sx={{ color: "#1e1b4b", lineHeight: 1.1, fontSize: 14 }}>
                   <Box component="span" sx={{ color: "#6366f1" }}>Home</Box> Lift
@@ -300,22 +301,22 @@ function SidebarContent({ open, setOpen, onMobileClose, isMobile }) {
           </>
         ) : (
           <Tooltip title="Back to user side" placement="right">
-            <Avatar
+            <Box
+              component="img"
+              src={logoImg}
+              alt="HomeLift Logo"
               onClick={() => navigate("/home")}
               sx={{
                 width: 36,
                 height: 36,
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                fontSize: 12,
-                fontWeight: 900,
+                borderRadius: 2,
+                objectFit: "contain",
                 cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
-                "&:hover": { transform: "scale(1.05)" },
+                boxShadow: "0 4px 12px rgba(99,102,241,0.25)",
+                "&:hover": { transform: "scale(1.08)" },
                 transition: "transform 0.2s",
               }}
-            >
-              HL
-            </Avatar>
+            />
           </Tooltip>
         )}
       </Box>

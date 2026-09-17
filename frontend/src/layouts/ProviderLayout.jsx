@@ -6,6 +6,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSelector } from "react-redux";
 import ProviderSidebar from "../components/provider/ProviderSidebar";
+import logoImg from "../assets/user/homelift_favicon.png";
 
 const ProviderLayout = () => {
   const [open, setOpen] = useState(true);
@@ -56,17 +57,17 @@ const ProviderLayout = () => {
               >
                 <MenuIcon />
               </IconButton>
-              <Avatar
+              <Box
+                component="img"
+                src={logoImg}
+                alt="HomeLift Logo"
                 sx={{
-                  width: 32,
-                  height: 32,
-                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                  fontSize: 13,
-                  fontWeight: 900,
+                  width: 30,
+                  height: 30,
+                  borderRadius: 1.5,
+                  objectFit: "contain",
                 }}
-              >
-                HL
-              </Avatar>
+              />
               <Typography variant="subtitle1" fontWeight={800} color="#0f172a" noWrap>
                 {getPageTitle(location.pathname)}
               </Typography>

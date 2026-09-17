@@ -23,6 +23,7 @@ import { setUser } from '../../redux/slices/authSlice';
 import { fetchBookings } from '../../redux/slices/bookingSlice';
 import { fetchNotifications } from '../../redux/slices/notificationSlice';
 import { fetchChatRooms } from '../../redux/slices/chatSlice';
+import logoImg from '../../assets/user/homelift_logo.png';
 
 const UserNavbar = () => {
   const navigate = useNavigate();
@@ -98,19 +99,17 @@ const UserNavbar = () => {
         {/* Left: Logo and Title */}
         <Box display="flex" alignItems="center" gap={1.5} sx={{ cursor: 'pointer' }} onClick={() => navigate('/home')}>
           <Box
+            component="img"
+            src={logoImg}
+            alt="HomeLift Logo"
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 2.5,
-              background: "linear-gradient(135deg, #4f46e5, #8b5cf6)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(79,70,229,0.3)"
+              width: 38,
+              height: 38,
+              borderRadius: 2,
+              objectFit: 'contain',
+              boxShadow: '0 4px 12px rgba(79,70,229,0.25)'
             }}
-          >
-            <LocationOn sx={{ color: '#fff', fontSize: 24 }} />
-          </Box>
+          />
           <Typography
             variant="h6"
             fontWeight="900"
