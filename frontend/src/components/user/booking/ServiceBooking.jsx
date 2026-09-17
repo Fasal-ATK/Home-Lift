@@ -26,6 +26,7 @@ import {
   IconButton,
   Tooltip,
   Stack,
+  Alert,
 } from "@mui/material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -287,23 +288,34 @@ const BookingPage = () => {
   const price = watch("price");
   const selectedDate = watch("booking_date");
 
-  // Get today's date in YYYY-MM-DD format for min date
-  const today = new Date().toISOString().split('T')[0];
+  // Local date formatting helper (YYYY-MM-DD)
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const tomorrowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const tomorrow = `${tomorrowDate.getFullYear()}-${pad(tomorrowDate.getMonth() + 1)}-${pad(tomorrowDate.getDate())}`;
 
-  // Filter time slots if today is selected
+  // Check which time slots for today are still in the future
+  const currentHour = now.getHours();
+  const todayAvailableSlots = timeSlots.filter(slot => {
+    const startHour = parseInt(slot.split(':')[0], 10);
+    return startHour > currentHour;
+  });
+  const isTodayAvailable = todayAvailableSlots.length > 0;
+
+  // If all time slots for today have already passed, disable today by setting minDate to tomorrow
+  const minSelectableDate = isTodayAvailable ? today : tomorrow;
+
+  // Filter time slots based on the selected date
   const getAvailableTimeSlots = () => {
-    if (!selectedDate || selectedDate !== today) {
-      return timeSlots;
+    if (!selectedDate) return [];
+    if (selectedDate === today) {
+      return todayAvailableSlots;
     }
-
-    // If today is selected, filter out past time slots
-    const now = new Date();
-    const currentHour = now.getHours();
-
-    return timeSlots.filter(slot => {
-      const startHour = parseInt(slot.split(':')[0]);
-      return startHour > currentHour;
-    });
+    if (selectedDate < today) {
+      return [];
+    }
+    return timeSlots;
   };
 
   const availableTimeSlots = getAvailableTimeSlots();
@@ -326,23 +338,37 @@ const BookingPage = () => {
 
   const onSubmit = (data) => {
     // Frontend Date Validation
-    const selectedDateObj = new Date(data.booking_date);
-    const todayObj = new Date();
-    todayObj.setHours(0, 0, 0, 0);
-
-    if (selectedDateObj < todayObj) {
-      ShowToast("Booking date cannot be in the past.", "error");
+    if (!data.booking_date) {
+      ShowToast("Please select a booking date.", "error");
       return;
     }
 
-    if (data.booking_date === today && data.booking_time) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const startHour = parseInt(data.booking_time.split(':')[0]);
-      if (startHour <= currentHour) {
-        ShowToast("Booking time cannot be in the past.", "error");
+    if (data.booking_date < minSelectableDate) {
+      if (data.booking_date === today && !isTodayAvailable) {
+        ShowToast("All time slots for today have already passed. Please select tomorrow or a future date.", "warning");
+      } else {
+        ShowToast("Booking date cannot be in the past.", "error");
+      }
+      return;
+    }
+
+    if (data.booking_date === today) {
+      if (!isTodayAvailable) {
+        ShowToast("No time slots are available for today. Please select tomorrow or a later date.", "warning");
         return;
       }
+      if (data.booking_time) {
+        const startHour = parseInt(data.booking_time.split(':')[0], 10);
+        if (startHour <= currentHour) {
+          ShowToast("The selected time slot has already passed. Please select an upcoming slot.", "error");
+          return;
+        }
+      }
+    }
+
+    if (!data.booking_time || !availableTimeSlots.includes(data.booking_time)) {
+      ShowToast("Please select an available time slot.", "error");
+      return;
     }
 
     // Ensure service is included
@@ -391,6 +417,10 @@ const BookingPage = () => {
     options,
     readOnly,
     defaultValue,
+    inputProps,
+    InputProps,
+    disabled,
+    helperText: customHelperText,
     ...props
   }) => (
     <Controller
@@ -407,9 +437,11 @@ const BookingPage = () => {
           multiline={multiline}
           rows={rows}
           fullWidth
+          disabled={disabled}
           error={!!fieldState.error}
-          helperText={fieldState.error?.message}
-          InputProps={{ readOnly }}
+          helperText={fieldState.error?.message || customHelperText}
+          InputProps={{ readOnly, ...InputProps }}
+          inputProps={inputProps}
           InputLabelProps={type === "date" ? { shrink: true } : undefined}
           {...props}
         >
@@ -523,22 +555,45 @@ const BookingPage = () => {
                 />
               </Box>
 
+              {/* Alert message if today has no available time slots */}
+              {!isTodayAvailable && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Bookings for today are closed as all time slots have passed. Earliest available date is tomorrow ({tomorrow}).
+                </Alert>
+              )}
+              {selectedDate === today && !isTodayAvailable && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  No time slots are available for today. Please select tomorrow or a later date.
+                </Alert>
+              )}
+
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
                 <Field
                   name="booking_date"
                   label="Booking Date"
                   type="date"
                   rules={{ required: "Date is required" }}
-                  InputProps={{
-                    inputProps: { min: today }
-                  }}
+                  inputProps={{ min: minSelectableDate }}
+                  helperText={
+                    !isTodayAvailable
+                      ? `Today unavailable. Earliest: ${tomorrow}`
+                      : "Select today or a future date"
+                  }
                 />
                 <Field
                   name="booking_time"
                   label="Time Slot"
                   select
                   options={availableTimeSlots}
+                  disabled={!selectedDate || availableTimeSlots.length === 0}
                   rules={{ required: "Time slot is required" }}
+                  helperText={
+                    !selectedDate
+                      ? "Select a booking date first"
+                      : availableTimeSlots.length === 0
+                      ? (selectedDate === today ? "No slots left for today" : "No slots available")
+                      : `${availableTimeSlots.length} slot${availableTimeSlots.length > 1 ? 's' : ''} available`
+                  }
                 />
               </Box>
 
