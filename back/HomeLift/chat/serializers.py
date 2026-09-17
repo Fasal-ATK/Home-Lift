@@ -16,6 +16,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
 class ChatRoomSerializer(serializers.ModelSerializer):
     other_user_name = serializers.SerializerMethodField()
     other_user_id = serializers.SerializerMethodField()
+    other_user_avatar = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
     booking_id = serializers.IntegerField(source='booking.id', read_only=True, allow_null=True)
@@ -23,7 +24,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChatRoom
-        fields = ['id', 'other_user_name', 'other_user_id', 'last_message', 'unread_count', 'booking_id', 'service_name', 'created_at']
+        fields = ['id', 'other_user_name', 'other_user_id', 'other_user_avatar', 'last_message', 'unread_count', 'booking_id', 'service_name', 'created_at']
 
     def get_other_user_name(self, obj):
         request = self.context.get('request')
@@ -40,6 +41,20 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         me = request.user
         other = obj.provider if obj.user == me else obj.user
         return other.id
+
+    def get_other_user_avatar(self, obj):
+        request = self.context.get('request')
+        if not request:
+            return None
+        me = request.user
+        other = obj.provider if obj.user == me else obj.user
+        if other.profile_picture:
+            url = other.profile_picture.url
+            # Return absolute URL if request context is available
+            if request and not url.startswith('http'):
+                return request.build_absolute_uri(url)
+            return url
+        return None
 
     def get_last_message(self, obj):
         msg = obj.messages.last()

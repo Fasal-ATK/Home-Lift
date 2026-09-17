@@ -149,6 +149,7 @@ const RoomItem = ({ room, isActive, onClick, currentUserId }) => {
   const lastMsg = room.last_message?.content || "No messages yet";
   const unread = room.unread_count || 0;
   const initial = otherName.charAt(0).toUpperCase();
+  const avatar = room.other_user_avatar || null;
 
   return (
     <>
@@ -177,10 +178,11 @@ const RoomItem = ({ room, isActive, onClick, currentUserId }) => {
             sx={{ mr: 2 }}
           >
             <Avatar
+              src={avatar}
               sx={{
                 width: 46,
                 height: 46,
-                bgcolor: isActive ? "#1976d2" : "#e2e8f0",
+                bgcolor: avatar ? "transparent" : (isActive ? "#1976d2" : "#e2e8f0"),
                 color: isActive ? "#fff" : "#475569",
                 fontWeight: 700,
                 fontSize: "1rem",
@@ -188,7 +190,7 @@ const RoomItem = ({ room, isActive, onClick, currentUserId }) => {
                 transition: "all 0.25s",
               }}
             >
-              {initial}
+              {!avatar && initial}
             </Avatar>
           </Badge>
           <ListItemText
@@ -435,15 +437,16 @@ export default function ChatPage() {
             </IconButton>
 
             <Avatar
+              src={activeRoom?.other_user_avatar || undefined}
               sx={{
-                bgcolor: "#1976d2",
+                bgcolor: activeRoom?.other_user_avatar ? "transparent" : "#1976d2",
                 fontWeight: 700,
                 width: 42,
                 height: 42,
                 boxShadow: "0 4px 12px rgba(25,118,210,0.25)",
               }}
             >
-              {otherName.charAt(0).toUpperCase()}
+              {!activeRoom?.other_user_avatar && otherName.charAt(0).toUpperCase()}
             </Avatar>
             <Box>
               <Typography fontWeight={700} sx={{ color: "#101828", lineHeight: 1.3 }}>

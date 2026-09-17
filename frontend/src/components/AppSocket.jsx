@@ -85,10 +85,20 @@ const AppSocket = ({ userId }) => {
     const seenMessagesRef = useRef(new Set());
     const activeConnectIdRef = useRef(0);
     const activeRoomIdRef = useRef(activeRoomId);
+    const locationRef = useRef(location.pathname);
+    const navigateRef = useRef(navigate);
 
     useEffect(() => {
         activeRoomIdRef.current = activeRoomId;
     }, [activeRoomId]);
+
+    useEffect(() => {
+        locationRef.current = location.pathname;
+    }, [location.pathname]);
+
+    useEffect(() => {
+        navigateRef.current = navigate;
+    }, [navigate]);
 
     useEffect(() => {
         let isComponentMounted = true;
@@ -163,7 +173,8 @@ const AppSocket = ({ userId }) => {
 
                             dispatch(receiveMessage(payload));
 
-                            const isChatPage = location.pathname.includes("/chat");
+                            const currentPath = locationRef.current || "";
+                            const isChatPage = currentPath.includes("/chat");
                             const isMe = String(payload.sender_id) === String(userId);
                             const msgRoomId = payload.room_id || payload.room;
 
@@ -186,8 +197,8 @@ const AppSocket = ({ userId }) => {
                                     }`,
                                     {
                                         onClick: () =>
-                                            navigate(
-                                                location.pathname.startsWith("/provider")
+                                            navigateRef.current(
+                                                currentPath.startsWith("/provider")
                                                     ? "/provider/chat"
                                                     : "/chat",
                                                 {
@@ -232,7 +243,6 @@ const AppSocket = ({ userId }) => {
             } catch (err) {
                 
                 // If it is not a cancellation and component is still mounted, schedule a retry.
-                // Note: performLogout will trigger a redirect, but we schedule a retry in case of transient network errors.
                 if (isComponentMounted && connectId === activeConnectIdRef.current) {
                     const delay = Math.min(
                         1000 * Math.pow(2, reconnectAttemptsRef.current),
@@ -257,7 +267,7 @@ const AppSocket = ({ userId }) => {
                 clearTimeout(reconnectTimeoutRef.current);
             }
         };
-    }, [userId, dispatch, location.pathname, navigate]);
+    }, [userId]);
 
     return null;
 };
