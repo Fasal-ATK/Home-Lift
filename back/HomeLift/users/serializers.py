@@ -2,7 +2,16 @@ from django.core.cache import cache   # ✅ REQUIRED
 from rest_framework import serializers
 from .models import CustomUser
 import re
-
+from providers.models import ProviderServiceRequest
+from .validators import (
+    validate_first_name,
+    validate_last_name,
+    validate_username_format,
+    validate_phone_format,
+    validate_email_format,
+    validate_password_complexity,
+    validate_login_password,
+)
 
 class UserSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(required=False, allow_blank=True)
@@ -17,6 +26,32 @@ class UserSerializer(serializers.ModelSerializer):
             'is_staff', 'is_provider', 'is_active', 'is_provider_active'
         ]
         read_only_fields = ['email']
+
+    def validate_first_name(self, value):
+        return validate_first_name(value)
+
+    def validate_last_name(self, value):
+        return validate_last_name(value)
+
+    def validate_username(self, value):
+        value = validate_username_format(value)
+        qs = CustomUser.objects.filter(username=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("This username is already taken. Please choose another username.")
+        return value
+
+    def validate_phone(self, value):
+        if not value or not str(value).strip():
+            return value  # Optional field
+        value = validate_phone_format(value, required=False)
+        qs = CustomUser.objects.filter(phone=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("This phone number is already registered to another account.")
+        return value
 
     def get_is_provider_active(self, obj):
         if not obj.is_provider:
@@ -59,7 +94,14 @@ class SignupSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['first_name', 'last_name', 'username', 'email', 'phone', 'password', 'otp']
 
+    def validate_first_name(self, value):
+        return validate_first_name(value)
+
+    def validate_last_name(self, value):
+        return validate_last_name(value)
+
     def validate_username(self, value):
+        value = validate_username_format(value)
         if CustomUser.objects.filter(username=value).exists():
             raise serializers.ValidationError({
                 "error": "username-exists",
@@ -68,6 +110,7 @@ class SignupSerializer(serializers.ModelSerializer):
         return value
 
     def validate_email(self, value):
+        value = validate_email_format(value)
         if CustomUser.objects.filter(email=value).exists():
             raise serializers.ValidationError({
                 "error": "email-exists",
@@ -76,12 +119,7 @@ class SignupSerializer(serializers.ModelSerializer):
         return value
 
     def validate_phone(self, value):
-        # Enforce exactly 10 digits for Indian phone numbers, allowing optional '+91' prefix
-        if not re.match(r'^(?:\+?91)?\d{10}$', value):
-            raise serializers.ValidationError({
-                "error": "invalid-phone",
-                "message": "Enter a valid 10‑digit phone number."
-            })
+        value = validate_phone_format(value, required=True)
         if CustomUser.objects.filter(phone=value).exists():
             raise serializers.ValidationError({
                 "error": "phone-exists",
@@ -90,17 +128,7 @@ class SignupSerializer(serializers.ModelSerializer):
         return value
 
     def validate_password(self, value):
-        if not re.search(r'[A-Za-z]', value) or not re.search(r'\d', value):
-            raise serializers.ValidationError({
-                "error": "password-weak",
-                "message": "Password must contain letters and numbers."
-            })
-        if len(value) < 8:
-            raise serializers.ValidationError({
-                "error": "password-short",
-                "message": "Password must be at least 8 characters long."
-            })
-        return value
+        return validate_password_complexity(value)
 
     def validate(self, attrs):
         email = attrs.get("email")
@@ -135,6 +163,12 @@ class SignupSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True)
+
+    def validate_email(self, value):
+        return validate_email_format(value)
+
+    def validate_password(self, value):
+        return validate_login_password(value)
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -172,6 +206,7 @@ class ResetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True, min_length=8)
 
     def validate_email(self, value):
+        value = validate_email_format(value)
         if not CustomUser.objects.filter(email=value).exists():
             raise serializers.ValidationError({
                 "error": "not-found",
@@ -180,12 +215,7 @@ class ResetPasswordSerializer(serializers.Serializer):
         return value
 
     def validate_new_password(self, value):
-        if not re.search(r'[A-Za-z]', value) or not re.search(r'\d', value):
-            raise serializers.ValidationError({
-                "error": "password-weak",
-                "message": "Password must contain letters and numbers."
-            })
-        return value
+        return validate_password_complexity(value)
 
     def save(self):
         email = self.validated_data["email"]
@@ -194,7 +224,7 @@ class ResetPasswordSerializer(serializers.Serializer):
         if not cache.get(f"otp_verified_forgot-password_{email}"):
             raise serializers.ValidationError({
                 "error": "otp-not-verified",
-                "message": "OTP verification required."
+                "message": "OTP verification is required before resetting your password. Please verify the OTP sent to your email."
             })
 
         user = CustomUser.objects.get(email=email)
@@ -229,16 +259,10 @@ class ChangePasswordSerializer(serializers.Serializer):
         if user.check_password(value):
             raise serializers.ValidationError({
                 "error": "same-password",
-                "message": "New password must be different."
+                "message": "New password must be different from your current password."
             })
 
-        if not re.search(r'[A-Za-z]', value) or not re.search(r'\d', value):
-            raise serializers.ValidationError({
-                "error": "password-weak",
-                "message": "Password must contain letters and numbers."
-            })
-
-        return value
+        return validate_password_complexity(value)
 
     def save(self):
         user = self.context['request'].user

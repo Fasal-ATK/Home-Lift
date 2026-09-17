@@ -10,6 +10,7 @@ import { useDispatch } from 'react-redux';
 import { authService } from '../../services/apiServices';
 import { loginSuccess } from '../../redux/slices/authSlice';
 import validateLoginForm from '../../utils/loginVal';
+import { getErrorMessage } from '../../utils/errorHelper';
 
 import { ShowToast } from '../../components/common/Toast'; 
 
@@ -33,7 +34,7 @@ function Login() {
     // Client-side validation
     const validationError = validateLoginForm({ email, password: pass });
     if (validationError) {
-      setFieldErrors(validationError);
+      setServerError(validationError);
       return;
     }
 
@@ -57,14 +58,14 @@ function Login() {
           // Field-specific errors
           if (backendData.email || backendData.password) {
             setFieldErrors({
-              email: backendData.email?.[0] || '',
-              password: backendData.password?.[0] || ''
+              email: Array.isArray(backendData.email) ? backendData.email[0] : (backendData.email || ''),
+              password: Array.isArray(backendData.password) ? backendData.password[0] : (backendData.password || '')
             });
           }
 
-          // General errors (like "Invalid credentials")
+          // General errors (like "No account found with this email.")
           setServerError(
-            backendData.detail || backendData.message || 'Login failed. Try again.'
+            getErrorMessage(backendData, 'Login failed. Try again.')
           );
         } else {
           setServerError('Invalid response from server.');

@@ -309,11 +309,12 @@ function Signup() {
               sx={{ mt: 2 }}
               {...register('pass1', { 
                 required: 'Password is required',
-                minLength: { value: 8, message: 'At least 8 characters' },
+                minLength: { value: 8, message: 'Password must be at least 8 characters long' },
+                maxLength: { value: 128, message: 'Password cannot exceed 128 characters' },
                 validate: {
-                  hasLetter: v => /[a-zA-Z]/.test(v) || 'Must include at least one letter',
-                  hasNumber: v => /\d/.test(v) || 'Must include at least one number',
-                  noSpaces: v => !/\s/.test(v) || 'Cannot contain spaces'
+                  hasLetter: v => /[a-zA-Z]/.test(v) || 'Password must include at least one letter',
+                  hasNumber: v => /\d/.test(v) || 'Password must include at least one number',
+                  noSpaces: v => !/\s/.test(v) || 'Password cannot contain spaces'
                 }
               })}
               error={!!formErrors.pass1}

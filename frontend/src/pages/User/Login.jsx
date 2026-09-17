@@ -33,23 +33,6 @@ function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const extractErrorMessage = (data) => {
-    if (!data) return "Something went wrong";
-    if (typeof data === "string") return data;
-    if (data.message) return data.message;
-    if (data.error) return data.error;
-    if (typeof data === "object") {
-      for (let key in data) {
-        const val = data[key];
-        if (Array.isArray(val) && val.length > 0) {
-          const first = val[0];
-          if (typeof first === "string") return first;
-        }
-      }
-    }
-    return "An unknown error occurred";
-  };
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
@@ -103,7 +86,7 @@ function Login() {
       ShowToast('OTP sent to your email', 'success');
       setShowOtpModal(true);
     } catch (err) {
-      setError(extractErrorMessage(err.response?.data) || "Failed to send OTP");
+      setError(getErrorMessage(err, "Failed to send OTP"));
     }
     setOtpLoading(false);
     // dispatch(stopLoading());
@@ -116,7 +99,7 @@ function Login() {
       await otpService.sendOtp({ email, purpose: 'forgot-password' });
       ShowToast('OTP resent successfully', 'success');
     } catch (err) {
-      setError(extractErrorMessage(err.response?.data) || "Failed to resend OTP");
+      setError(getErrorMessage(err, "Failed to resend OTP"));
     }
     setResending(false);
   };
@@ -135,7 +118,7 @@ function Login() {
       ShowToast('OTP verified! Please set your new password.', 'success');
       navigate('/forgot-password', { state: { email, otpVerified: true } });
     } catch (error) {
-      setError(extractErrorMessage(error.response?.data));
+      setError(getErrorMessage(error, "Failed to verify OTP"));
       setShowOtpModal(false);
     } finally {
       // dispatch(stopLoading());

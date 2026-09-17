@@ -11,6 +11,8 @@ import { otpService, authService } from '../../../services/apiServices';
 import { logout } from '../../../redux/slices/authSlice';
 import OtpModal from '../otp_modal';
 import { ShowToast } from '../../common/Toast';
+import { validatePassword, validateEmail } from '../../../utils/authValidation';
+import { getErrorMessage } from '../../../utils/errorHelper';
 
 function ForgotPassword() {
   const location = useLocation();
@@ -51,30 +53,14 @@ function ForgotPassword() {
     }
   }, [otpVerifiedFromLogin, emailFromLogin]);
 
-  const extractErrorMessage = (data) => {
-    if (!data) return "Something went wrong";
-    if (typeof data === "string") return data;
-    if (data.message) return data.message;
-    if (data.error) return data.error;
-    if (typeof data === "object") {
-      for (let key in data) {
-        const val = data[key];
-        if (Array.isArray(val) && val.length > 0) {
-          const first = val[0];
-          if (typeof first === "string") return first;
-        }
-      }
-    }
-    return "An unknown error occurred";
-  };
-
   // Step 1: Send OTP to email (Forgot Password only)
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!email) {
-      setError('Please enter your email');
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setError(emailError);
       return;
     }
 
@@ -82,8 +68,9 @@ function ForgotPassword() {
     try {
       await otpService.sendOtp({ email, purpose: 'forgot-password' });
       setShowOtpModal(true);
+      ShowToast('OTP sent to your email', 'success');
     } catch (err) {
-      setError(extractErrorMessage(err.response?.data) || "Failed to send OTP");
+      setError(getErrorMessage(err, "Failed to send OTP"));
     }
     setLoading(false);
   };
@@ -95,7 +82,7 @@ function ForgotPassword() {
       await otpService.sendOtp({ email, purpose: 'forgot-password' });
       ShowToast('OTP resent successfully', 'success');
     } catch (err) {
-      setError(extractErrorMessage(err.response?.data) || "Failed to resend OTP");
+      setError(getErrorMessage(err, "Failed to resend OTP"));
     }
     setResending(false);
   };
@@ -108,7 +95,7 @@ function ForgotPassword() {
       setShowOtpModal(false);
       setStep(3); // Move to password reset step
     } catch (error) {
-      setError(extractErrorMessage(error.response?.data) || 'Invalid OTP');
+      setError(getErrorMessage(error, 'Invalid OTP'));
       setShowOtpModal(false);
     }
   };
@@ -129,8 +116,14 @@ function ForgotPassword() {
       return;
     }
 
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long');
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    if (mode === 'change' && currentPassword === newPassword) {
+      setError('New password must be different from your current password');
       return;
     }
 
@@ -163,7 +156,7 @@ function ForgotPassword() {
         setTimeout(() => navigate('/login'), 1500);
       }
     } catch (err) {
-      setError(extractErrorMessage(err.response?.data) || 'Failed to update password');
+      setError(getErrorMessage(err, 'Failed to update password'));
     }
     setLoading(false);
   };
