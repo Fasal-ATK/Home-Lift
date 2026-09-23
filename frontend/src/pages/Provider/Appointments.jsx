@@ -45,7 +45,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import DirectionsIcon from "@mui/icons-material/Directions";
 
 import { useNavigate } from "react-router-dom";
-import { providerJobService } from "../../services/apiServices";
+import { providerJobService, bookingService } from "../../services/apiServices";
 import api from "../../API/apiConfig";
 import { ShowToast } from "../../components/common/Toast";
 import useDebounce from "../../hooks/useDebounce";
@@ -206,6 +206,7 @@ export default function WeekScheduleDemo() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [initiatingChatId, setInitiatingChatId] = useState(null);
 
   // Live timeline tracker effect
   useEffect(() => {
@@ -434,15 +435,38 @@ export default function WeekScheduleDemo() {
   };
 
   // Chat Redirect helper
-  const handleChatWithClient = (booking) => {
-    if (booking.user_details || booking.user) {
-      navigate("/provider/chat", {
-        state: {
-          prefilledRecipient: booking.user_username || booking.user_email || booking.user,
-        },
-      });
-    } else {
-      ShowToast("Chat details unavailable for this booking.", "warning");
+  const handleChatWithClient = async (booking) => {
+    if (!booking) {
+      ShowToast("Booking details unavailable.", "warning");
+      return;
+    }
+    const customerId =
+      booking.user?.id ||
+      (typeof booking.user === "number" || typeof booking.user === "string" ? booking.user : null) ||
+      booking.customer_id;
+
+    if (!customerId) {
+      ShowToast("Customer details unavailable for chat.", "warning");
+      return;
+    }
+
+    try {
+      setInitiatingChatId(booking.id);
+      const res = await bookingService.initiateChat(customerId, booking.id);
+      if (res && res.id) {
+        navigate("/provider/chat", {
+          state: {
+            roomId: res.id,
+            prefilledRecipient: booking.user_username || booking.user_email || booking.full_name || customerId,
+          },
+        });
+      } else {
+        throw new Error("Could not create or retrieve chat room.");
+      }
+    } catch (err) {
+      ShowToast(err.response?.data?.detail || err.message || "Failed to start chat with client.", "error");
+    } finally {
+      setInitiatingChatId(null);
     }
   };
 
@@ -797,7 +821,7 @@ export default function WeekScheduleDemo() {
                           left: `${leftOffset}%`,
                           width: `${columnPercent}%`,
                           top: currentHourTopPx,
-                          height: 1,
+                          height: "2px",
                           bgcolor: "error.main",
                           zIndex: 10,
                           pointerEvents: "none",
@@ -934,7 +958,7 @@ export default function WeekScheduleDemo() {
                     left: 20,
                     right: 20,
                     top: currentHourTopPx + 20,
-                    height: 1.5,
+                    height: "2px",
                     bgcolor: "error.main",
                     zIndex: 10,
                     pointerEvents: "none",
@@ -1267,22 +1291,29 @@ export default function WeekScheduleDemo() {
 
                                 {/* Chat icon button */}
                                 <Tooltip title="Chat with client" placement="top">
-                                  <IconButton
-                                    size="small"
-                                    onClick={(e) => { e.stopPropagation(); handleChatWithClient(b); }}
-                                    sx={{
-                                      bgcolor: "#eff6ff",
-                                      color: "#2563eb",
-                                      border: "1.5px solid #bfdbfe",
-                                      borderRadius: 2,
-                                      width: 34,
-                                      height: 34,
-                                      flexShrink: 0,
-                                      "&:hover": { bgcolor: "#dbeafe" },
-                                    }}
-                                  >
-                                    <ChatIcon sx={{ fontSize: 16 }} />
-                                  </IconButton>
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      disabled={initiatingChatId === b?.id}
+                                      onClick={(e) => { e.stopPropagation(); handleChatWithClient(b); }}
+                                      sx={{
+                                        bgcolor: "#eff6ff",
+                                        color: "#2563eb",
+                                        border: "1.5px solid #bfdbfe",
+                                        borderRadius: 2,
+                                        width: 34,
+                                        height: 34,
+                                        flexShrink: 0,
+                                        "&:hover": { bgcolor: "#dbeafe" },
+                                      }}
+                                    >
+                                      {initiatingChatId === b?.id ? (
+                                        <CircularProgress size={16} color="inherit" />
+                                      ) : (
+                                        <ChatIcon sx={{ fontSize: 16 }} />
+                                      )}
+                                    </IconButton>
+                                  </span>
                                 </Tooltip>
 
                                 {/* Invoice icon button */}
@@ -1661,21 +1692,28 @@ export default function WeekScheduleDemo() {
 
                 {/* 3. Chat with client — icon only */}
                 <Tooltip title="Chat with client" placement="top">
-                  <IconButton
-                    onClick={() => handleChatWithClient(selectedEvent.rawBooking)}
-                    sx={{
-                      bgcolor: "#eff6ff",
-                      color: "#2563eb",
-                      border: "1.5px solid #bfdbfe",
-                      borderRadius: 2,
-                      width: 42,
-                      height: 42,
-                      flexShrink: 0,
-                      "&:hover": { bgcolor: "#dbeafe" },
-                    }}
-                  >
-                    <ChatIcon sx={{ fontSize: 19 }} />
-                  </IconButton>
+                  <span>
+                    <IconButton
+                      disabled={initiatingChatId === selectedEvent.rawBooking?.id}
+                      onClick={() => handleChatWithClient(selectedEvent.rawBooking)}
+                      sx={{
+                        bgcolor: "#eff6ff",
+                        color: "#2563eb",
+                        border: "1.5px solid #bfdbfe",
+                        borderRadius: 2,
+                        width: 42,
+                        height: 42,
+                        flexShrink: 0,
+                        "&:hover": { bgcolor: "#dbeafe" },
+                      }}
+                    >
+                      {initiatingChatId === selectedEvent.rawBooking?.id ? (
+                        <CircularProgress size={18} color="inherit" />
+                      ) : (
+                        <ChatIcon sx={{ fontSize: 19 }} />
+                      )}
+                    </IconButton>
+                  </span>
                 </Tooltip>
 
                 {/* 4. Download Invoice — icon only */}
