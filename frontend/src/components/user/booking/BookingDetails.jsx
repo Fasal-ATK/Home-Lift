@@ -331,33 +331,9 @@ export default function BookingDetails() {
                 {booking.provider_contact && (
                   <Grid item xs={12}>
                     <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f5f3ff', border: '1px solid', borderColor: '#ddd6fe' }}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                        <Typography variant="caption" fontWeight={800} color="#7c3aed" sx={{ textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.6rem' }}>
-                          Provider Assigned
-                        </Typography>
-                        {booking.status !== 'cancelled' && (
-                          <Button
-                            size="small"
-                            variant="contained"
-                            startIcon={<ChatIcon sx={{ fontSize: '13px !important' }} />}
-                            onClick={handleChat}
-                            disabled={busy}
-                            sx={{
-                              textTransform: 'none',
-                              fontWeight: 700,
-                              fontSize: '0.68rem',
-                              borderRadius: 1.5,
-                              bgcolor: '#7c3aed',
-                              '&:hover': { bgcolor: '#6d28d9' },
-                              py: 0.2,
-                              px: 1.2,
-                              minWidth: 0,
-                            }}
-                          >
-                            Chat
-                          </Button>
-                        )}
-                      </Stack>
+                      <Typography variant="caption" fontWeight={800} color="#7c3aed" sx={{ textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.6rem', display: 'block', mb: 1 }}>
+                        Provider Assigned
+                      </Typography>
                       <Grid container spacing={1.5}>
                         <Grid item xs={12} sm={4}>
                           <InfoRow icon={<PersonIcon />} label="Name" value={booking.provider_contact.name || `@${booking.provider_contact.username}`} />
