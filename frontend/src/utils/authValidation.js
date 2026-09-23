@@ -6,7 +6,7 @@ export const PASSWORD_MAX_LENGTH = 128;
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const PHONE_REGEX = /^\d{10}$/;
 export const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/;
-export const NAME_REGEX = /^[A-Za-z][A-Za-z\s'-]{1,29}$/;
+export const NAME_REGEX = /^[A-Za-z][A-Za-z\s]{1,29}$/;
 
 /**
  * Validate email address format and presence
@@ -84,14 +84,14 @@ export function validateSignupForm({
   if (!fname?.trim()) {
     errors.push('First name is required');
   } else if (!NAME_REGEX.test(fname.trim())) {
-    errors.push('First name can only contain letters, spaces, hyphens, or apostrophes (2–30 chars)');
+    errors.push('First name must start with a letter and can only contain letters and spaces (2–30 chars)');
   }
 
   // --- Last Name ---
   if (!lname?.trim()) {
     errors.push('Last name is required');
   } else if (!NAME_REGEX.test(lname.trim())) {
-    errors.push('Last name can only contain letters, spaces, hyphens, or apostrophes (2–30 chars)');
+    errors.push('Last name must start with a letter and can only contain letters and spaces (2–30 chars)');
   }
 
   // --- Username ---

@@ -14,14 +14,14 @@ import {
 const VALIDATORS = {
   first_name: (v) => {
     if (!v || !v.trim()) return "First name is required.";
-    if (!/^[A-Za-z\s'-]+$/.test(v.trim())) return "First name can only contain letters, spaces, hyphens, or apostrophes.";
+    if (!/^[A-Za-z][A-Za-z\s]*$/.test(v.trim())) return "First name must start with a letter and can only contain letters and spaces.";
     if (v.trim().length < 2) return "First name must be at least 2 characters.";
     if (v.trim().length > 50) return "First name must be at most 50 characters.";
     return "";
   },
   last_name: (v) => {
     if (!v || !v.trim()) return "Last name is required.";
-    if (!/^[A-Za-z\s'-]+$/.test(v.trim())) return "Last name can only contain letters, spaces, hyphens, or apostrophes.";
+    if (!/^[A-Za-z][A-Za-z\s]*$/.test(v.trim())) return "Last name must start with a letter and can only contain letters and spaces.";
     if (v.trim().length < 2) return "Last name must be at least 2 characters.";
     if (v.trim().length > 50) return "Last name must be at most 50 characters.";
     return "";
@@ -73,7 +73,12 @@ export default function ReusableFormModal({
     } else if (name === "phone") {
       filteredValue = value.replace(/[^0-9+]/g, '');
     } else if (name === "first_name" || name === "last_name") {
-      filteredValue = value.replace(/[^A-Za-z\s'-]/g, '');
+      // First char must be a letter; subsequent chars can be letters or spaces
+      let sanitized = value.replace(/[^A-Za-z\s]/g, '');
+      if (sanitized.length > 0 && !/^[A-Za-z]/.test(sanitized)) {
+        sanitized = sanitized.replace(/^[^A-Za-z]+/, '');
+      }
+      filteredValue = sanitized;
     }
 
     setFormData((prev) => ({ ...prev, [name]: filteredValue }));

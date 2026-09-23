@@ -192,13 +192,17 @@ function Signup() {
                   {...register('fname', { 
                     required: 'First name is required',
                     pattern: {
-                      value: /^[A-Za-z]+(?: [A-Za-z]+)?$/,
-                      message: 'Only letters and at most one space allowed'
+                      value: /^[A-Za-z][A-Za-z\s]{1,29}$/,
+                      message: 'Must start with a letter, letters and spaces only (2–30 chars)'
                     }
                   })}
                   error={!!formErrors.fname}
                   helperText={formErrors.fname?.message}
-                  onInput={(e) => { e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, ''); }}
+                  onInput={(e) => {
+                    let v = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                    if (v.length > 0 && !/^[A-Za-z]/.test(v)) v = v.replace(/^[^A-Za-z]+/, '');
+                    e.target.value = v;
+                  }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -208,13 +212,17 @@ function Signup() {
                   {...register('lname', { 
                     required: 'Last name is required',
                     pattern: {
-                      value: /^[A-Za-z]+(?: [A-Za-z]+)?$/,
-                      message: 'Only letters and at most one space allowed'
+                      value: /^[A-Za-z][A-Za-z\s]{1,29}$/,
+                      message: 'Must start with a letter, letters and spaces only (2–30 chars)'
                     }
                   })}
                   error={!!formErrors.lname}
                   helperText={formErrors.lname?.message}
-                  onInput={(e) => { e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, ''); }}
+                  onInput={(e) => {
+                    let v = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                    if (v.length > 0 && !/^[A-Za-z]/.test(v)) v = v.replace(/^[^A-Za-z]+/, '');
+                    e.target.value = v;
+                  }}
                 />
               </Grid>
             </Grid>
