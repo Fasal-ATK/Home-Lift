@@ -45,6 +45,8 @@ import StarIcon from "@mui/icons-material/Star";
 import CancelIcon from "@mui/icons-material/Cancel";
 import PaymentIcon from "@mui/icons-material/Payment";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ChatIcon from "@mui/icons-material/Chat";
+import DescriptionIcon from "@mui/icons-material/Description";
 import { getErrorMessage } from "../../../utils/errorHelper";
 
 const STATUS_CONFIG = {
@@ -119,10 +121,49 @@ export default function BookingDetails() {
     setBusy(true);
     try {
       await dispatch(updateBooking({ id: bookingId, data: { status: "cancelled" } })).unwrap();
+      ShowToast("Booking cancelled successfully.", "info");
       await dispatch(fetchBookings());
       await dispatch(fetchBookingDetails(bookingId));
-    } catch { /* booking cancellation failed silently */ }
-    finally { setBusy(false); }
+    } catch (err) {
+      ShowToast(getErrorMessage(err, "Failed to cancel booking."), "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleChat = async () => {
+    const providerId = booking?.provider || booking?.provider_contact?.id;
+    if (!providerId) {
+      ShowToast("No provider assigned to this booking yet.", "info");
+      return;
+    }
+    setBusy(true);
+    try {
+      const response = await bookingService.initiateChat(providerId, booking.id);
+      navigate("/chat", { state: { roomId: response.id } });
+    } catch (err) {
+      ShowToast(err.response?.data?.detail || err.message || "Failed to start chat.", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    try {
+      ShowToast("Downloading invoice...", "info");
+      const blob = await bookingService.downloadInvoice(booking.id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Invoice_${booking.id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      ShowToast("Invoice downloaded successfully!", "success");
+    } catch {
+      ShowToast("Invoice download failed. Please try again.", "error");
+    }
   };
 
   const openPayModal = async (type) => {
@@ -290,9 +331,33 @@ export default function BookingDetails() {
                 {booking.provider_contact && (
                   <Grid item xs={12}>
                     <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f5f3ff', border: '1px solid', borderColor: '#ddd6fe' }}>
-                      <Typography variant="caption" fontWeight={800} color="#7c3aed" sx={{ textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.6rem', display: 'block', mb: 1 }}>
-                        Provider Assigned
-                      </Typography>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                        <Typography variant="caption" fontWeight={800} color="#7c3aed" sx={{ textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.6rem' }}>
+                          Provider Assigned
+                        </Typography>
+                        {booking.status !== 'cancelled' && (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            startIcon={<ChatIcon sx={{ fontSize: '13px !important' }} />}
+                            onClick={handleChat}
+                            disabled={busy}
+                            sx={{
+                              textTransform: 'none',
+                              fontWeight: 700,
+                              fontSize: '0.68rem',
+                              borderRadius: 1.5,
+                              bgcolor: '#7c3aed',
+                              '&:hover': { bgcolor: '#6d28d9' },
+                              py: 0.2,
+                              px: 1.2,
+                              minWidth: 0,
+                            }}
+                          >
+                            Chat
+                          </Button>
+                        )}
+                      </Stack>
                       <Grid container spacing={1.5}>
                         <Grid item xs={12} sm={4}>
                           <InfoRow icon={<PersonIcon />} label="Name" value={booking.provider_contact.name || `@${booking.provider_contact.username}`} />
@@ -462,6 +527,42 @@ export default function BookingDetails() {
                     sx={{ textTransform: "none", fontWeight: 600, fontSize: '0.8rem', py: 1, borderRadius: 2 }}
                   >
                     Rate & Review
+                  </Button>
+                )}
+
+                {Boolean(booking.provider || booking.provider_contact) && booking.status !== "cancelled" && (
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={handleChat}
+                    disabled={busy}
+                    startIcon={<ChatIcon />}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      py: 1,
+                      borderRadius: 2,
+                      borderColor: '#6366f1',
+                      color: '#6366f1',
+                      '&:hover': { borderColor: '#4f46e5', bgcolor: 'rgba(99, 102, 241, 0.04)' }
+                    }}
+                  >
+                    Chat with Provider
+                  </Button>
+                )}
+
+                {booking.status !== "pending" && booking.status !== "cancelled" && (
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    color="inherit"
+                    onClick={handleDownloadInvoice}
+                    disabled={busy}
+                    startIcon={<DescriptionIcon />}
+                    sx={{ textTransform: "none", fontWeight: 600, fontSize: '0.8rem', borderColor: 'grey.300', color: 'text.secondary', py: 1, borderRadius: 2 }}
+                  >
+                    Download Invoice
                   </Button>
                 )}
 

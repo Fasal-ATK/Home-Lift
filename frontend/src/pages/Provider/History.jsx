@@ -5,6 +5,7 @@ import { bookingService } from "../../services/apiServices";
 import { fetchMyAppointments } from "../../redux/slices/provider/providerJobSlice";
 import { selectMyAppointmentsTotalCount } from "../../redux/slices/provider/providerJobSlice";
 import useDebounce from "../../hooks/useDebounce";
+import { ShowToast } from "../../components/common/Toast";
 import {
   Box, Typography, Grid, Paper, Chip, Divider, Dialog, DialogTitle,
   DialogContent, DialogActions, Button, Avatar, Stack, IconButton,
@@ -264,11 +265,28 @@ const JobDetailDialog = ({ job, open, onClose }) => {
           fullWidth
           startIcon={<ChatBubbleOutlineIcon />}
           onClick={async () => {
+            const customerId =
+              job?.user?.id ||
+              (typeof job?.user === "number" || typeof job?.user === "string" ? job.user : null) ||
+              job?.customer_id;
+            if (!customerId) {
+              ShowToast("Customer details unavailable for chat.", "warning");
+              return;
+            }
             try {
-              const res = await bookingService.initiateChat(job.user, job.id);
-              navigate("/provider/chat", { state: { roomId: res.id } });
+              const res = await bookingService.initiateChat(customerId, job.id);
+              if (res && res.id) {
+                navigate("/provider/chat", {
+                  state: {
+                    roomId: res.id,
+                    prefilledRecipient: job?.user_username || job?.user_email || job?.full_name || customerId,
+                  },
+                });
+              } else {
+                throw new Error("Could not retrieve chat room.");
+              }
             } catch (err) {
-              alert(err.response?.data?.detail || err.message || "Failed to start chat.");
+              ShowToast(err.response?.data?.detail || err.message || "Failed to start chat.", "error");
             }
           }}
           sx={{

@@ -1,7 +1,7 @@
 // src/pages/Chat/ChatPage.jsx
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -243,6 +243,9 @@ const RoomItem = ({ room, isActive, onClick, currentUserId, isOnline }) => {
 export default function ChatPage() {
   const dispatch = useDispatch();
   const location = useLocation();
+  const navigate = useNavigate();
+  const initialNavHandledRef = useRef(false);
+
   const { user } = useSelector((state) => state.auth);
   const { rooms, messages, activeRoomId, loading, onlineUsers = [] } = useSelector(
     (state) => state.chat
@@ -255,18 +258,43 @@ export default function ChatPage() {
   const inputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  const navRoomId = location.state?.roomId;
-
   useEffect(() => {
     dispatch(fetchChatRooms());
+  }, [dispatch]);
+
+  // Initial room selection from navigation state (run once when entering with state)
+  useEffect(() => {
+    if (initialNavHandledRef.current) return;
+
+    const navRoomId = location.state?.roomId;
+    const prefilledRecipient = location.state?.prefilledRecipient;
+
     if (navRoomId) {
-      dispatch(setActiveRoom(navRoomId));
-      dispatch(fetchMessages(navRoomId));
+      const parsedId = Number(navRoomId) || navRoomId;
+      dispatch(setActiveRoom(parsedId));
+      dispatch(fetchMessages(parsedId));
+      initialNavHandledRef.current = true;
+      // Clean up history state so the user can freely go back to all chats
+      navigate(location.pathname, { replace: true, state: {} });
+    } else if (prefilledRecipient && rooms && rooms.length > 0) {
+      const needle = String(prefilledRecipient).toLowerCase();
+      const found = rooms.find(
+        (r) =>
+          String(r.other_user_name || "").toLowerCase().includes(needle) ||
+          String(r.other_user_id) === needle
+      );
+      if (found) {
+        dispatch(setActiveRoom(found.id));
+        dispatch(fetchMessages(found.id));
+        initialNavHandledRef.current = true;
+        navigate(location.pathname, { replace: true, state: {} });
+      }
     }
-  }, [dispatch, navRoomId]);
+  }, [location.state, rooms, dispatch, navigate, location.pathname]);
 
   // Auto-scroll to latest message
-  const activeMessages = messages[activeRoomId];
+  const activeMessages =
+    messages[activeRoomId] || messages[String(activeRoomId)] || [];
   const messageCount = activeMessages?.length || 0;
   useEffect(() => {
     if (containerRef.current) {
@@ -321,7 +349,9 @@ export default function ChatPage() {
     });
   };
 
-  const activeRoom = rooms.find((r) => r.id === activeRoomId);
+  const activeRoom = rooms.find(
+    (r) => r.id === activeRoomId || String(r.id) === String(activeRoomId)
+  );
   const otherName = activeRoom?.other_user_name || "…";
 
   const filteredRooms = rooms.filter((r) =>
@@ -444,14 +474,16 @@ export default function ChatPage() {
               backdropFilter: "blur(12px)",
             }}
           >
-            {/* Mobile back button */}
-            <IconButton
-              onClick={handleBack}
-              sx={{ display: { xs: "flex", md: "none" }, mr: -1 }}
-              size="small"
-            >
-              <ArrowBackIcon />
-            </IconButton>
+            {/* Mobile / responsive back button */}
+            <Tooltip title="Back to all conversations">
+              <IconButton
+                onClick={handleBack}
+                sx={{ display: { xs: "flex", md: "none" }, mr: -0.5 }}
+                size="small"
+              >
+                <ArrowBackIcon />
+              </IconButton>
+            </Tooltip>
 
             <Avatar
               src={activeRoom?.other_user_avatar || undefined}

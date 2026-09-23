@@ -31,8 +31,14 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import DoneAllIcon from "@mui/icons-material/DoneAll";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import TimerIcon from "@mui/icons-material/Timer";
+import ChatIcon from "@mui/icons-material/Chat";
+import CancelIcon from "@mui/icons-material/Cancel";
+import DescriptionIcon from "@mui/icons-material/Description";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Loader from "../../common/Loader";
+import ConfirmModal from "../../common/Confirm";
+import { ShowToast } from "../../common/Toast";
+import { bookingService } from "../../../services/apiServices";
 import { useDispatch, useSelector } from "react-redux";
 import {
   jobsSelectors,
@@ -261,6 +267,71 @@ export default function ProviderJobDetail() {
     } finally { setCompleting(false); }
   };
 
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+
+  const handleChat = async () => {
+    const customerId = booking?.user?.id || booking?.user;
+    if (!customerId) {
+      if (booking?.user_username || booking?.user_email) {
+        navigate("/provider/chat", {
+          state: { prefilledRecipient: booking.user_username || booking.user_email },
+        });
+        return;
+      }
+      ShowToast("Customer details unavailable for chat.", "warning");
+      return;
+    }
+    try {
+      const res = await bookingService.initiateChat(customerId, booking.id);
+      navigate("/provider/chat", { state: { roomId: res.id } });
+    } catch (err) {
+      if (booking?.user_username || booking?.user_email) {
+        navigate("/provider/chat", {
+          state: { prefilledRecipient: booking.user_username || booking.user_email },
+        });
+      } else {
+        ShowToast(err.response?.data?.detail || err.message || "Failed to start chat.", "error");
+      }
+    }
+  };
+
+  const onCancel = async () => {
+    setCancelling(true);
+    try {
+      const action = await dispatch(updateBookingStatus({ id, status: "cancelled" }));
+      if (updateBookingStatus.fulfilled.match(action)) {
+        setSnack({ open: true, message: "Booking has been cancelled.", severity: "warning" });
+        setCancelModalOpen(false);
+        dispatch(fetchJobDetail(Number(id)));
+      } else {
+        setSnack({ open: true, message: action.payload || "Failed to cancel booking", severity: "error" });
+      }
+    } catch (err) {
+      setSnack({ open: true, message: "An error occurred while cancelling the booking", severity: "error" });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    try {
+      ShowToast("Generating invoice PDF...", "info");
+      const blob = await bookingService.downloadInvoice(booking.id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Invoice_Booking_${booking.id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      ShowToast("Invoice downloaded successfully!", "success");
+    } catch (err) {
+      ShowToast("Could not download invoice. File unavailable.", "error");
+    }
+  };
+
   const closeSnack = () => setSnack((s) => ({ ...s, open: false }));
 
   // ── Loading / Error / Empty states ──
@@ -438,24 +509,48 @@ export default function ProviderJobDetail() {
       >
         {/* Customer Details */}
         <SectionCard title="Customer Details" icon={<PersonIcon fontSize="small" />} accentColor="#6366f1">
-          <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-            <Avatar
-              sx={{
-                width: 52,
-                height: 52,
-                fontWeight: 800,
-                fontSize: "1.2rem",
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-              }}
-            >
-              {String(customer).charAt(0).toUpperCase()}
-            </Avatar>
-            <Box>
-              <Typography fontWeight={800} fontSize="1rem">{customer}</Typography>
-              {booking.full_name && booking.full_name !== customer && (
-                <Typography variant="caption" color="text.secondary">{booking.full_name}</Typography>
-              )}
-            </Box>
+          <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" mb={2}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  width: 52,
+                  height: 52,
+                  fontWeight: 800,
+                  fontSize: "1.2rem",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                }}
+              >
+                {String(customer).charAt(0).toUpperCase()}
+              </Avatar>
+              <Box>
+                <Typography fontWeight={800} fontSize="1rem">{customer}</Typography>
+                {booking.full_name && booking.full_name !== customer && (
+                  <Typography variant="caption" color="text.secondary">{booking.full_name}</Typography>
+                )}
+              </Box>
+            </Stack>
+
+            {booking.status !== "cancelled" && (
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<ChatIcon sx={{ fontSize: "14px !important" }} />}
+                onClick={handleChat}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  borderRadius: 2,
+                  borderColor: "#6366f1",
+                  color: "#6366f1",
+                  py: 0.4,
+                  px: 1.5,
+                  "&:hover": { borderColor: "#4f46e5", bgcolor: "rgba(99, 102, 241, 0.04)" },
+                }}
+              >
+                Chat
+              </Button>
+            )}
           </Stack>
           <Stack spacing={1.5}>
             {booking.phone && (
@@ -781,9 +876,72 @@ export default function ProviderJobDetail() {
                 {completing ? <CircularProgress size={18} color="inherit" /> : "Complete Job"}
               </Button>
             )}
+
+            {booking.status !== "cancelled" && (
+              <Button
+                variant="outlined"
+                onClick={handleChat}
+                startIcon={<ChatIcon />}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  borderColor: "#6366f1",
+                  color: "#6366f1",
+                  "&:hover": { borderColor: "#4f46e5", bgcolor: "rgba(99, 102, 241, 0.04)" },
+                }}
+              >
+                Chat
+              </Button>
+            )}
+
+            {booking.status !== "pending" && booking.status !== "cancelled" && (
+              <Button
+                variant="outlined"
+                onClick={handleDownloadInvoice}
+                startIcon={<DescriptionIcon />}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  borderColor: "grey.300",
+                  color: "text.secondary",
+                }}
+              >
+                Invoice
+              </Button>
+            )}
+
+            {(booking.status === "pending" || booking.status === "confirmed") && (
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => setCancelModalOpen(true)}
+                disabled={cancelling || isAccepting || starting || completing}
+                startIcon={cancelling ? <CircularProgress size={16} color="inherit" /> : <CancelIcon />}
+                sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2 }}
+              >
+                {booking.status === "pending" ? "Decline" : "Cancel"}
+              </Button>
+            )}
           </Stack>
         </Stack>
       </Paper>
+
+      {/* ── Confirm Cancel / Decline Modal ── */}
+      <ConfirmModal
+        open={cancelModalOpen}
+        onClose={() => setCancelModalOpen(false)}
+        onConfirm={onCancel}
+        title={booking.status === "pending" ? "Decline Request" : "Cancel Booking"}
+        message={
+          booking.status === "pending"
+            ? "Are you sure you want to decline this job request? It will be marked as cancelled."
+            : "Are you sure you want to cancel this confirmed booking? The customer will be notified."
+        }
+        confirmLabel={booking.status === "pending" ? "Decline Request" : "Cancel Booking"}
+        color="danger"
+      />
 
       {/* ── Snackbar ── */}
       <Snackbar
