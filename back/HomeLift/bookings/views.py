@@ -551,7 +551,20 @@ class BookingReviewCreateView(APIView):
             # Send notification to provider
             try:
                 from notifications.utils import send_user_notification
-                send_user_notification(booking.provider.id, f"You received a new {serializer.validated_data.get('rating')}-star review from {request.user.username}.")
+                rating = serializer.validated_data.get('rating', 0)
+                stars = '⭐' * int(rating)
+                customer_name = request.user.get_full_name() or request.user.username
+                service_name = getattr(booking.service, 'name', 'your service')
+                send_user_notification(
+                    booking.provider.id,
+                    (
+                        f"{customer_name} left you a {rating}-star review {stars} for '{service_name}' "
+                        f"(Booking #{booking.id}). Check your profile to see what they said!"
+                    ),
+                    title=f"{stars} New {rating}-Star Review!",
+                    notification_type="booking",
+                    payload={"booking_id": booking.id},
+                )
             except Exception as e:
                 logger.error(f"Failed to send review notification: {e}")
 

@@ -59,7 +59,18 @@ def stripe_webhook(request):
                 
                 logger.info(f"✅ Booking #{booking_id} marked as paid.")
                 if user_id:
-                    send_user_notification(user_id, f"Payment of ₹{intent['amount']/100.0} was successful!")
+                    payment_label = "remaining balance" if payment_type == "remaining" else "advance"
+                    amount_inr = intent['amount'] / 100.0
+                    send_user_notification(
+                        user_id,
+                        (
+                            f"Your {payment_label} payment of ₹{amount_inr:.2f} for booking #{booking_id} "
+                            f"was successful! You can view your booking details in the bookings section."
+                        ),
+                        title="💳 Payment Successful",
+                        notification_type="payment",
+                        payload={"booking_id": booking_id, "payment_type": payment_type},
+                    )
 
             except Booking.DoesNotExist:
                 logger.error(f"❌ Webhook error: Booking #{booking_id} not found.")

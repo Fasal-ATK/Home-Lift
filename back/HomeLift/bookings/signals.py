@@ -38,8 +38,13 @@ def safe_create_notification(recipient, **kwargs):
                 if not User.objects.filter(pk=recipient.pk).exists():
                     raise ValueError(f"recipient id={recipient.pk} does not exist")
                 Notification.objects.create(recipient=recipient, **kwargs)
-                # Trigger WebSocket notification
-                send_user_notification(recipient.id, kwargs.get('message', ''))
+                # Trigger WebSocket notification with title + type
+                send_user_notification(
+                    recipient.id,
+                    kwargs.get('message', ''),
+                    title=kwargs.get('title', ''),
+                    notification_type=kwargs.get('type', 'system'),
+                )
                 return
 
             # If recipient is None, route to system user
@@ -93,24 +98,56 @@ def booking_pre_save(sender, instance, **kwargs):
 @receiver(post_save, sender=Booking)
 def booking_post_save(sender, instance, created, **kwargs):
     """
-    Handle booking state transitions:
-      - when status -> 'cancelled' : notify booking.user (system -> user)
-      - when status -> 'confirmed' : notify booking.user (provider -> user) and provider (system -> provider)
-    Uses safe_create_notification which schedules creation after transaction commit.
+    Handle booking state transitions and send rich notifications:
+      - new booking created : notify provider (user -> provider)
+      - status -> 'cancelled' : notify booking.user (system -> user)
+      - status -> 'confirmed' : notify booking.user (provider -> user) and provider (system -> provider)
+      - status -> 'completed' : notify booking.user (system -> user)
     """
     try:
         prev_status = getattr(instance, "_pre_save_status", None)
         booking_ct = ContentType.objects.get_for_model(instance)
+        service_name = getattr(instance.service, "name", "service")
+        booking_date = instance.booking_date
+        booking_time = instance.booking_time
+
+        # ---------- new booking created ----------
+        if created:
+            provider = getattr(instance, "provider", None)
+            if provider:
+                try:
+                    customer_name = (
+                        instance.full_name
+                        or (instance.user.get_full_name() if hasattr(instance.user, "get_full_name") else None)
+                        or getattr(instance.user, "username", "A customer")
+                    )
+                    title_p = "📋 New Booking Request"
+                    message_p = (
+                        f"You have a new booking request for '{service_name}' "
+                        f"on {booking_date} at {booking_time} from {customer_name}. "
+                        f"Open your job requests to accept or decline."
+                    )
+                    safe_create_notification(
+                        recipient=provider,
+                        sender=instance.user,
+                        type='booking',
+                        title=title_p,
+                        message=message_p,
+                        content_type=booking_ct,
+                        object_id=instance.pk
+                    )
+                except Exception:
+                    logger.exception("Failed to schedule new-booking notification for provider, booking pk=%s", instance.pk)
 
         # ---------- cancelled ----------
         if instance.status == "cancelled" and prev_status != "cancelled":
             # 1. Notify User
             try:
-                service_name = getattr(instance.service, "name", "service")
-                title = "Booking Cancelled"
+                title = "❌ Booking Cancelled"
                 message = (
-                    f"You have cancelled booking #{instance.pk} for {service_name} "
-                    f"on {instance.booking_date} at {instance.booking_time}."
+                    f"Your booking #{instance.pk} for '{service_name}' "
+                    f"on {booking_date} at {booking_time} has been cancelled. "
+                    f"If you paid an advance, a refund will be credited to your wallet shortly."
                 )
 
                 safe_create_notification(
@@ -144,14 +181,14 @@ def booking_post_save(sender, instance, created, **kwargs):
                             status='completed',
                             description=f"Refund for cancelled booking #{instance.pk}"
                         )
-                        
+
                         # Mark as refunded to prevent duplicate refunds
                         Booking.objects.filter(pk=instance.pk).update(is_refunded=True)
                         instance.is_refunded = True
-                        
+
                     # Force set it again just in case update() didn't reflect in memory immediately
                     instance.is_refunded = True
-                        
+
                     logger.info("Refunded advance of %s for booking %s to user %s wallet", instance.advance, instance.pk, instance.user.email)
                 except Exception:
                     logger.exception("Failed to refund advance for booking %s", instance.pk)
@@ -160,16 +197,14 @@ def booking_post_save(sender, instance, created, **kwargs):
         if instance.status == "confirmed" and prev_status != "confirmed":
             provider = getattr(instance, "provider", None)
             try:
-                service_name = getattr(instance.service, "name", "service")
-
                 # Notify the booking owner (user) that provider accepted
                 try:
-                    title_u = "Booking Accepted"
-                    provider_name = (provider.get_full_name() or provider.username) if provider else "Provider"
+                    provider_name = (provider.get_full_name() or provider.username) if provider else "your provider"
+                    title_u = "✅ Booking Accepted!"
                     message_u = (
-                        f"Good news — your booking #{instance.pk} for {service_name} "
-                        f"on {instance.booking_date} at {instance.booking_time} has been accepted by "
-                        f"{provider_name}."
+                        f"Great news! {provider_name} has accepted your booking #{instance.pk} "
+                        f"for '{service_name}' on {booking_date} at {booking_time}. "
+                        f"Please complete your advance payment to confirm the slot."
                     )
 
                     safe_create_notification(
@@ -187,12 +222,16 @@ def booking_post_save(sender, instance, created, **kwargs):
                 # Notify the provider that they have been assigned (system -> provider)
                 if provider:
                     try:
-                        title_p = "Booking Assigned to You"
-                        customer_name = instance.full_name or (instance.user.get_full_name() if hasattr(instance.user, "get_full_name") else getattr(instance.user, "username", "Customer"))
+                        customer_name = (
+                            instance.full_name
+                            or (instance.user.get_full_name() if hasattr(instance.user, "get_full_name") else None)
+                            or getattr(instance.user, "username", "Customer")
+                        )
+                        title_p = "🔧 Job Assigned to You"
                         message_p = (
-                            f"You have been assigned booking #{instance.pk} for {service_name} "
-                            f"on {instance.booking_date} at {instance.booking_time}. "
-                            f"Customer: {customer_name}."
+                            f"You've accepted booking #{instance.pk} for '{service_name}' "
+                            f"on {booking_date} at {booking_time}. "
+                            f"Customer: {customer_name}. Check your schedule and be ready!"
                         )
 
                         safe_create_notification(
@@ -213,11 +252,11 @@ def booking_post_save(sender, instance, created, **kwargs):
         # ---------- completed ----------
         if instance.status == "completed" and prev_status != "completed":
             try:
-                service_name = getattr(instance.service, "name", "service")
-                title = "Service Completed"
+                title = "🎉 Service Completed!"
                 message = (
-                    f"Your service for {service_name} has been marked as completed. "
-                    f"Please rate your experience and leave a review!"
+                    f"Your '{service_name}' service (booking #{instance.pk}) has been marked as completed. "
+                    f"We hope everything went smoothly! "
+                    f"Please take a moment to rate your experience and leave a review."
                 )
 
                 safe_create_notification(

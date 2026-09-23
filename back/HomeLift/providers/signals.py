@@ -41,8 +41,13 @@ def safe_create_notification(recipient, **kwargs):
                 raise ValueError(f"recipient id={recipient.pk} does not exist")
             # create notification for valid recipient
             Notification.objects.create(recipient=recipient, **kwargs)
-            # Trigger WebSocket notification
-            send_user_notification(recipient.id, kwargs.get('message', ''))
+            # Trigger WebSocket notification with title + type
+            send_user_notification(
+                recipient.id,
+                kwargs.get('message', ''),
+                title=kwargs.get('title', ''),
+                notification_type=kwargs.get('type', 'system'),
+            )
             return
 
         # If recipient is None, route to system user
@@ -108,8 +113,11 @@ def handle_provider_application_update(sender, instance, created, **kwargs):
             recipient=user,
             sender=None,  # system-generated
             type='provider',
-            title='Provider Application Approved',
-            message=f"Congratulations {getattr(user, 'username', '')}! Your provider application has been approved."
+            title='🎉 Application Approved!',
+            message=(
+                f"Congratulations {getattr(user, 'username', '')}! Your provider application has been approved. "
+                f"You can now start accepting job requests. Log in to set up your profile and get started!"
+            )
         )
 
     # --- When rejected ---
@@ -125,8 +133,12 @@ def handle_provider_application_update(sender, instance, created, **kwargs):
             recipient=user,
             sender=None,  # system-generated
             type='provider',
-            title='Provider Application Rejected',
-            message=f"Your provider application has been rejected. Reason: {reason}"
+            title='❌ Application Rejected',
+            message=(
+                f"Unfortunately your provider application was not approved. "
+                f"Reason: {reason} — "
+                f"You may update your application and reapply."
+            )
         )
 
 
@@ -146,8 +158,11 @@ def handle_provider_service_request_update(sender, instance, created, **kwargs):
             recipient=user,
             sender=None,
             type='provider',
-            title='Service Addition Approved',
-            message=f"Your request to add '{service_name}' to your profile has been approved."
+            title='✅ Service Addition Approved',
+            message=(
+                f"Your request to add '{service_name}' to your profile has been approved. "
+                f"The service is now live and customers can book you for it!"
+            )
         )
     elif instance.status == 'rejected':
         reason = instance.rejection_reason or "No reason provided."
@@ -155,8 +170,11 @@ def handle_provider_service_request_update(sender, instance, created, **kwargs):
             recipient=user,
             sender=None,
             type='provider',
-            title='Service Addition Rejected',
-            message=f"Your request to add '{service_name}' was rejected. Reason: {reason}"
+            title='❌ Service Addition Rejected',
+            message=(
+                f"Your request to add '{service_name}' was not approved. "
+                f"Reason: {reason} — Please review and resubmit if needed."
+            )
         )
 
 
@@ -187,11 +205,17 @@ def handle_provider_status_notification(sender, instance, created, **kwargs):
         if old_is_active is not None and old_is_active != new_is_active:
             user = instance.user
             if new_is_active:
-                title = "Account Unblocked"
-                message = "Your provider account has been unblocked. You can now accept jobs again. please re-login to continue"
+                title = "✅ Account Unblocked"
+                message = (
+                    "Good news! Your provider account has been unblocked. "
+                    "You can now accept jobs again. Please re-login to refresh your session."
+                )
             else:
-                title = "Account Blocked"
-                message = "Your provider account has been blocked. Please contact support for more information."
+                title = "⚠️ Account Blocked"
+                message = (
+                    "Your provider account has been temporarily blocked. "
+                    "If you believe this is a mistake, please contact our support team for assistance."
+                )
 
             safe_create_notification(
                 recipient=user,

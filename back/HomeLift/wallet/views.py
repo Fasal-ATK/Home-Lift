@@ -90,7 +90,15 @@ class WalletWithdrawalView(APIView):
                 )
 
                 # Send real-time notification
-                send_user_notification(request.user.id, f"Withdrawal request of ₹{amount} submitted. Awaiting admin approval.")
+                send_user_notification(
+                    request.user.id,
+                    (
+                        f"Your withdrawal request of ₹{amount} has been submitted and is awaiting admin approval. "
+                        f"You'll be notified once it's processed."
+                    ),
+                    title="💸 Withdrawal Request Submitted",
+                    notification_type="payment",
+                )
 
             return Response(WithdrawalRequestSerializer(withdrawal).data, status=status.HTTP_201_CREATED)
 
@@ -243,7 +251,15 @@ class AdminWithdrawalActionView(APIView):
                     withdrawal.status = 'completed'
                     
                     withdrawal.save()
-                    send_user_notification(withdrawal.provider.id, f"Your withdrawal of ₹{withdrawal.amount} has been approved and processed!")
+                    send_user_notification(
+                        withdrawal.provider.id,
+                        (
+                            f"Your withdrawal of ₹{withdrawal.amount} (Request #{withdrawal.id}) has been approved and processed. "
+                            f"The amount will be transferred to your account shortly."
+                        ),
+                        title="✅ Withdrawal Approved",
+                        notification_type="payment",
+                    )
 
                 elif action == 'reject':
                     withdrawal.status = 'failed'
@@ -261,7 +277,15 @@ class AdminWithdrawalActionView(APIView):
                         txn.description = f'Withdrawal Request #{withdrawal.id} Rejected'
                         txn.save()
 
-                    send_user_notification(withdrawal.provider.id, f"Your withdrawal request of ₹{withdrawal.amount} was rejected.")
+                    send_user_notification(
+                        withdrawal.provider.id,
+                        (
+                            f"Your withdrawal request of ₹{withdrawal.amount} (Request #{withdrawal.id}) was rejected. "
+                            f"The reserved amount has been returned to your wallet balance."
+                        ),
+                        title="❌ Withdrawal Rejected",
+                        notification_type="payment",
+                    )
 
             return Response(WithdrawalRequestSerializer(withdrawal).data)
         except Exception as e:

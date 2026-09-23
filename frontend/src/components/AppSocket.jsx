@@ -148,21 +148,57 @@ const AppSocket = ({ userId }) => {
 
                         if (data.type === "notification" || data.message) {
                             const messageText = data.message || data.text;
+                            const titleText = data.title || "";
+                            const nType = data.notification_type || "system";
 
-                            if (seenMessagesRef.current.has(messageText)) return;
+                            // De-dup key combines title + message
+                            const dedupeKey = `${titleText}::${messageText}`;
+                            if (seenMessagesRef.current.has(dedupeKey)) return;
+                            seenMessagesRef.current.add(dedupeKey);
+                            setTimeout(() => seenMessagesRef.current.delete(dedupeKey), 3000);
 
-                            seenMessagesRef.current.add(messageText);
-                            setTimeout(() => seenMessagesRef.current.delete(messageText), 2000);
+                            // Build rich toast content
+                            const toastContent = titleText ? (
+                                <div>
+                                    <strong style={{ display: 'block', marginBottom: 2 }}>{titleText}</strong>
+                                    <span style={{ fontSize: '0.88em', opacity: 0.9 }}>{messageText}</span>
+                                </div>
+                            ) : messageText;
 
-                            toast.info(messageText);
+                            // Choose toast style based on notification type
+                            const toastOpts = { autoClose: 6000 };
+                            if (nType === "payment") {
+                                if (titleText.includes("❌") || titleText.includes("Rejected")) {
+                                    toast.error(toastContent, toastOpts);
+                                } else {
+                                    toast.success(toastContent, toastOpts);
+                                }
+                            } else if (nType === "booking") {
+                                if (titleText.includes("❌") || titleText.includes("Cancelled")) {
+                                    toast.warning(toastContent, toastOpts);
+                                } else {
+                                    toast.info(toastContent, toastOpts);
+                                }
+                            } else if (nType === "provider") {
+                                if (titleText.includes("❌") || titleText.includes("Rejected") || titleText.includes("Blocked")) {
+                                    toast.error(toastContent, toastOpts);
+                                } else if (titleText.includes("✅") || titleText.includes("🎉") || titleText.includes("Approved")) {
+                                    toast.success(toastContent, toastOpts);
+                                } else {
+                                    toast.info(toastContent, toastOpts);
+                                }
+                            } else {
+                                toast.info(toastContent, toastOpts);
+                            }
 
                             dispatch(
                                 addNotification({
                                     id: Date.now(),
                                     message: messageText,
+                                    title: titleText,
                                     created_at: new Date().toISOString(),
                                     is_read: false,
-                                    type: data.notification_type || "system",
+                                    type: nType,
                                     ...data,
                                 })
                             );

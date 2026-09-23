@@ -4,7 +4,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def send_user_notification(user_id, message):
+
+def send_user_notification(user_id, message, title=None, notification_type="system", payload=None):
+    """
+    Send a real-time WebSocket notification to a specific user.
+
+    Args:
+        user_id:           The recipient's user ID.
+        message:           The notification body text.
+        title:             Optional short title for the notification toast.
+        notification_type: One of 'booking', 'payment', 'provider', 'chat', 'system'.
+        payload:           Optional extra dict forwarded to the frontend as-is.
+    """
     try:
         channel_layer = get_channel_layer()
         if channel_layer:
@@ -13,9 +24,12 @@ def send_user_notification(user_id, message):
                 {
                     "type": "send_notification",
                     "message": message,
+                    "title": title or "",
+                    "notification_type": notification_type,
+                    "payload": payload or {},
                 }
             )
         else:
-            logger.warning(f"Could not send notification: Channel layer not configured.")
+            logger.warning("Could not send notification: Channel layer not configured.")
     except Exception as e:
-        logger.warning(f"Failed to send real-time notification to user {user_id}: {e}")
+        logger.warning("Failed to send real-time notification to user %s: %s", user_id, e)
