@@ -11,7 +11,7 @@ const UserLayout = () => {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: 3, bgcolor: 'white', minHeight: '100vh' }}
+        sx={{ flexGrow: 1, p: 0, bgcolor: 'white', minHeight: '100vh' }}
       >
         <UserNavbar />
         <AnimatePresence mode="wait">
