@@ -9,8 +9,16 @@ import { useDispatch } from 'react-redux';
 
 import { authService } from '../../services/apiServices';
 import { loginSuccess } from '../../redux/slices/authSlice';
-import validateLoginForm from '../../utils/loginVal';
 import { getErrorMessage } from '../../utils/errorHelper';
+
+// Admin login only needs: valid email + non-empty password (no letter/number rules)
+const validateAdminLoginForm = ({ email, password }) => {
+  if (!email || !email.trim()) return 'Email is required.';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'Enter a valid email address.';
+  if (!password) return 'Password is required.';
+  return null;
+};
+
 
 import { ShowToast } from '../../components/common/Toast'; 
 
@@ -32,7 +40,7 @@ function Login() {
     setServerError('');
 
     // Client-side validation
-    const validationError = validateLoginForm({ email, password: pass });
+    const validationError = validateAdminLoginForm({ email, password: pass });
     if (validationError) {
       setServerError(validationError);
       return;
