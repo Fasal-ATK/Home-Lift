@@ -1,7 +1,9 @@
 // src/components/provider/ApplicationForm.jsx
 import React from 'react';
 import {
-  Modal, Box, Typography, Button, IconButton, MenuItem, FormControl, Select, Paper, InputLabel, TextField, FormHelperText
+  Modal, Box, Typography, Button, IconButton, MenuItem, FormControl,
+  Select, Paper, InputLabel, TextField, FormHelperText, useMediaQuery,
+  useTheme, Divider
 } from '@mui/material';
 import { Add, Remove, UploadFile, Close } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
@@ -12,18 +14,28 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
+// ================= Styled Components =================
 const StyledBox = styled(Paper)(({ theme }) => ({
   position: 'absolute',
   top: '50%',
   left: '50%',
   transform: 'translate(-50%,-50%)',
-  width: 620,
+  width: '95vw',
+  maxWidth: 640,
   backgroundColor: theme.palette.background.paper,
   borderRadius: 12,
   boxShadow: theme.shadows[10],
-  padding: theme.spacing(5),
-  maxHeight: '90vh',
+  padding: theme.spacing(2.5),
+  maxHeight: '92vh',
   overflowY: 'auto',
+  [theme.breakpoints.up('sm')]: {
+    padding: theme.spacing(4),
+    width: '88vw',
+  },
+  [theme.breakpoints.up('md')]: {
+    padding: theme.spacing(5),
+    width: 620,
+  },
 }));
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
@@ -32,15 +44,11 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
 }));
 
-const FileButton = styled(Button)(({ theme }) => ({
-  borderColor: theme.palette.primary.main,
-  textTransform: 'none',
-  minWidth: 180,
-}));
-
 // ================= FileUpload Component =================
 const FileUpload = ({ value, onChange, label, uniqueId, maxSizeMB = 10, error }) => {
   const [localError, setLocalError] = React.useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -51,11 +59,7 @@ const FileUpload = ({ value, onChange, label, uniqueId, maxSizeMB = 10, error })
   };
 
   const handleFileChange = (selectedFile) => {
-    if (!selectedFile) {
-      onChange(null);
-      setLocalError(null);
-      return;
-    }
+    if (!selectedFile) { onChange(null); setLocalError(null); return; }
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     if (selectedFile.size > maxSizeBytes) {
       setLocalError(`File size exceeds ${maxSizeMB} MB limit.`);
@@ -67,8 +71,8 @@ const FileUpload = ({ value, onChange, label, uniqueId, maxSizeMB = 10, error })
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, width: '100%' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <input
           type="file"
           accept=".pdf,.doc,.docx,.png,.jpg"
@@ -76,10 +80,17 @@ const FileUpload = ({ value, onChange, label, uniqueId, maxSizeMB = 10, error })
           id={uniqueId}
           onChange={(e) => handleFileChange(e.target.files[0])}
         />
-        <label htmlFor={uniqueId}>
-          <FileButton variant="outlined" component="span" startIcon={<UploadFile />} color={error || localError ? "error" : "primary"}>
+        <label htmlFor={uniqueId} style={{ width: isMobile ? '100%' : 'auto' }}>
+          <Button
+            variant="outlined"
+            component="span"
+            startIcon={<UploadFile />}
+            color={error || localError ? 'error' : 'primary'}
+            fullWidth={isMobile}
+            sx={{ textTransform: 'none', minWidth: { xs: '100%', sm: 180 } }}
+          >
             {value ? value.name : label}
-          </FileButton>
+          </Button>
         </label>
         {value && (
           <IconButton size="small" color="error" onClick={() => handleFileChange(null)}>
@@ -101,7 +112,7 @@ const FileUpload = ({ value, onChange, label, uniqueId, maxSizeMB = 10, error })
   );
 };
 
-// Validation Schema
+// ================= Validation Schema =================
 const schema = yup.object().shape({
   personalDoc: yup.mixed().required('Personal Verification Document is required'),
   services: yup.array().of(
@@ -110,9 +121,9 @@ const schema = yup.object().shape({
       service: yup.string().required('Service is required'),
       experience_years: yup.number()
         .typeError('Must be a number')
-        .min(0, 'Experience cannot be negative')
+        .min(0, 'Cannot be negative')
         .max(50, 'Max 50 years')
-        .required('Experience is required'),
+        .required('Required'),
       doc: yup.mixed().nullable()
     })
   ).min(1, 'Add at least one service')
@@ -127,6 +138,9 @@ const schema = yup.object().shape({
 // ================= ProviderApplicationModal =================
 const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
   const dispatch = useDispatch();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const { loading, error: reduxError, providerApplicationStatus } = useSelector((state) => state.user);
 
   const { control, handleSubmit, reset, watch, formState: { errors } } = useForm({
@@ -137,11 +151,7 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
     }
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'services'
-  });
-
+  const { fields, append, remove } = useFieldArray({ control, name: 'services' });
   const watchServices = watch('services');
 
   const onSubmit = (data) => {
@@ -153,7 +163,6 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
         experience_years: s.experience_years
       })),
     };
-
     dispatch(applyProvider(applicationData))
       .unwrap()
       .then(() => {
@@ -161,28 +170,43 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
         handleClose();
       })
       .catch((err) => {
-        ShowToast(typeof err === 'object' ? 'Failed to submit application:\n' + JSON.stringify(err, null, 2) : 'Failed to submit application: ' + err, 'error');
+        ShowToast(
+          typeof err === 'object'
+            ? 'Failed to submit application:\n' + JSON.stringify(err, null, 2)
+            : 'Failed to submit application: ' + err,
+          'error'
+        );
       });
   };
 
-  const handleClose = () => {
-    reset();
-    onClose?.();
-  };
+  const handleClose = () => { reset(); onClose?.(); };
 
   return (
     <Modal open={open} onClose={handleClose}>
       <StyledBox>
-        <Box display="flex" justifyContent="flex-end">
+        {/* Header */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <SectionTitle variant="h6" sx={{ mb: 0, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+            Apply to Become a Provider
+          </SectionTitle>
           <IconButton size="small" onClick={handleClose}><Close /></IconButton>
         </Box>
 
-        <SectionTitle variant="h6">Apply to Become a Provider</SectionTitle>
+        <Divider sx={{ mb: 2.5 }} />
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          {/* Personal Identity Verification */}
-          <Box display="flex" alignItems="center" mb={3} gap={2}>
-            <InputLabel sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>Upload your Personal Identity Verification</InputLabel>
+
+          {/* ── Personal Identity Verification ── */}
+          <Box mb={3}>
+            <Typography
+              variant="subtitle2"
+              fontWeight={600}
+              mb={1}
+              color="text.secondary"
+              sx={{ textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: 0.8 }}
+            >
+              Personal Identity Verification
+            </Typography>
             <Controller
               name="personalDoc"
               control={control}
@@ -190,7 +214,7 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
                 <FileUpload
                   value={field.value}
                   onChange={field.onChange}
-                  label="Upload File"
+                  label="Upload ID Document"
                   uniqueId="personal-doc"
                   error={fieldState.error}
                 />
@@ -198,38 +222,88 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
             />
           </Box>
 
-          {/* Services Section */}
-          <SectionTitle variant="subtitle2">Select Services (up to 4) & Optional Documents</SectionTitle>
+          <Divider sx={{ mb: 2.5 }} />
+
+          {/* ── Services Section header ── */}
+          <Box mb={2}>
+            <Typography
+              variant="subtitle2"
+              fontWeight={600}
+              mb={0.5}
+              color="text.secondary"
+              sx={{ textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: 0.8 }}
+            >
+              Services (up to 4)
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Select your service categories and optionally upload supporting documents.
+            </Typography>
+          </Box>
+
           {errors.services?.root && (
-             <Typography color="error" variant="caption" sx={{ display: 'block', mb: 2 }}>
-               {errors.services.root.message}
-             </Typography>
+            <Typography color="error" variant="caption" sx={{ display: 'block', mb: 1.5 }}>
+              {errors.services.root.message}
+            </Typography>
+          )}
+          {typeof errors.services?.message === 'string' && (
+            <Typography color="error" variant="caption" sx={{ display: 'block', mb: 1.5 }}>
+              {errors.services.message}
+            </Typography>
           )}
 
+          {/* ── Service rows ── */}
           {fields.map((item, index) => {
             const currentCat = watchServices[index]?.category;
             const currentSvc = watchServices[index]?.service;
-            
             const serviceOptions = currentCat
               ? services.filter((s) => {
-                  const isInCategory = s.category === parseInt(currentCat) || s.category?.id === parseInt(currentCat);
-                  // Ensure uniqueness
+                  const isInCategory =
+                    s.category === parseInt(currentCat) ||
+                    s.category?.id === parseInt(currentCat);
                   const selectedIds = watchServices.map(w => w.service).filter(Boolean);
                   return isInCategory && (!selectedIds.includes(s.id) || s.id === currentSvc);
                 })
               : [];
 
             return (
-              <Box key={item.id} mb={3} p={2} border="1px solid" borderColor={errors.services?.[index] ? "error.main" : "#e0e0e0"} borderRadius={2} boxShadow={1}>
-                <Box display="flex" alignItems="flex-start" gap={1} mb={1}>
+              <Box
+                key={item.id}
+                mb={2}
+                p={{ xs: 1.5, sm: 2 }}
+                border="1px solid"
+                borderColor={errors.services?.[index] ? 'error.main' : '#e0e0e0'}
+                borderRadius={2}
+                boxShadow={1}
+              >
+                {/* Card header: label + remove */}
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+                  <Typography variant="caption" fontWeight={600} color="text.secondary">
+                    Service {index + 1}
+                  </Typography>
+                  {fields.length > 1 && (
+                    <IconButton size="small" color="error" onClick={() => remove(index)}>
+                      <Remove fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+
+                {/* Category + Service: column on xs, row on sm+ */}
+                <Box
+                  display="flex"
+                  flexDirection={{ xs: 'column', sm: 'row' }}
+                  gap={1.5}
+                  mb={1.5}
+                >
                   <Controller
                     name={`services.${index}.category`}
                     control={control}
                     render={({ field, fieldState }) => (
                       <FormControl fullWidth size="small" error={!!fieldState.error}>
-                        <Select {...field} displayEmpty>
-                          <MenuItem value="" disabled>Select Category</MenuItem>
-                          {categories.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+                        <InputLabel>Category</InputLabel>
+                        <Select {...field} label="Category">
+                          {categories.map((c) => (
+                            <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                          ))}
                         </Select>
                         {fieldState.error && <FormHelperText>{fieldState.error.message}</FormHelperText>}
                       </FormControl>
@@ -241,40 +315,42 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
                     control={control}
                     render={({ field, fieldState }) => (
                       <FormControl fullWidth size="small" error={!!fieldState.error}>
-                        <Select {...field} displayEmpty disabled={!currentCat}>
-                          <MenuItem value="" disabled>Select Service</MenuItem>
-                          {serviceOptions.map((s) => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+                        <InputLabel>Service</InputLabel>
+                        <Select {...field} label="Service" disabled={!currentCat}>
+                          {serviceOptions.map((s) => (
+                            <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
+                          ))}
                         </Select>
                         {fieldState.error && <FormHelperText>{fieldState.error.message}</FormHelperText>}
                       </FormControl>
                     )}
                   />
-
-                  <Controller
-                    name={`services.${index}.experience_years`}
-                    control={control}
-                    render={({ field, fieldState }) => (
-                      <TextField
-                        {...field}
-                        label="Exp (Years)"
-                        type="number"
-                        size="small"
-                        sx={{ width: 140 }}
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
-                      />
-                    )}
-                  />
-
-                  {fields.length > 1 && (
-                    <IconButton size="small" color="error" onClick={() => remove(index)}>
-                      <Remove />
-                    </IconButton>
-                  )}
                 </Box>
 
+                {/* Experience: full width on mobile */}
+                <Controller
+                  name={`services.${index}.experience_years`}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      {...field}
+                      label="Years of Experience"
+                      type="number"
+                      size="small"
+                      sx={{ width: { xs: '100%', sm: 200 } }}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                      inputProps={{ min: 0, max: 50 }}
+                    />
+                  )}
+                />
+
+                {/* Optional document */}
                 {currentSvc && (
-                  <Box display="flex" alignItems="center" gap={1} mt={1}>
+                  <Box mt={1.5}>
+                    <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                      Optional: Upload a supporting document
+                    </Typography>
                     <Controller
                       name={`services.${index}.doc`}
                       control={control}
@@ -282,7 +358,7 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
                         <FileUpload
                           value={field.value}
                           onChange={field.onChange}
-                          label="Upload Optional Document"
+                          label="Upload Document"
                           uniqueId={`service-doc-${index}`}
                           error={fieldState.error}
                         />
@@ -294,22 +370,44 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
             );
           })}
 
+          {/* Add service */}
           {fields.length < 4 && (
             <Box mb={3}>
-              <Button variant="outlined" startIcon={<Add />} onClick={() => append({ category: '', service: '', experience_years: 0, doc: null })}>
+              <Button
+                variant="outlined"
+                startIcon={<Add />}
+                onClick={() => append({ category: '', service: '', experience_years: 0, doc: null })}
+                fullWidth={isMobile}
+                sx={{ textTransform: 'none' }}
+              >
                 Add Another Service
               </Button>
             </Box>
           )}
 
-          <Box mt={4} display="flex" justifyContent="flex-end">
-            <Button variant="contained" color="primary" type="submit" disabled={loading}>
-              {loading ? 'Submitting...' : 'Submit Application'}
+          {/* Submit */}
+          <Box mt={3} display="flex" justifyContent={{ xs: 'stretch', sm: 'flex-end' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              type="submit"
+              disabled={loading}
+              fullWidth={isMobile}
+              size={isMobile ? 'large' : 'medium'}
+              sx={{ minWidth: { sm: 160 } }}
+            >
+              {loading ? 'Submitting…' : 'Submit Application'}
             </Button>
           </Box>
 
-          {reduxError && <Typography color="error" mt={2}>{reduxError}</Typography>}
-          {providerApplicationStatus === 'pending' && <Typography color="primary" mt={2}>Your application is under review.</Typography>}
+          {reduxError && (
+            <Typography color="error" mt={2} variant="body2">{reduxError}</Typography>
+          )}
+          {providerApplicationStatus === 'pending' && (
+            <Typography color="primary" mt={2} variant="body2">
+              Your application is under review.
+            </Typography>
+          )}
         </form>
       </StyledBox>
     </Modal>
@@ -317,3 +415,4 @@ const ProviderApplicationModal = ({ open, onClose, categories, services }) => {
 };
 
 export default ProviderApplicationModal;
+
