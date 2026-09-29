@@ -98,9 +98,9 @@ const UserNavbar = () => {
         boxShadow: "0 8px 32px rgba(0,0,0,0.06)",
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 4 }, minHeight: '70px !important' }}>
+      <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: { xs: 2, md: 4 }, minHeight: '70px !important' }}>
         {/* Left: Logo and Title */}
-        <Box display="flex" alignItems="center" gap={1.5} sx={{ cursor: 'pointer' }} onClick={() => navigate('/home')}>
+        <Box display="flex" alignItems="center" gap={1.5} sx={{ cursor: 'pointer', height: 40 }} onClick={() => navigate('/home')}>
           <Box
             component="img"
             src={logoImg}
@@ -110,6 +110,7 @@ const UserNavbar = () => {
               height: 38,
               borderRadius: 2,
               objectFit: 'contain',
+              display: 'block',
               boxShadow: '0 4px 12px rgba(79,70,229,0.25)'
             }}
           />
@@ -117,52 +118,76 @@ const UserNavbar = () => {
             variant="h6"
             fontWeight="900"
             color="#1e1b4b"
-            sx={{ display: { xs: 'none', sm: 'block' }, letterSpacing: -0.5 }}
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              alignItems: 'center',
+              height: 38,
+              lineHeight: 1,
+              letterSpacing: -0.5
+            }}
           >
             HOME<Box component="span" sx={{ color: '#4f46e5' }}>LIFT</Box>
           </Typography>
         </Box>
 
         {/* Right side container */}
-        <Box display="flex" alignItems="center" gap={{ xs: 1, sm: 2 }}>
+        <Box display="flex" alignItems="center" gap={{ xs: 1, sm: 1.5 }}>
           {/* Desktop Nav links */}
-          <Box display={{ xs: 'none', md: 'flex' }} gap={2} alignItems="center">
+          <Box display={{ xs: 'none', md: 'flex' }} gap={0.5} alignItems="center" sx={{ height: 38 }}>
             {navLinks.map((item) => {
               const isActive = location.pathname.startsWith(item.path);
               return (
-                <Typography
+                <Button
                   key={item.label}
                   component={Link}
                   to={item.path}
-                  variant="body1"
-                  fontWeight="bold"
                   sx={{
-                    cursor: "pointer",
-                    textDecoration: "none",
-                    color: isActive ? "#4f46e5" : "inherit",
-                    "&:hover": { color: "#4f46e5" },
+                    height: 38,
+                    px: 2,
+                    borderRadius: '10px',
+                    fontWeight: isActive ? 800 : 700,
+                    fontSize: "0.85rem",
+                    letterSpacing: '0.03em',
+                    color: isActive ? "#4f46e5" : "#475569",
+                    bgcolor: isActive ? "rgba(79,70,229,0.08)" : "transparent",
+                    textTransform: "none",
+                    minWidth: 'auto',
+                    lineHeight: 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    "&:hover": {
+                      color: "#4f46e5",
+                      bgcolor: "rgba(79,70,229,0.06)",
+                    },
                   }}
                 >
                   {item.label}
-                </Typography>
+                </Button>
               );
             })}
           </Box>
 
           {/* Icons (Always visible) */}
-          <Box display="flex" gap={1} alignItems="center">
+          <Box display="flex" gap={0.75} alignItems="center" sx={{ height: 38 }}>
             <Tooltip title="Notifications">
               <IconButton
                 component={Link}
                 to="/notifications"
                 sx={{
+                  width: 38,
+                  height: 38,
+                  p: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   color: location.pathname === "/notifications" ? '#4f46e5' : '#64748b',
                   bgcolor: location.pathname === "/notifications" ? 'rgba(79,70,229,0.08)' : 'transparent',
                   "&:hover": { bgcolor: "rgba(79,70,229,0.04)" }
                 }}
               >
                 <Badge badgeContent={notificationsUnreadCount} color="error">
-                  <Notifications />
+                  <Notifications sx={{ fontSize: 21 }} />
                 </Badge>
               </IconButton>
             </Tooltip>
@@ -172,13 +197,19 @@ const UserNavbar = () => {
                 component={Link}
                 to="/chat"
                 sx={{
+                  width: 38,
+                  height: 38,
+                  p: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   color: location.pathname === "/chat" ? '#4f46e5' : '#64748b',
                   bgcolor: location.pathname === "/chat" ? 'rgba(79,70,229,0.08)' : 'transparent',
                   "&:hover": { bgcolor: "rgba(79,70,229,0.04)" }
                 }}
               >
                 <Badge badgeContent={chatUnreadCount} color="error">
-                  <Chat />
+                  <Chat sx={{ fontSize: 21 }} />
                 </Badge>
               </IconButton>
             </Tooltip>
@@ -188,6 +219,12 @@ const UserNavbar = () => {
                 component={Link}
                 to="/profile"
                 sx={{
+                  width: 38,
+                  height: 38,
+                  p: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   color: location.pathname === "/profile" ? '#4f46e5' : '#64748b',
                   bgcolor: location.pathname === "/profile" ? 'rgba(79,70,229,0.08)' : 'transparent',
                   "&:hover": { bgcolor: "rgba(79,70,229,0.04)" }
@@ -196,7 +233,7 @@ const UserNavbar = () => {
                 <Avatar
                   src={user?.profile_picture || undefined}
                   alt={user?.first_name || user?.username || 'Profile'}
-                  sx={{ width: 32, height: 32, bgcolor: user?.profile_picture ? 'transparent' : '#4f46e5', fontSize: 14 }}
+                  sx={{ width: 32, height: 32, bgcolor: user?.profile_picture ? 'transparent' : '#4f46e5', fontSize: 13 }}
                 >
                   {!user?.profile_picture && (user?.first_name ? user.first_name[0] : user?.username?.[0] || 'U')}
                 </Avatar>
@@ -207,17 +244,23 @@ const UserNavbar = () => {
           {/* Provider Page Button (Desktop only) */}
           {isProvider && (
             <Tooltip title="Switch to Provider Dashboard">
-              <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+              <Box sx={{ display: { xs: 'none', md: 'inline-flex' }, alignItems: 'center', height: 38 }}>
                 <Button
                   variant="contained"
                   sx={{
+                    height: 38,
+                    py: 0,
+                    px: 2.5,
                     background: 'linear-gradient(135deg, #10b981, #059669)',
                     textTransform: "none",
-                    borderRadius: 2.5,
+                    borderRadius: '10px',
                     fontWeight: 700,
+                    fontSize: '0.85rem',
                     boxShadow: "0 4px 12px rgba(16,185,129,0.3)",
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     "&:hover": { background: "linear-gradient(135deg, #059669, #047857)" },
-                    px: 3,
                   }}
                   onClick={handleProviderRedirect}
                 >
@@ -231,7 +274,7 @@ const UserNavbar = () => {
           <Tooltip title="Navigation Menu">
             <IconButton 
               onClick={handleMobileMenuOpen} 
-              sx={{ display: { xs: 'flex', md: 'none' }, color: "#1e293b" }}
+              sx={{ display: { xs: 'inline-flex', md: 'none' }, width: 38, height: 38, color: "#1e293b", p: 0, alignItems: 'center', justifyContent: 'center' }}
             >
               <MenuIcon />
             </IconButton>
@@ -239,13 +282,20 @@ const UserNavbar = () => {
 
           {/* Logout (Desktop only) */}
           <Tooltip title="Logout">
-            <Box sx={{ display: { xs: 'none', md: 'block' }, ml: 1 }}>
+            <Box sx={{ display: { xs: 'none', md: 'inline-flex' }, alignItems: 'center', height: 38, ml: 0.5 }}>
               <LogoutButton
                 collapsed={true} // Use collapsed version for icon only
                 sx={{
+                  width: 38,
+                  height: 38,
+                  minWidth: 38,
+                  p: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   color: "#ef4444",
                   bgcolor: "rgba(239,68,68,0.08)",
-                  borderRadius: 2,
+                  borderRadius: '10px',
                   "&:hover": { bgcolor: "#ef4444", color: "white" }
                 }}
               />

@@ -26,8 +26,10 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
         top: 0,
         left: 0,
         height: '100vh',
-        backgroundColor: '#fff',
-        borderRight: '1px solid #ddd',
+        backgroundColor: 'rgba(255, 255, 255, 0.96)',
+        backdropFilter: 'blur(16px)',
+        borderRight: '1px solid rgba(226, 232, 240, 0.8)',
+        boxShadow: '4px 0 24px rgba(0, 0, 0, 0.03)',
         p: 2,
         display: 'flex',
         flexDirection: 'column',
@@ -37,109 +39,129 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
       }}
     >
       {/* Brand */}
-        <Box
+      <Box
+        sx={{
+          textAlign: 'center',
+          mb: 2.5,
+          mt: 0.5,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <Typography
+          variant="h6"
           sx={{
-            textAlign: 'center',
-            mb: 3,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
+            fontWeight: 900,
+            fontSize: collapsed ? '24px' : '22px',
+            color: '#1e1b4b',
+            letterSpacing: -0.5,
+            transition: '0.3s',
+            whiteSpace: 'nowrap',
           }}
         >
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 'bold',
-              fontSize: collapsed ? '28px' : '24px',
-              color: 'orange',
-              transition: '0.3s',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {collapsed ? (
-              <>H<span style={{ color: 'black' }}>L</span></>
-            ) : (
-              <>Home<span style={{ color: 'black' }}>Lift</span></>
-            )}
-          </Typography>
-        </Box>
+          {collapsed ? (
+            <>H<span style={{ color: '#4f46e5' }}>L</span></>
+          ) : (
+            <>HOME<span style={{ color: '#4f46e5' }}>LIFT</span></>
+          )}
+        </Typography>
+      </Box>
 
-        <Divider />
+      <Divider sx={{ mb: 2, borderColor: 'rgba(226, 232, 240, 0.8)' }} />
 
-        {/* Navigation Items */}
-        <List sx={{ 
-          flexGrow: 1, 
-          overflowY: 'auto', 
-          overflowX: 'hidden',
-          "&::-webkit-scrollbar": { width: "4px" },
-          "&::-webkit-scrollbar-thumb": { backgroundColor: "#ccc", borderRadius: "4px" }
-        }}>
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Tooltip title={collapsed ? item.text : ''} placement="right" key={item.text}>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  sx={{
-                    backgroundColor: isActive ? '#FFC107' : 'transparent',
-                    borderRadius: '8px',
-                    mb: 2,
-                    justifyContent: collapsed ? 'center' : 'flex-start',
-                    '&:hover': { backgroundColor: '#ffe082' },
-                    transition: 'all 0.3s',
+      {/* Navigation Items */}
+      <List sx={{ 
+        flexGrow: 1, 
+        overflowY: 'auto', 
+        overflowX: 'hidden',
+        px: 0.5,
+        "&::-webkit-scrollbar": { width: "4px" },
+        "&::-webkit-scrollbar-thumb": { backgroundColor: "#cbd5e1", borderRadius: "4px" }
+      }}>
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <Tooltip title={collapsed ? item.text : ''} placement="right" key={item.text}>
+              <ListItemButton
+                component={Link}
+                to={item.path}
+                sx={{
+                  backgroundColor: isActive ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                  color: isActive ? '#4f46e5' : '#475569',
+                  borderRadius: '12px',
+                  mb: 1,
+                  py: 1.2,
+                  px: collapsed ? 1.5 : 2,
+                  justifyContent: collapsed ? 'center' : 'flex-start',
+                  borderLeft: isActive ? '3px solid #4f46e5' : '3px solid transparent',
+                  '&:hover': {
+                    backgroundColor: isActive ? 'rgba(79, 70, 229, 0.14)' : 'rgba(79, 70, 229, 0.05)',
+                    color: '#4f46e5',
+                  },
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                }}
+              >
+                <ListItemIcon
+                  sx={{ 
+                    color: isActive ? '#4f46e5' : '#64748b', 
+                    minWidth: 'unset', 
+                    mr: collapsed ? 0 : 1.75,
+                    transform: collapsed ? 'scale(1.15)' : 'scale(1)',
+                    transition: 'transform 0.2s ease-in-out, color 0.2s ease-in-out'
                   }}
                 >
-                  <ListItemIcon
-                    sx={{ 
-                      color: isActive ? 'black' : '#333', 
-                      minWidth: 'unset', 
-                      mr: collapsed ? 0 : 2,
-                      transform: collapsed ? 'scale(1.3)' : 'scale(1.1)',
-                      transition: 'transform 0.3s ease-in-out'
+                  {item.icon}
+                </ListItemIcon>
+                {!collapsed && (
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontWeight: isActive ? 700 : 600,
+                      fontSize: '0.9rem',
+                      letterSpacing: '0.01em',
                     }}
-                  >
-                    {item.icon}
-                  </ListItemIcon>
-                  {!collapsed && (
-                    <ListItemText
-                      primary={item.text}
-                      primaryTypographyProps={{ fontWeight: isActive ? 'bold' : 'normal' }}
-                    />
-                  )}
-                </ListItemButton>
-              </Tooltip>
-            );
-          })}
-        </List>
+                  />
+                )}
+              </ListItemButton>
+            </Tooltip>
+          );
+        })}
+      </List>
 
-        {/* Logout Button */}
-        <Box sx={{ mt: 2, mb: 1 }}>
-          <LogoutButton collapsed={collapsed} />
-        </Box>
+      {/* Logout Button */}
+      <Box sx={{ mt: 1, mb: 1, px: 0.5 }}>
+        <LogoutButton collapsed={collapsed} />
+      </Box>
 
       {/* Collapse Toggle Button */}
       <Tooltip title={collapsed ? "Expand" : "Collapse"} placement="right">
         <Paper
-          elevation={4}
+          elevation={3}
           sx={{
             position: 'absolute',
             top: '50%',
             transform: 'translateY(-50%)',
-            right: -16,
+            right: -14,
             zIndex: 10,
-            width: '32px',
-            height: '48px',
+            width: '28px',
+            height: '42px',
             borderRadius: '0 8px 8px 0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#fff',
+            backgroundColor: '#ffffff',
+            border: '1px solid rgba(226, 232, 240, 0.9)',
+            borderLeft: 'none',
             cursor: 'pointer',
+            color: '#4f46e5',
+            '&:hover': {
+              backgroundColor: '#f8fafc',
+            },
           }}
           onClick={() => setCollapsed((prev) => !prev)}
         >
-          {collapsed ? <ChevronRight /> : <ChevronLeft />}
+          {collapsed ? <ChevronRight fontSize="small" /> : <ChevronLeft fontSize="small" />}
         </Paper>
       </Tooltip>
     </Box>
