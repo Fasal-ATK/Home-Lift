@@ -4,7 +4,10 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Divider, Avatar,
 } from "@mui/material";
-import { Block, LockOpen, InfoOutlined as InfoIcon, Person } from "@mui/icons-material";
+import { Block, LockOpen, InfoOutlined as InfoIcon, Person, Chat as ChatIcon } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import api from "../../API/apiConfig";
+import { ShowToast } from "../../components/common/Toast";
 import DataTable from "../../components/admin/DataTable";
 import SearchBarWithFilter from "../../components/admin/SearchBar";
 import ConfirmModal from "../../components/common/Confirm";
@@ -97,6 +100,7 @@ function UserDetailModal({ open, onClose, user }) {
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function UserManager() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { customers, loading } = useSelector((s) => s.adminCustomers);
   const totalCount = useSelector(selectTotalCustomersCount);
 
@@ -133,6 +137,15 @@ export default function UserManager() {
     }
     setConfirmOpen(false);
     setSelectedRow(null);
+  };
+
+  const handleStartChat = async (user) => {
+    try {
+      const res = await api.post('/chat/rooms/', { other_user_id: user.id });
+      navigate('/admin/chat', { state: { roomId: res.data.id } });
+    } catch (err) {
+      ShowToast(err?.response?.data?.detail || 'Failed to open chat with customer.', 'error');
+    }
   };
 
   // ── Columns ─────────────────────────────────────────────────────────────────
@@ -184,6 +197,11 @@ export default function UserManager() {
       label: "Actions",
       render: (row) => (
         <Stack direction="row" spacing={0.5}>
+          <Tooltip title="Chat with Customer">
+            <IconButton size="small" color="primary" onClick={() => handleStartChat(row)}>
+              <ChatIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="View Details">
             <IconButton size="small" color="info" onClick={() => { setDetailUser(row); setDetailOpen(true); }}>
               <InfoIcon fontSize="small" />

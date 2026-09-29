@@ -5,8 +5,11 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Divider, Avatar,
 } from '@mui/material';
-import { Block, LockOpen, InfoOutlined as InfoIcon, Engineering } from '@mui/icons-material';
+import { Block, LockOpen, InfoOutlined as InfoIcon, Engineering, Chat as ChatIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import api from '../../../API/apiConfig';
+import { ShowToast } from '../../common/Toast';
 import DataTable from '../DataTable';
 import SearchBarWithFilter from '../SearchBar';
 import {
@@ -100,6 +103,7 @@ function ProviderDetailModal({ open, onClose, provider }) {
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function ProviderManager() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { list: providers, loading } = useSelector((s) => s.providers);
   const totalCount = useSelector(selectTotalProvidersCount);
 
@@ -136,6 +140,16 @@ export default function ProviderManager() {
     }
     setConfirmOpen(false);
     setSelectedRow(null);
+  };
+
+  const handleStartChat = async (provider) => {
+    try {
+      const targetUserId = provider.user || provider.id;
+      const res = await api.post('/chat/rooms/', { other_user_id: targetUserId });
+      navigate('/admin/chat', { state: { roomId: res.data.id } });
+    } catch (err) {
+      ShowToast(err?.response?.data?.detail || 'Failed to open chat with provider.', 'error');
+    }
   };
 
   // ── Columns ─────────────────────────────────────────────────────────────────
@@ -195,6 +209,11 @@ export default function ProviderManager() {
       label: 'Actions',
       render: (row) => (
         <Stack direction="row" spacing={0.5}>
+          <Tooltip title="Chat with Provider">
+            <IconButton size="small" color="primary" onClick={() => handleStartChat(row)}>
+              <ChatIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="View Details">
             <IconButton size="small" color="info" onClick={() => { setDetailProvider(row); setDetailOpen(true); }}>
               <InfoIcon fontSize="small" />

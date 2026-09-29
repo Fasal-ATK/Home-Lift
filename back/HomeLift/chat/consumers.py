@@ -25,8 +25,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        if not (room.user == self.user or room.provider == self.user):
-            logger.warning("ChatConsumer: User %s not a participant of room %s", self.user.id, self.room_id)
+        is_participant = (room.user == self.user or room.provider == self.user)
+        is_admin_user = (self.user.is_staff or self.user.is_superuser)
+        if not (is_participant or is_admin_user):
+            logger.warning("ChatConsumer: User %s not a participant or admin of room %s", self.user.id, self.room_id)
             await self.close()
             return
 
@@ -69,6 +71,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # Save message to DB
             message = await self.save_message(content)
 
+            is_admin = bool(self.user.is_staff or self.user.is_superuser)
             # Broadcast to room group (both participants)
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -78,10 +81,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         'id': message.id,
                         'room_id': self.room.id,
                         'sender_id': self.user.id,
-                        'sender_name': self.user.get_full_name() or self.user.username,
+                        'sender_name': (f"Admin ({self.user.get_full_name() or self.user.username})" if is_admin else (self.user.get_full_name() or self.user.username)),
                         'content': message.content,
                         'created_at': message.created_at.isoformat(),
                         'is_read': False,
+                        'is_sender_admin': is_admin,
                     }
                 }
             )

@@ -23,9 +23,10 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'username', 'profile_picture',
             'first_name', 'last_name', 'phone',
-            'is_staff', 'is_provider', 'is_active', 'is_provider_active'
+            'is_staff', 'is_provider', 'is_active', 'is_provider_active',
+            'date_joined',
         ]
-        read_only_fields = ['email']
+        read_only_fields = ['email', 'date_joined']
 
     def validate_first_name(self, value):
         return validate_first_name(value)

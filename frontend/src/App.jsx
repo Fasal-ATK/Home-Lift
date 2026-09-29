@@ -150,6 +150,7 @@ function App() {
           <Route path='offers' element={<OffersManager />} />
           <Route path='bookings' element={<BookingMng />} />
           <Route path='withdrawals' element={<AdminWithdrawals />} />
+          <Route path='chat' element={<ChatPage />} />
         </Route>
 
         {/* Provider Routes */}

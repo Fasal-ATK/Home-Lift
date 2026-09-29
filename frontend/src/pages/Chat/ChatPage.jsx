@@ -17,12 +17,13 @@ import {
   ListItemButton,
   InputAdornment,
   Tooltip,
+  Chip,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
 import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
-import { Done, DoneAll } from "@mui/icons-material";
+import { Done, DoneAll, AdminPanelSettings } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   fetchChatRooms,
@@ -57,6 +58,7 @@ const TypingDots = () => (
 const MessageBubble = ({ msg, isMe, formatTime }) => {
   const isPending = msg.isPending;
   const isFailed = msg.isFailed;
+  const isAdminSender = Boolean(msg.is_sender_admin);
 
   return (
     <motion.div
@@ -79,24 +81,49 @@ const MessageBubble = ({ msg, isMe, formatTime }) => {
             ? "#fef2f2"
             : isMe
             ? "linear-gradient(135deg, #1e3a5f 0%, #1976d2 100%)"
+            : isAdminSender
+            ? "rgba(245, 243, 255, 0.95)"
             : "rgba(255,255,255,0.9)",
           background: isFailed
             ? "#fef2f2"
             : isMe
             ? "linear-gradient(135deg, #1e3a5f 0%, #1976d2 100%)"
+            : isAdminSender
+            ? "linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%)"
             : "rgba(255,255,255,0.92)",
           color: isFailed ? "#dc2626" : isMe ? "#ffffff" : "#101828",
           boxShadow: isMe
             ? "0 4px 12px rgba(25, 118, 210, 0.25)"
+            : isAdminSender
+            ? "0 4px 14px rgba(79, 70, 229, 0.12)"
             : "0 2px 8px rgba(0,0,0,0.06)",
           border: isFailed
             ? "1px solid #fca5a5"
             : isMe
             ? "none"
+            : isAdminSender
+            ? "1.5px solid rgba(99, 102, 241, 0.3)"
             : "1px solid rgba(0,0,0,0.06)",
           backdropFilter: !isMe ? "blur(8px)" : "none",
         }}
       >
+        {isAdminSender && !isMe && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+            <AdminPanelSettings sx={{ fontSize: 14, color: "#4f46e5" }} />
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 800,
+                fontSize: "0.68rem",
+                color: "#4f46e5",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+              }}
+            >
+              Admin Support
+            </Typography>
+          </Box>
+        )}
         <Typography
           variant="body2"
           sx={{
@@ -150,6 +177,7 @@ const RoomItem = ({ room, isActive, onClick, currentUserId, isOnline }) => {
   const unread = room.unread_count || 0;
   const initial = otherName.charAt(0).toUpperCase();
   const avatar = room.other_user_avatar || null;
+  const isOtherAdmin = Boolean(room.is_other_user_admin);
 
   return (
     <>
@@ -183,15 +211,15 @@ const RoomItem = ({ room, isActive, onClick, currentUserId, isOnline }) => {
                 sx={{
                   width: 46,
                   height: 46,
-                  bgcolor: avatar ? "transparent" : (isActive ? "#1976d2" : "#e2e8f0"),
-                  color: isActive ? "#fff" : "#475569",
+                  bgcolor: avatar ? "transparent" : isOtherAdmin ? "#4f46e5" : (isActive ? "#1976d2" : "#e2e8f0"),
+                  color: isOtherAdmin ? "#fff" : (isActive ? "#fff" : "#475569"),
                   fontWeight: 700,
                   fontSize: "1rem",
                   boxShadow: isActive ? "0 4px 12px rgba(25,118,210,0.3)" : "none",
                   transition: "all 0.25s",
                 }}
               >
-                {!avatar && initial}
+                {!avatar && (isOtherAdmin ? <AdminPanelSettings sx={{ fontSize: 22 }} /> : initial)}
               </Avatar>
               {isOnline && (
                 <Box
@@ -211,13 +239,29 @@ const RoomItem = ({ room, isActive, onClick, currentUserId, isOnline }) => {
           </Badge>
           <ListItemText
             primary={
-              <Typography
-                fontWeight={unread > 0 ? 700 : 500}
-                sx={{ color: "#101828", fontSize: "0.95rem" }}
-                noWrap
-              >
-                {otherName}
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                <Typography
+                  fontWeight={unread > 0 ? 700 : 500}
+                  sx={{ color: "#101828", fontSize: "0.95rem" }}
+                  noWrap
+                >
+                  {otherName}
+                </Typography>
+                {isOtherAdmin && (
+                  <Chip
+                    label="ADMIN"
+                    size="small"
+                    sx={{
+                      height: 18,
+                      fontSize: "0.62rem",
+                      fontWeight: 800,
+                      bgcolor: "rgba(79, 70, 229, 0.12)",
+                      color: "#4f46e5",
+                      border: "1px solid rgba(79, 70, 229, 0.25)",
+                    }}
+                  />
+                )}
+              </Box>
             }
             secondary={
               <Typography
@@ -494,19 +538,48 @@ export default function ChatPage() {
             <Avatar
               src={activeRoom?.other_user_avatar || undefined}
               sx={{
-                bgcolor: activeRoom?.other_user_avatar ? "transparent" : "#1976d2",
+                bgcolor: activeRoom?.other_user_avatar
+                  ? "transparent"
+                  : activeRoom?.is_other_user_admin
+                  ? "#4f46e5"
+                  : "#1976d2",
                 fontWeight: 700,
                 width: 42,
                 height: 42,
-                boxShadow: "0 4px 12px rgba(25,118,210,0.25)",
+                boxShadow: activeRoom?.is_other_user_admin
+                  ? "0 4px 12px rgba(79, 70, 229, 0.3)"
+                  : "0 4px 12px rgba(25,118,210,0.25)",
               }}
             >
-              {!activeRoom?.other_user_avatar && otherName.charAt(0).toUpperCase()}
+              {!activeRoom?.other_user_avatar &&
+                (activeRoom?.is_other_user_admin ? (
+                  <AdminPanelSettings sx={{ fontSize: 22 }} />
+                ) : (
+                  otherName.charAt(0).toUpperCase()
+                ))}
             </Avatar>
-            <Box>
-              <Typography fontWeight={700} sx={{ color: "#101828", lineHeight: 1.3 }}>
-                {otherName}
-              </Typography>
+            <Box sx={{ flexGrow: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography fontWeight={700} sx={{ color: "#101828", lineHeight: 1.3 }}>
+                  {otherName}
+                </Typography>
+                {activeRoom?.is_other_user_admin && (
+                  <Chip
+                    icon={<AdminPanelSettings style={{ fontSize: 13, color: "#4f46e5" }} />}
+                    label="ADMIN"
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: "0.65rem",
+                      fontWeight: 800,
+                      bgcolor: "rgba(79, 70, 229, 0.12)",
+                      color: "#4f46e5",
+                      border: "1px solid rgba(79, 70, 229, 0.3)",
+                      "& .MuiChip-icon": { ml: 0.5, mr: -0.5 },
+                    }}
+                  />
+                )}
+              </Box>
               {isTyping ? (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                   <TypingDots />

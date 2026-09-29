@@ -42,14 +42,20 @@ class ChatRoomListView(APIView):
             )
 
     def post(self, request):
-        """Create or get a chat room between the requesting user and a provider."""
+        """Create or get a chat room between the requesting user/admin and a provider/user."""
         try:
-            other_user_id = request.data.get('provider_id')
+            other_user_id = (
+                request.data.get('other_user_id') or
+                request.data.get('provider_id') or 
+                request.data.get('user_id') or 
+                request.data.get('target_user_id') or 
+                request.data.get('recipient_id')
+            )
             booking_id = request.data.get('booking_id')
 
             if not other_user_id:
                 return Response(
-                    {'detail': 'Provider ID is required to start or open a chat room.'},
+                    {'detail': 'Recipient user ID is required to start or open a chat room.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -59,7 +65,7 @@ class ChatRoomListView(APIView):
                 other_user = User.objects.get(id=other_user_id)
             except User.DoesNotExist:
                 return Response(
-                    {'detail': 'The specified service provider or user could not be found.'},
+                    {'detail': 'The specified user could not be found.'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
@@ -70,10 +76,19 @@ class ChatRoomListView(APIView):
                 except Booking.DoesNotExist:
                     logger.warning("ChatRoomListView.post: booking %s not found (non-fatal)", booking_id)
 
+            is_requester_admin = bool(getattr(request.user, 'is_staff', False) or getattr(request.user, 'is_superuser', False))
+
             # Determine who is user vs provider
             if booking:
                 user_in_room = booking.user
                 provider_in_room = booking.provider
+            elif is_requester_admin:
+                if getattr(other_user, 'is_provider', False):
+                    user_in_room = request.user
+                    provider_in_room = other_user
+                else:
+                    user_in_room = other_user
+                    provider_in_room = request.user
             else:
                 if getattr(request.user, 'is_provider', False):
                     user_in_room = other_user
@@ -84,7 +99,7 @@ class ChatRoomListView(APIView):
 
             if provider_in_room is None:
                 return Response(
-                    {'detail': 'Cannot start a chat room: A service provider has not been assigned to this booking yet.'},
+                    {'detail': 'Cannot start a chat room: A service provider or recipient has not been assigned.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -133,7 +148,8 @@ class ChatMessageListView(APIView):
             room = ChatRoom.objects.get(id=room_id)
         except ChatRoom.DoesNotExist:
             return None, Response({'detail': 'The requested chat room does not exist.'}, status=status.HTTP_404_NOT_FOUND)
-        if room.user != user and room.provider != user:
+        is_staff = bool(getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False))
+        if room.user != user and room.provider != user and not is_staff:
             return None, Response({'detail': 'You do not have permission to access or send messages in this chat room.'}, status=status.HTTP_403_FORBIDDEN)
         return room, None
 
@@ -178,15 +194,17 @@ class ChatMessageListView(APIView):
             message = ChatMessage.objects.create(room=room, sender=request.user, content=content)
             serializer = ChatMessageSerializer(message)
 
+            is_admin = bool(getattr(request.user, 'is_staff', False) or getattr(request.user, 'is_superuser', False))
             # Broadcast message via Channels to both participants
             payload = {
                 'id': message.id,
                 'room_id': room.id,
                 'sender_id': request.user.id,
-                'sender_name': request.user.get_full_name() or request.user.username,
+                'sender_name': (f"Admin ({request.user.get_full_name() or request.user.username})" if is_admin else (request.user.get_full_name() or request.user.username)),
                 'content': message.content,
                 'created_at': message.created_at.isoformat(),
                 'is_read': False,
+                'is_sender_admin': is_admin,
             }
             self._broadcast_chat_message(room, payload)
 
