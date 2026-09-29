@@ -77,12 +77,17 @@ class BookingListCreateView(APIView):
 
         search_query = request.query_params.get('search')
         if search_query:
-            qs = qs.filter(
-                Q(service__name__icontains=search_query) | 
-                Q(provider__user__first_name__icontains=search_query) |
-                Q(provider__user__username__icontains=search_query) |
-                Q(id__icontains=search_query)
+            sq = search_query.strip()
+            search_filter = (
+                Q(service__name__icontains=sq) |
+                Q(provider__first_name__icontains=sq) |
+                Q(provider__last_name__icontains=sq) |
+                Q(provider__username__icontains=sq) |
+                Q(full_name__icontains=sq)
             )
+            if sq.isdigit():
+                search_filter |= Q(id=int(sq))
+            qs = qs.filter(search_filter)
 
         # Category filtering
         category = request.query_params.get('category')
@@ -180,13 +185,18 @@ class ProviderBookingsView(APIView):
 
         search_query = request.query_params.get('search')
         if search_query:
-            qs = qs.filter(
-                Q(user__first_name__icontains=search_query) |
-                Q(user__username__icontains=search_query) |
-                Q(service__name__icontains=search_query) |
-                Q(address__city__icontains=search_query) |
-                Q(id__icontains=search_query)
+            sq = search_query.strip()
+            search_filter = (
+                Q(user__first_name__icontains=sq) |
+                Q(user__last_name__icontains=sq) |
+                Q(user__username__icontains=sq) |
+                Q(full_name__icontains=sq) |
+                Q(service__name__icontains=sq) |
+                Q(address__city__icontains=sq)
             )
+            if sq.isdigit():
+                search_filter |= Q(id=int(sq))
+            qs = qs.filter(search_filter)
 
         from core.pagination import LargeResultsSetPagination
         paginator = LargeResultsSetPagination()
@@ -285,13 +295,18 @@ class ProviderAssignedBookingsView(APIView):
 
         search_query = request.query_params.get('search')
         if search_query:
-            qs = qs.filter(
-                Q(service__name__icontains=search_query) |
-                Q(user__first_name__icontains=search_query) |
-                Q(user__last_name__icontains=search_query) |
-                Q(user__username__icontains=search_query) |
-                Q(id__icontains=search_query)
+            sq = search_query.strip()
+            search_filter = (
+                Q(service__name__icontains=sq) |
+                Q(user__first_name__icontains=sq) |
+                Q(user__last_name__icontains=sq) |
+                Q(user__username__icontains=sq) |
+                Q(full_name__icontains=sq) |
+                Q(address__city__icontains=sq)
             )
+            if sq.isdigit():
+                search_filter |= Q(id=int(sq))
+            qs = qs.filter(search_filter)
 
         # Status filter — supports single value or comma-separated list
         status_param = request.query_params.get('status')
@@ -329,12 +344,20 @@ class AdminBookingsView(APIView):
         # Search
         search_query = request.query_params.get('search')
         if search_query:
-            qs = qs.filter(
-                Q(service__name__icontains=search_query) |
-                Q(provider__user__username__icontains=search_query) |
-                Q(user__username__icontains=search_query) |
-                Q(id__icontains=search_query)
+            sq = search_query.strip()
+            search_filter = (
+                Q(service__name__icontains=sq) |
+                Q(user__username__icontains=sq) |
+                Q(user__first_name__icontains=sq) |
+                Q(user__last_name__icontains=sq) |
+                Q(provider__username__icontains=sq) |
+                Q(provider__first_name__icontains=sq) |
+                Q(provider__last_name__icontains=sq) |
+                Q(full_name__icontains=sq)
             )
+            if sq.isdigit():
+                search_filter |= Q(id=int(sq))
+            qs = qs.filter(search_filter)
 
         # Status
         status_param = request.query_params.get('status')

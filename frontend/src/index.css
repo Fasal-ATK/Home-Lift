@@ -7,8 +7,8 @@
 html {
   margin: 0;
   padding: 0;
-  /* Prevent horizontal scroll on all pages */
-  overflow-x: hidden;
+  /* Prevent horizontal scroll without breaking position: sticky */
+  overflow-x: clip;
   /* Smooth scrolling */
   scroll-behavior: smooth;
 }
@@ -16,7 +16,7 @@ html {
 body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
   /* Improve touch scroll on iOS */
   -webkit-overflow-scrolling: touch;
   /* Prevent text size inflation on orientation change */

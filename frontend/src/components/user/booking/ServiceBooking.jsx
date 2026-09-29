@@ -30,6 +30,7 @@ import {
 } from "@mui/material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import AddLocationAltIcon from "@mui/icons-material/AddLocationAlt";
 import { LocationOn } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createBooking } from "../../../redux/slices/bookingSlice";
@@ -627,75 +628,116 @@ const BookingPage = () => {
                     const selectedAddr = userAddresses.find(a => a.id === field.value) || null;
 
                     return (
-                      <Stack direction="row" spacing={1} alignItems="flex-start">
-                        {/* Address dropdown */}
-                        <Box sx={{ flex: 1 }}>
-                          <Autocomplete
-                            options={userAddresses}
-                            // plain string shown in the input box once selected
-                            getOptionLabel={opt =>
-                              opt ? `${opt.title}: ${opt.address_line}, ${opt.city}, ${opt.state} ${opt.postal_code}` : ""
-                            }
-                            // custom dropdown rows: bold title + secondary detail line
-                            renderOption={(props, opt) => (
-                              <Box component="li" {...props} key={opt.id}>
-                                <Box>
-                                  <Typography variant="body2" fontWeight={700} lineHeight={1.3}>
-                                    {opt.title}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    {opt.address_line}, {opt.city}, {opt.state} {opt.postal_code}
-                                  </Typography>
+                      <Stack direction="column" spacing={1}>
+                        <Stack direction="row" spacing={1} alignItems="flex-start">
+                          {/* Address dropdown */}
+                          <Box sx={{ flex: 1 }}>
+                            <Autocomplete
+                              options={userAddresses}
+                              // plain string shown in the input box once selected
+                              getOptionLabel={opt =>
+                                opt ? `${opt.title}: ${opt.address_line}, ${opt.city}, ${opt.state} ${opt.postal_code}` : ""
+                              }
+                              // custom dropdown rows: bold title + secondary detail line
+                              renderOption={(props, opt) => (
+                                <Box component="li" {...props} key={opt.id}>
+                                  <Box>
+                                    <Typography variant="body2" fontWeight={700} lineHeight={1.3}>
+                                      {opt.title}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      {opt.address_line}, {opt.city}, {opt.state} {opt.postal_code}
+                                    </Typography>
+                                  </Box>
                                 </Box>
-                              </Box>
-                            )}
-                            loading={addressesLoading}
-                            value={selectedAddr}
-                            onChange={(_e, val) => field.onChange(val ? val.id : "")}
-                            renderInput={params => (
-                              <TextField
-                                {...params}
-                                label="Service Address"
-                                fullWidth
-                                error={!!fieldState.error}
-                                helperText={
-                                  fieldState.error?.message ||
-                                  (userAddresses.length === 0 && !addressesLoading
-                                    ? "No addresses yet — click + to add one"
-                                    : undefined)
-                                }
-                              />
-                            )}
-                            disabled={addressesLoading}
-                            isOptionEqualToValue={(opt, val) => opt.id === val.id}
-                          />
-                        </Box>
+                              )}
+                              loading={addressesLoading}
+                              value={selectedAddr}
+                              onChange={(_e, val) => field.onChange(val ? val.id : "")}
+                              renderInput={params => (
+                                <TextField
+                                  {...params}
+                                  label="Service Address"
+                                  fullWidth
+                                  error={!!fieldState.error}
+                                  helperText={
+                                    fieldState.error?.message ||
+                                    (userAddresses.length === 0 && !addressesLoading
+                                      ? "No addresses yet — click \"+ Add Address\" to add one"
+                                      : undefined)
+                                  }
+                                />
+                              )}
+                              disabled={addressesLoading}
+                              isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                            />
+                          </Box>
+                        </Stack>
 
-                        {/* ➕ Add button */}
-                        <Tooltip title="Add new address" placement="top">
-                          <IconButton
+                        {/* Action buttons row */}
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                          {/* ➕ Add Address button */}
+                          <Button
                             onClick={() => setAddAddrOpen(true)}
-                            color="primary"
-                            sx={{ mt: 0.5 }}
+                            startIcon={<AddLocationAltIcon />}
+                            size="small"
                             aria-label="add new address"
+                            sx={{
+                              borderRadius: "20px",
+                              px: 2,
+                              py: 0.75,
+                              fontSize: "0.8rem",
+                              fontWeight: 700,
+                              textTransform: "none",
+                              letterSpacing: 0.3,
+                              background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                              color: "#fff",
+                              boxShadow: "0 4px 14px rgba(79,70,229,0.35)",
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                background: "linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)",
+                                boxShadow: "0 6px 20px rgba(79,70,229,0.45)",
+                                transform: "translateY(-1px)",
+                              },
+                              "&:active": { transform: "translateY(0px)" },
+                            }}
                           >
-                            <AddCircleOutlineIcon />
-                          </IconButton>
-                        </Tooltip>
+                            Add Address
+                          </Button>
 
-                        {/* ✏️ Edit button — only shown when an address is selected */}
-                        {selectedAddr && (
-                          <Tooltip title="Edit selected address" placement="top">
-                            <IconButton
+                          {/* ✏️ Edit button — only shown when an address is selected */}
+                          {selectedAddr && (
+                            <Button
                               onClick={() => setEditingAddr(selectedAddr)}
-                              color="secondary"
-                              sx={{ mt: 0.5 }}
+                              startIcon={<EditOutlinedIcon />}
+                              size="small"
                               aria-label="edit selected address"
+                              sx={{
+                                borderRadius: "20px",
+                                px: 2,
+                                py: 0.75,
+                                fontSize: "0.8rem",
+                                fontWeight: 700,
+                                textTransform: "none",
+                                letterSpacing: 0.3,
+                                border: "1.5px solid",
+                                borderColor: "#7c3aed",
+                                color: "#7c3aed",
+                                bgcolor: "transparent",
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                  bgcolor: "rgba(124,58,237,0.08)",
+                                  borderColor: "#6d28d9",
+                                  color: "#6d28d9",
+                                  transform: "translateY(-1px)",
+                                },
+                                "&:active": { transform: "translateY(0px)" },
+                              }}
                             >
-                              <EditOutlinedIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
+                              Edit Address
+                            </Button>
+                          )}
+                        </Stack>
                       </Stack>
                     );
                   }}

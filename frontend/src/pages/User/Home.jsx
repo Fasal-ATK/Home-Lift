@@ -224,7 +224,7 @@ const Home = () => {
           borderBottomLeftRadius: { xs: 32, md: 64 },
           borderBottomRightRadius: { xs: 32, md: 64 },
           position: "relative",
-          overflow: "hidden",
+          overflow: "clip",
         }}
       >
         {/* Decorative background circles */}
@@ -244,6 +244,9 @@ const Home = () => {
             onSubmit={handleSearch}
             elevation={0}
             sx={{
+              position: "sticky",
+              top: { xs: 72, sm: 88 },
+              zIndex: 1050,
               p: "6px",
               display: "flex",
               alignItems: "center",

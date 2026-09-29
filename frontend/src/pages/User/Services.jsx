@@ -131,10 +131,18 @@ function Services() {
         {/* ── Search Bar ──────────────────────────────── */}
         <Box
           sx={{
-            mb: 4,
+            position: "sticky",
+            top: { xs: 72, sm: 88 },
+            zIndex: 1050,
+            py: 1,
+            mb: 3,
             maxWidth: 680,
             mx: "auto",
-            position: "relative",
+            bgcolor: "rgba(240, 244, 255, 0.85)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            borderRadius: 4,
+            px: { xs: 0.5, sm: 1 },
           }}
         >
           <TextField

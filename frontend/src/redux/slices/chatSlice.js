@@ -43,6 +43,15 @@ export const sendMessage = createAsyncThunk(
     }
 );
 
+const sortRoomsByLatest = (rooms) => {
+    if (!Array.isArray(rooms)) return [];
+    return [...rooms].sort((a, b) => {
+        const timeA = new Date(a.last_message?.created_at || a.created_at || 0).getTime();
+        const timeB = new Date(b.last_message?.created_at || b.created_at || 0).getTime();
+        return timeB - timeA;
+    });
+};
+
 const chatSlice = createSlice({
     name: 'chat',
 
@@ -78,12 +87,13 @@ const chatSlice = createSlice({
             });
 
             // Update last_message in room list immediately for snappy feel
-            const room = state.rooms.find(r => r.id === roomId);
+            const room = state.rooms.find(r => r.id === roomId || String(r.id) === String(roomId));
             if (room) {
                 room.last_message = {
                     content,
                     created_at: new Date().toISOString(),
                 };
+                state.rooms = sortRoomsByLatest(state.rooms);
             }
         },
         receiveMessage: (state, action) => {
@@ -124,15 +134,16 @@ const chatSlice = createSlice({
             }
 
             // Update last message & unread count in rooms list
-            const room = state.rooms.find(r => r.id === roomId);
+            const room = state.rooms.find(r => r.id === roomId || String(r.id) === String(roomId));
             if (room) {
                 room.last_message = {
                     content: message.content,
                     created_at: message.created_at || new Date().toISOString()
                 };
-                if (state.activeRoomId !== roomId) {
+                if (state.activeRoomId !== roomId && String(state.activeRoomId) !== String(roomId)) {
                     room.unread_count = (room.unread_count || 0) + 1;
                 }
+                state.rooms = sortRoomsByLatest(state.rooms);
             }
         },
         clearActiveRoom: (state) => {
@@ -158,7 +169,7 @@ const chatSlice = createSlice({
                     is_read: true
                 }));
             }
-            const roomObj = state.rooms.find(r => r.id === roomId);
+            const roomObj = state.rooms.find(r => r.id === roomId || String(r.id) === String(roomId));
             if (roomObj) {
                 roomObj.unread_count = 0;
             }
@@ -173,7 +184,7 @@ const chatSlice = createSlice({
             })
             .addCase(fetchChatRooms.fulfilled, (state, action) => {
                 state.loading = false;
-                state.rooms = action.payload;
+                state.rooms = sortRoomsByLatest(action.payload || []);
             })
             .addCase(fetchChatRooms.rejected, (state, action) => {
                 state.loading = false;
@@ -183,7 +194,7 @@ const chatSlice = createSlice({
                 const { roomId, data } = action.payload;
                 state.messages[roomId] = data;
                 // Since fetching messages marks them as read on backend, we update local too
-                const room = state.rooms.find(r => r.id === roomId);
+                const room = state.rooms.find(r => r.id === roomId || String(r.id) === String(roomId));
                 if (room) room.unread_count = 0;
             })
             .addCase(sendMessage.fulfilled, (state, action) => {
@@ -212,12 +223,13 @@ const chatSlice = createSlice({
                 }
 
                 // Update last message in room list
-                const roomObj = state.rooms.find(r => r.id === roomId);
+                const roomObj = state.rooms.find(r => r.id === roomId || String(r.id) === String(roomId));
                 if (roomObj) {
                     roomObj.last_message = {
                         content: message.content,
                         created_at: message.created_at || new Date().toISOString()
                     };
+                    state.rooms = sortRoomsByLatest(state.rooms);
                 }
             })
             .addCase(sendMessage.rejected, (state, action) => {

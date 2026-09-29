@@ -509,27 +509,43 @@ export default function Bookings() {
 
   return (
     <Box sx={{ py: 3, px: { xs: 2, md: 4 }, maxWidth: 1100, mx: "auto" }}>
-      {/* Header */}
-      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} mb={3} spacing={1.5}>
-        <Box>
-          <Typography variant="h5" fontWeight={800}>My Bookings</Typography>
-          <Typography variant="body2" color="text.secondary" fontWeight={500}>
-            {totalCount > 0 ? `${totalCount} booking${totalCount !== 1 ? 's' : ''} found` : 'No bookings yet'}
-          </Typography>
-        </Box>
+      {/* Header & Search */}
+      <Box
+        sx={{
+          position: "sticky",
+          top: { xs: 70, sm: 86 },
+          zIndex: 1050,
+          py: 1.5,
+          mb: 2.5,
+          bgcolor: "rgba(255, 255, 255, 0.9)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          borderRadius: 2.5,
+          px: { xs: 1, sm: 2 },
+          mx: { xs: -1, sm: -2 },
+        }}
+      >
+        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1.5}>
+          <Box>
+            <Typography variant="h5" fontWeight={800}>My Bookings</Typography>
+            <Typography variant="body2" color="text.secondary" fontWeight={500}>
+              {totalCount > 0 ? `${totalCount} booking${totalCount !== 1 ? 's' : ''} found` : 'No bookings yet'}
+            </Typography>
+          </Box>
 
-        <TextField
-          size="small"
-          placeholder="Search by service, name…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (<InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} /></InputAdornment>),
-            endAdornment: search ? (<InputAdornment position="end"><IconButton size="small" onClick={() => setSearch("")}><ClearIcon fontSize="small" /></IconButton></InputAdornment>) : null
-          }}
-          sx={{ minWidth: { sm: 280 }, bgcolor: "background.paper", borderRadius: 2 }}
-        />
-      </Stack>
+          <TextField
+            size="small"
+            placeholder="Search by service, name…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (<InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} /></InputAdornment>),
+              endAdornment: search ? (<InputAdornment position="end"><IconButton size="small" onClick={() => setSearch("")}><ClearIcon fontSize="small" /></IconButton></InputAdornment>) : null
+            }}
+            sx={{ minWidth: { sm: 280 }, width: { xs: "100%", sm: "auto" }, bgcolor: "background.paper", borderRadius: 2 }}
+          />
+        </Stack>
+      </Box>
 
       {/* Snackbar for transient errors */}
       <Snackbar open={snackOpen} autoHideDuration={6000} onClose={handleCloseSnack}>

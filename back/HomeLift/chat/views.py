@@ -5,6 +5,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
+from django.db.models import Max, Q
+from django.db.models.functions import Coalesce
+
 from .models import ChatRoom, ChatMessage
 from .serializers import ChatRoomSerializer, ChatMessageSerializer
 from bookings.models import Booking
@@ -23,9 +26,12 @@ class ChatRoomListView(APIView):
     def get(self, request):
         try:
             rooms = (
-                ChatRoom.objects.filter(user=request.user) |
-                ChatRoom.objects.filter(provider=request.user)
-            ).distinct().order_by('-created_at').prefetch_related('messages')
+                ChatRoom.objects.filter(Q(user=request.user) | Q(provider=request.user))
+                .distinct()
+                .annotate(latest_activity=Coalesce(Max('messages__created_at'), 'created_at'))
+                .order_by('-latest_activity')
+                .prefetch_related('messages')
+            )
             serializer = ChatRoomSerializer(rooms, many=True, context={'request': request})
             return Response(serializer.data)
         except Exception as e:

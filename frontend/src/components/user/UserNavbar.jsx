@@ -85,14 +85,17 @@ const UserNavbar = () => {
       color="inherit"
       elevation={0}
       sx={{
+        top: 0,
+        zIndex: 1100,
         borderRadius: { xs: 0, sm: '16px' },
-        mt: { xs: 0, sm: 2 },
+        mt: { xs: 0, sm: 1.5 },
         mx: { xs: 0, sm: 2 },
         width: { xs: '100%', sm: 'calc(100% - 32px)' },
-        background: "rgba(255, 255, 255, 0.9)",
-        backdropFilter: "blur(12px)",
-        border: "1px solid rgba(0,0,0,0.05)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+        background: "rgba(255, 255, 255, 0.95)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        border: "1px solid rgba(0,0,0,0.06)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.06)",
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 4 }, minHeight: '70px !important' }}>
