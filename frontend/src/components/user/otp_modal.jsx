@@ -79,42 +79,53 @@ export default function OtpModal({
   return (
     <Modal open={open} onClose={onClose}>
       <Box sx={{
-        background: 'rgba(30, 27, 75, 0.85)', // dark indigo glass base
+        backgroundColor: 'rgba(255, 255, 255, 0.98)',
         backdropFilter: 'blur(20px)',
-        webkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.15)',
+        border: '1px solid rgba(226, 232, 240, 0.9)',
         p: 4,
-        borderRadius: 5,
-        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
-        width: 320,
+        borderRadius: 4,
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+        width: { xs: '90%', sm: 360 },
+        maxWidth: 380,
         mx: 'auto',
         mt: '20vh',
         textAlign: 'center',
         position: 'relative',
-        color: '#ffffff',
+        color: '#0f172a',
+        userSelect: 'text',
       }}>
         <IconButton
           onClick={onClose}
           sx={{
             position: 'absolute',
-            top: 12,
-            right: 12,
-            color: 'rgba(255, 255, 255, 0.65)',
-            '&:hover': { color: '#ffffff', transform: 'rotate(90deg)' },
-            transition: 'all 0.28s ease',
+            top: 14,
+            right: 14,
+            color: '#64748b',
+            '&:hover': { color: '#0f172a', transform: 'rotate(90deg)' },
+            transition: 'all 0.25s ease',
           }}
           aria-label="close"
         >
-          <CloseIcon />
+          <CloseIcon fontSize="small" />
         </IconButton>
 
-        <Typography variant="h6" mb={1} fontWeight="bold" sx={{ color: '#ffffff' }}>
+        <Typography variant="h5" mb={1} fontWeight="800" sx={{ color: '#0f172a' }}>
           {getTitle()}
         </Typography>
-        <Typography variant="body2" mb={3} sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>
+        <Typography variant="body2" mb={2.5} sx={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.5 }}>
           {getMessage()}
           {timeLeft > 0 && (
-            <Box component="span" sx={{ display: 'block', mt: 1.5, fontWeight: 'bold', color: '#818cf8' }}>
+            <Box component="span" sx={{
+              display: 'inline-block',
+              mt: 1.5,
+              px: 1.5,
+              py: 0.5,
+              borderRadius: 2,
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              color: '#4f46e5',
+              bgcolor: 'rgba(79, 70, 229, 0.08)'
+            }}>
               Expires in: {formatTime(timeLeft)}
             </Box>
           )}
@@ -125,14 +136,8 @@ export default function OtpModal({
             severity="error"
             sx={{
               mb: 2,
-              borderRadius: '12px',
-              bgcolor: 'rgba(239, 68, 68, 0.15)',
-              color: '#fca5a5',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
+              borderRadius: 2,
               textAlign: 'left',
-              '& .MuiAlert-icon': {
-                color: '#f87171',
-              }
             }}
           >
             {error}
@@ -141,12 +146,12 @@ export default function OtpModal({
 
         <TextField
           fullWidth
-          label="OTP"
+          label="Verification Code"
           type="text"
           inputProps={{
             maxLength: 6,
             pattern: '[0-9]*',
-            style: { textAlign: 'center', letterSpacing: '8px', fontSize: '1.2rem', fontWeight: 'bold' }
+            style: { textAlign: 'center', letterSpacing: '8px', fontSize: '1.25rem', fontWeight: 800 }
           }}
           value={otp}
           onChange={e => {
@@ -155,26 +160,6 @@ export default function OtpModal({
           }}
           sx={{
             mb: 2.5,
-            '& .MuiOutlinedInput-root': {
-              color: '#ffffff',
-              '& fieldset': {
-                borderColor: 'rgba(255, 255, 255, 0.25)',
-                borderRadius: '12px',
-                transition: 'border-color 0.2s ease',
-              },
-              '&:hover fieldset': {
-                borderColor: 'rgba(255, 255, 255, 0.55)',
-              },
-              '&.Mui-focused fieldset': {
-                borderColor: '#818cf8',
-              },
-            },
-            '& .MuiInputLabel-root': {
-              color: 'rgba(255, 255, 255, 0.6)',
-              '&.Mui-focused': {
-                color: '#818cf8',
-              },
-            },
           }}
           placeholder="••••••"
         />
@@ -185,23 +170,22 @@ export default function OtpModal({
           onClick={handleVerify}
           sx={{
             mt: 1,
-            bgcolor: '#ffffff',
-            color: '#1e1b4b',
-            fontWeight: 'bold',
-            borderRadius: '12px',
             py: 1.3,
-            textTransform: 'none',
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+            color: '#ffffff',
+            fontWeight: 700,
             fontSize: '0.95rem',
-            boxShadow: '0 4px 12px rgba(255, 255, 255, 0.15)',
+            boxShadow: '0 4px 14px rgba(79, 70, 229, 0.3)',
             '&:hover': {
-              bgcolor: '#f3f4f6',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 6px 16px rgba(255, 255, 255, 0.25)',
+              background: 'linear-gradient(135deg, #4338ca 0%, #4f46e5 100%)',
+              boxShadow: '0 6px 18px rgba(79, 70, 229, 0.42)',
+              transform: 'translateY(-1px)',
             },
-            transition: 'all 0.25s ease',
+            transition: 'all 0.2s ease',
           }}
         >
-          Verify OTP
+          Verify Code
         </Button>
 
         <Button
@@ -211,19 +195,20 @@ export default function OtpModal({
           disabled={resending || resendCountdown > 0}
           sx={{
             mt: 2,
-            color: '#a5b4fc',
+            color: '#4f46e5',
+            fontWeight: 600,
             textTransform: 'none',
             fontSize: '0.85rem',
             '&:hover': {
-              color: '#c7d2fe',
-              background: 'rgba(255, 255, 255, 0.05)',
+              color: '#3730a3',
+              background: 'rgba(79, 70, 229, 0.04)',
             },
             '&:disabled': {
-              color: 'rgba(255, 255, 255, 0.35)',
+              color: '#94a3b8',
             }
           }}
         >
-          {resending ? 'Resending...' : (resendCountdown > 0 ? `Resend available in ${formatTime(resendCountdown)}` : 'Resend OTP')}
+          {resending ? 'Resending...' : (resendCountdown > 0 ? `Resend available in ${formatTime(resendCountdown)}` : 'Resend Code')}
         </Button>
       </Box>
     </Modal>

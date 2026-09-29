@@ -223,29 +223,29 @@ function ForgotPassword() {
 
   return (
     <Box sx={{
-      background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%)',
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
       minHeight: '100vh',
       py: 8,
       display: 'flex',
       alignItems: 'center',
+      justifyContent: 'center',
+      userSelect: 'none',
     }}>
       <Container maxWidth="sm">
         <Box
           sx={{
-            background: 'rgba(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(16px)',
-            webkitBackdropFilter: 'blur(16px)',
-            borderRadius: 6,
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            boxShadow: '0 20px 40px 0 rgba(0, 0, 0, 0.3)',
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: 4,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
             px: { xs: 3, sm: 5 },
             pt: 6,
             pb: 5,
             textAlign: 'center',
-            color: '#ffffff',
+            userSelect: 'text',
           }}
         >
-          <Typography variant="h5" fontWeight="bold" gutterBottom mb={2} sx={{ letterSpacing: '0.5px' }}>
+          <Typography variant="h4" fontWeight="800" color="#0f172a" gutterBottom>
             {mode === 'change'
               ? 'Change Password'
               : step === 1
@@ -253,19 +253,21 @@ function ForgotPassword() {
                 : 'Reset Password'}
           </Typography>
 
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            {mode === 'change'
+              ? 'Update your account password below'
+              : step === 1
+                ? "Enter your email address and we'll send you an OTP"
+                : 'Enter your new password below to reset'}
+          </Typography>
+
           {error && (
             <Alert
               severity="error"
               sx={{
                 mb: 3,
-                borderRadius: '12px',
-                bgcolor: 'rgba(239, 68, 68, 0.15)',
-                color: '#fca5a5',
-                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: 2,
                 textAlign: 'left',
-                '& .MuiAlert-icon': {
-                  color: '#f87171',
-                }
               }}
             >
               {error}
@@ -275,24 +277,33 @@ function ForgotPassword() {
           {/* Step 1: Enter Email (Forgot Password only - if not coming from login) */}
           {mode === 'forgot' && step === 1 && !otpVerifiedFromLogin && (
             <form onSubmit={handleSendOtp}>
-              <Typography variant="body2" sx={{ mb: 4, color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
-                Enter your email address and we'll send you an OTP to reset your password.
-              </Typography>
-
               <TextField
-                label="Email"
+                label="Email Address"
                 type="email"
                 fullWidth
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                sx={textFieldStyle}
+                sx={{ mb: 2.5 }}
               />
 
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={buttonStyle}
+                sx={{
+                  mt: 1,
+                  py: 1.4,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  boxShadow: '0 4px 16px rgba(79, 70, 229, 0.35)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #4338ca 0%, #4f46e5 100%)',
+                    boxShadow: '0 6px 20px rgba(79, 70, 229, 0.45)',
+                  },
+                }}
                 disabled={loading}
               >
                 {loading ? <CircularProgress size={24} color="inherit" /> : 'Send OTP'}
@@ -303,12 +314,6 @@ function ForgotPassword() {
           {/* Step 3: Enter New Password (Both modes) */}
           {step === 3 && (
             <form onSubmit={handlePasswordSubmit}>
-              <Typography variant="body2" sx={{ mb: 4, color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
-                {mode === 'change'
-                  ? 'Enter your current password and choose a new password.'
-                  : 'Enter your new password below.'}
-              </Typography>
-
               {/* Current Password (Change Password mode only) */}
               {mode === 'change' && (
                 <TextField
@@ -317,7 +322,7 @@ function ForgotPassword() {
                   fullWidth
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  sx={textFieldStyle}
+                  sx={{ mb: 2.5 }}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
@@ -337,7 +342,7 @@ function ForgotPassword() {
                 fullWidth
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                sx={textFieldStyle}
+                sx={{ mb: 2.5 }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -356,7 +361,7 @@ function ForgotPassword() {
                 fullWidth
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                sx={textFieldStyle}
+                sx={{ mb: 2.5 }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -372,7 +377,20 @@ function ForgotPassword() {
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={buttonStyle}
+                sx={{
+                  mt: 1,
+                  py: 1.4,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  boxShadow: '0 4px 16px rgba(79, 70, 229, 0.35)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #4338ca 0%, #4f46e5 100%)',
+                    boxShadow: '0 6px 20px rgba(79, 70, 229, 0.45)',
+                  },
+                }}
                 disabled={loading}
               >
                 {loading ? (
@@ -388,17 +406,17 @@ function ForgotPassword() {
 
           {/* Footer Links */}
           {mode === 'forgot' && (
-            <Typography variant="body2" sx={{ mt: 4, color: 'rgba(255, 255, 255, 0.6)' }}>
+            <Typography variant="body2" sx={{ mt: 3, color: '#64748b' }}>
               Remember your password?{' '}
-              <Link href="/login" sx={linkStyle}>
-                Login
+              <Link href="/login" underline="hover" sx={{ fontWeight: 700, color: '#4f46e5' }}>
+                Sign In
               </Link>
             </Typography>
           )}
 
           {mode === 'change' && (
-            <Typography variant="body2" sx={{ mt: 4 }}>
-              <Link href="/profile" sx={linkStyle}>
+            <Typography variant="body2" sx={{ mt: 3, color: '#64748b' }}>
+              <Link href="/profile" underline="hover" sx={{ fontWeight: 700, color: '#4f46e5' }}>
                 Back to Profile
               </Link>
             </Typography>
