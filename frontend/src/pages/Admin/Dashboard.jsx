@@ -193,8 +193,8 @@ const Dashboard = () => {
       </Stack>
 
       {/* 🟢 Top row stats */}
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3} sx={{ minWidth: 0 }}>
+      <Grid container spacing={2.5} mb={4}>
+        <Grid item xs={12} sm={6} md={4} lg={2.4} sx={{ minWidth: 0 }}>
           <StatCard
             title="Total Customers"
             value={data.stats.customers}
@@ -202,7 +202,7 @@ const Dashboard = () => {
             color="#1976d2"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ minWidth: 0 }}>
+        <Grid item xs={12} sm={6} md={4} lg={2.4} sx={{ minWidth: 0 }}>
           <StatCard
             title="Total Providers"
             value={data.stats.providers}
@@ -210,7 +210,7 @@ const Dashboard = () => {
             color="#2e7d32"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ minWidth: 0 }}>
+        <Grid item xs={12} sm={6} md={4} lg={2.4} sx={{ minWidth: 0 }}>
           <StatCard
             title="Total Bookings"
             value={data.stats.bookings}
@@ -218,13 +218,22 @@ const Dashboard = () => {
             color="#ed6c02"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ minWidth: 0 }}>
+        <Grid item xs={12} sm={6} md={6} lg={2.4} sx={{ minWidth: 0 }}>
           <StatCard
-            title="Total Revenue"
+            title="Total Booking Amount"
             value={`₹${Number(data.stats.revenue).toLocaleString()}`}
             icon={<AttachMoney />}
             color="#9c27b0"
-            subtitle={`Platform Earnings: ₹${Number(data.stats.platform_revenue).toLocaleString()}`}
+            subtitle="Gross Booking Value"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={6} lg={2.4} sx={{ minWidth: 0 }}>
+          <StatCard
+            title="Platform Earnings"
+            value={`₹${Number(data.stats.platform_revenue).toLocaleString()}`}
+            icon={<TrendingUp />}
+            color="#10b981"
+            subtitle="Net 7% Commission"
           />
         </Grid>
       </Grid>
