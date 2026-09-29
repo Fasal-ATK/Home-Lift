@@ -162,22 +162,37 @@ function Signup() {
   };
 
   return (
-    <Box sx={{ bgcolor: '#d9e021', minHeight: '100vh', py: 8 }}>
+    <Box
+      sx={{
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
+        minHeight: '100vh',
+        py: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        userSelect: 'none',
+      }}
+    >
       <Container maxWidth="sm" sx={{ position: 'relative' }}>
         <Box
           sx={{
-            backgroundColor: 'white',
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
             borderRadius: 4,
-            boxShadow: 4,
-            px: 4,
-            pt: 8,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+            px: { xs: 3, sm: 5 },
+            pt: 6,
             pb: 5,
             textAlign: 'center',
             position: 'relative',
+            userSelect: 'text',
           }}
         >
-          <Typography variant="h5" fontWeight="bold" gutterBottom>
-            User Registration
+          <Typography variant="h4" fontWeight="800" color="#0f172a" gutterBottom>
+            Create Account
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Join HomeLift to book home services with ease
           </Typography>
 
           {backendError && <Alert severity="error" sx={{ mb: 2 }}>{backendError}</Alert>}
@@ -362,14 +377,21 @@ function Signup() {
               variant="contained"
               sx={{
                 mt: 3,
-                bgcolor: '#e0dc25',
-                color: 'black',
-                fontWeight: 'bold',
-                '&:hover': { bgcolor: '#d4ce1f' }
+                py: 1.4,
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '1rem',
+                boxShadow: '0 4px 16px rgba(79, 70, 229, 0.35)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #4338ca 0%, #4f46e5 100%)',
+                  boxShadow: '0 6px 20px rgba(79, 70, 229, 0.45)',
+                },
               }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign up with email'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Create Account'}
             </Button>
           </form>
 
@@ -377,10 +399,10 @@ function Signup() {
             <GoogleLoginButton />
           </Box>
 
-          <Typography variant="body2" sx={{ mt: 2 }}>
+          <Typography variant="body2" sx={{ mt: 3, color: '#64748b' }}>
             Already have an account?{' '}
-            <Link href="/login" underline="hover" sx={{ fontWeight: 'bold' }}>
-              Login Now
+            <Link href="/login" underline="hover" sx={{ fontWeight: 700, color: '#4f46e5' }}>
+              Sign In
             </Link>
           </Typography>
         </Box>

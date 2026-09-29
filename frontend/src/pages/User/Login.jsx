@@ -129,32 +129,47 @@ function Login() {
   const togglePasswordVisibility = () => setShowPass(prev => !prev);
 
   return (
-    <Box sx={{ bgcolor: '#d9e021', minHeight: '100vh', py: 8 }}>
+    <Box
+      sx={{
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
+        minHeight: '100vh',
+        py: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        userSelect: 'none',
+      }}
+    >
       <Container maxWidth="sm">
         <Box
           sx={{
-            backgroundColor: 'white',
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
             borderRadius: 4,
-            boxShadow: 4,
-            px: 4,
-            pt: 8,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+            px: { xs: 3, sm: 5 },
+            pt: 6,
             pb: 5,
             textAlign: 'center',
+            userSelect: 'text',
           }}
         >
-          <Typography variant="h5" fontWeight="bold" gutterBottom>
+          <Typography variant="h4" fontWeight="800" color="#0f172a" gutterBottom>
             User Login
           </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Welcome back! Please enter your details to sign in.
+          </Typography>
 
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
 
           {/* Email/Password Login Form */}
           <form onSubmit={handleLogin}>
             <TextField
-              label="Email"
+              label="Email Address"
               type="email"
               fullWidth
-              sx={{ mt: 2 }}
+              sx={{ mt: 1 }}
               value={email}
               onChange={(e) => setEmail(e.target.value.trim())}
             />
@@ -163,7 +178,7 @@ function Login() {
               label="Password"
               type={showPass ? 'text' : 'password'}
               fullWidth
-              sx={{ mt: 2 }}
+              sx={{ mt: 2.5 }}
               value={pass}
               onChange={(e) => setPass(e.target.value.replace(/\s/g, ''))}
               InputProps={{
@@ -185,9 +200,9 @@ function Login() {
                 onClick={handleForgotPassword}
                 underline="hover"
                 sx={{
-                  fontSize: '0.875rem',
-                  color: '#1976d2',
-                  fontWeight: 500,
+                  fontSize: '0.85rem',
+                  color: '#4f46e5',
+                  fontWeight: 600,
                   cursor: otpLoading ? 'not-allowed' : 'pointer',
                   opacity: otpLoading ? 0.6 : 1
                 }}
@@ -202,11 +217,18 @@ function Login() {
               fullWidth
               variant="contained"
               sx={{
-                mt: 2,
-                bgcolor: '#e0dc25',
-                color: 'black',
-                fontWeight: 'bold',
-                '&:hover': { bgcolor: '#d4ce1f' },
+                mt: 3,
+                py: 1.4,
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '1rem',
+                boxShadow: '0 4px 16px rgba(79, 70, 229, 0.35)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #4338ca 0%, #4f46e5 100%)',
+                  boxShadow: '0 6px 20px rgba(79, 70, 229, 0.45)',
+                },
               }}
               disabled={loading}
             >
@@ -219,9 +241,9 @@ function Login() {
             <GoogleLoginButton />
           </Box>
 
-          <Typography variant="body2" sx={{ mt: 2 }}>
+          <Typography variant="body2" sx={{ mt: 3, color: '#64748b' }}>
             Don't have an account?{' '}
-            <Link href="/signup" underline="hover" sx={{ fontWeight: 'bold' }}>
+            <Link href="/signup" underline="hover" sx={{ fontWeight: 700, color: '#4f46e5' }}>
               Sign Up
             </Link>
           </Typography>
