@@ -21,7 +21,7 @@ const colorPresets = {
   },
 };
 
-const LogoutButton = ({ collapsed, color = 'red' }) => {
+const LogoutButton = ({ collapsed, color = 'red', sx = {} }) => {
   const [open, setOpen] = useState(false);
   const { isAdmin } = useSelector((state) => state.auth);
 
@@ -55,6 +55,7 @@ const LogoutButton = ({ collapsed, color = 'red' }) => {
           justifyContent: 'center',
           gap: collapsed ? 0 : 1,
           fontSize: '15px',
+          ...sx,
         }}
       >
         <LogoutIcon />

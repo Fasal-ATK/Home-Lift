@@ -58,12 +58,15 @@ import ChatPage from './pages/Chat/ChatPage';
 // Socket Component
 import AppSocket from './components/AppSocket';
 import { useSelector } from 'react-redux';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import theme from './theme/theme';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
       <ToastWrapper />
       <LoadingOverlay />
       <ScrollToTop />
@@ -172,7 +175,7 @@ function App() {
         {/* 404 Fallback */}
         <Route path="*" element={<div>404 - Page Not Found</div>} />
       </Routes>
-    </>
+    </ThemeProvider>
   );
 }
 

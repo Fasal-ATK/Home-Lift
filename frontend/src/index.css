@@ -1,7 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+/* Custom Text Selection Highlight */
+::selection {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+::-moz-selection {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+/* Prevent unwanted background wrapper text selection */
+body, #root, .page-wrapper {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Keep form inputs, typography, tables, and text content fully selectable */
+input, textarea, select, p, h1, h2, h3, h4, h5, h6, span, label, td, th, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Sleek custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.7);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #818cf8;
 }
 
 html {
@@ -11,12 +53,16 @@ html {
   overflow-x: clip;
   /* Smooth scrolling */
   scroll-behavior: smooth;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
   margin: 0;
   padding: 0;
   overflow-x: clip;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+  background-color: #f8fafc;
   /* Improve touch scroll on iOS */
   -webkit-overflow-scrolling: touch;
   /* Prevent text size inflation on orientation change */
@@ -41,6 +87,16 @@ textarea {
   touch-action: manipulation;
 }
 
+/* Remove unwanted inner input focus outlines so MUI notched outline handles focus cleanly */
+input,
+textarea,
+select,
+.MuiInputBase-input,
+.MuiInputBase-root,
+.MuiOutlinedInput-input {
+  outline: none !important;
+}
+
 /* Prevent overflowing text from breaking layouts */
 p, h1, h2, h3, h4, h5, h6 {
   overflow-wrap: break-word;
@@ -52,4 +108,13 @@ p, h1, h2, h3, h4, h5, h6 {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-}
+}
+
+/* Modern Card Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
