@@ -28,12 +28,9 @@ class MainConsumer(AsyncWebsocketConsumer):
 
             if self.channel_layer:
                 await self.channel_layer.group_add(self.group_name, self.channel_name)
-                logger.info(
-                    "⚡ [WS CONNECT] user_id=%s joined group=%s channel=%s",
-                    self.user_id,
-                    self.group_name,
-                    self.channel_name,
-                )
+                msg = f"⚡ [WS CONNECT] user_id={self.user_id} joined group={self.group_name} channel={self.channel_name}"
+                logger.info(msg)
+                print(msg, flush=True)
             else:
                 logger.error("MainConsumer: Channel layer not configured!")
 
@@ -45,12 +42,9 @@ class MainConsumer(AsyncWebsocketConsumer):
             await self.close()
 
     async def disconnect(self, close_code):
-        logger.info(
-            "⚡ [WS DISCONNECT] user_id=%s group=%s channel=%s",
-            getattr(self, "user_id", "?"),
-            getattr(self, "group_name", "?"),
-            self.channel_name,
-        )
+        msg = f"⚡ [WS DISCONNECT] user_id={getattr(self, 'user_id', '?')} group={getattr(self, 'group_name', '?')} channel={self.channel_name}"
+        logger.info(msg)
+        print(msg, flush=True)
         if hasattr(self, 'group_name') and self.channel_layer:
             # Broadcast offline presence before leaving the group
             await self.broadcast_presence("user_offline")
@@ -69,23 +63,22 @@ class MainConsumer(AsyncWebsocketConsumer):
 
     async def chat_message(self, event):
         """Handles: channel_layer.group_send(..., {'type': 'chat_message', ...})"""
-        logger.info(
-            "⚡ [WS DISPATCH] MainConsumer.chat_message received for user=%s event=%s",
-            getattr(self, "user_id", "?"),
-            event,
-        )
-        logger.info(
-            "⚡ [WS SEND] Sending chat_message to WebSocket user=%s",
-            getattr(self, "user_id", "?"),
-        )
+        msg1 = f"⚡ [WS DISPATCH] MainConsumer.chat_message received for user={getattr(self, 'user_id', '?')} event={event}"
+        logger.info(msg1)
+        print(msg1, flush=True)
+
+        msg2 = f"⚡ [WS SEND] Sending chat_message to WebSocket user={getattr(self, 'user_id', '?')}"
+        logger.info(msg2)
+        print(msg2, flush=True)
+
         await self.send(text_data=json.dumps({
             'type': 'chat_message',
             'payload': event.get('payload', {}),
         }))
-        logger.info(
-            "⚡ [WS SEND] WebSocket send completed for user=%s",
-            getattr(self, "user_id", "?"),
-        )
+
+        msg3 = f"⚡ [WS SEND] WebSocket send completed for user={getattr(self, 'user_id', '?')}"
+        logger.info(msg3)
+        print(msg3, flush=True)
 
     async def read_receipt(self, event):
         """Handles: channel_layer.group_send(..., {'type': 'read_receipt', ...})"""
