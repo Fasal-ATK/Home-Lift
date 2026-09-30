@@ -226,18 +226,26 @@ class ChatMessageListView(APIView):
             from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync
             channel_layer = get_channel_layer()
+            msg_id = payload.get('id', '?')
+            room_id = payload.get('room_id', '?')
             for pid in [room.user_id, room.provider_id]:
-                group = f"user_{pid}"
-                msg1 = f"⚡ [REST BROADCAST] Sending chat event to group={group} payload={payload}"
+                group_name = f"user_{pid}"
+                msg1 = (
+                    f"⚡ [REST BROADCAST] Sending chat message "
+                    f"message_id={msg_id} room_id={room_id} to={group_name}"
+                )
                 logger.info(msg1)
                 print(msg1, flush=True)
 
                 async_to_sync(channel_layer.group_send)(
-                    group,
+                    group_name,
                     {"type": "chat_message", "payload": payload}
                 )
 
-                msg2 = f"⚡ [REST BROADCAST] group_send completed successfully for group={group}"
+                msg2 = (
+                    f"⚡ [REST BROADCAST] group_send completed successfully "
+                    f"message_id={msg_id} to={group_name}"
+                )
                 logger.info(msg2)
                 print(msg2, flush=True)
         except Exception as e:

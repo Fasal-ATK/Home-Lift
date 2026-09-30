@@ -63,20 +63,29 @@ class MainConsumer(AsyncWebsocketConsumer):
 
     async def chat_message(self, event):
         """Handles: channel_layer.group_send(..., {'type': 'chat_message', ...})"""
-        msg1 = f"⚡ [WS DISPATCH] MainConsumer.chat_message received for user={getattr(self, 'user_id', '?')} event={event}"
+        payload = event.get('payload', {})
+        user_id = getattr(self, 'user_id', '?')
+        msg_id = payload.get('id', '?')
+        room_id = payload.get('room_id', '?')
+        created_at = payload.get('created_at', '?')
+
+        msg1 = (
+            f"⚡ [WS DISPATCH] MainConsumer.chat_message received "
+            f"user={user_id} message_id={msg_id} room_id={room_id} created_at={created_at}"
+        )
         logger.info(msg1)
         print(msg1, flush=True)
 
-        msg2 = f"⚡ [WS SEND] Sending chat_message to WebSocket user={getattr(self, 'user_id', '?')}"
+        msg2 = f"⚡ [WS SEND] Sending chat_message message_id={msg_id} user={user_id}"
         logger.info(msg2)
         print(msg2, flush=True)
 
         await self.send(text_data=json.dumps({
             'type': 'chat_message',
-            'payload': event.get('payload', {}),
+            'payload': payload,
         }))
 
-        msg3 = f"⚡ [WS SEND] WebSocket send completed for user={getattr(self, 'user_id', '?')}"
+        msg3 = f"⚡ [WS SEND] WebSocket send completed message_id={msg_id} user={user_id}"
         logger.info(msg3)
         print(msg3, flush=True)
 
