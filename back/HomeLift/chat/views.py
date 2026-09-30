@@ -227,9 +227,19 @@ class ChatMessageListView(APIView):
             from asgiref.sync import async_to_sync
             channel_layer = get_channel_layer()
             for pid in [room.user_id, room.provider_id]:
+                group = f"user_{pid}"
+                logger.info(
+                    "⚡ [REST BROADCAST] Sending chat event to group=%s payload=%s",
+                    group,
+                    payload,
+                )
                 async_to_sync(channel_layer.group_send)(
-                    f"user_{pid}",
+                    group,
                     {"type": "chat_message", "payload": payload}
+                )
+                logger.info(
+                    "⚡ [REST BROADCAST] group_send completed successfully for group=%s",
+                    group,
                 )
         except Exception as e:
             logger.warning("Failed to broadcast chat message for room %s: %s", room.id, e)

@@ -144,7 +144,9 @@ const AppSocket = ({ userId }) => {
 
                 socket.onmessage = (event) => {
                     try {
+                        console.log("⚡ [AppSocket RAW WS FRAME]", event.data);
                         const data = JSON.parse(event.data);
+                        console.log("⚡ [AppSocket PARSED WS EVENT]", data);
 
                         if (data.type === "notification" || data.message) {
                             const messageText = data.message || data.text;
@@ -206,6 +208,8 @@ const AppSocket = ({ userId }) => {
 
                         if (data.type === "chat_message") {
                             const payload = data.payload;
+                            console.log("⚡ [AppSocket CHAT EVENT]", payload);
+                            console.log("⚡ [REDUX CHAT DISPATCH]", payload);
 
                             dispatch(receiveMessage(payload));
 
